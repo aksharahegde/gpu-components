@@ -523,13 +523,33 @@ function WebGpuTimelineInner(props: {
   onStats: (stats: { fps: number; p50: number; p95: number; dropped: number }) => void
 }) {
   const { status } = useGpu()
-  const [viewport, setViewport] = useState({
+  const [viewport, setViewport] = useState(() => ({
     timeStart: 0,
     timeEnd: 1,
     trackCount: TRACKS,
-    width: 800,
-    height: 236,
-  })
+    width: props.hostRef.current?.clientWidth ?? 800,
+    height: props.hostRef.current?.clientHeight ?? 236,
+  }))
+  const [hoveredId, setHoveredId] = useState<number | null>(null)
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+
+  // Tracks the stage's own size (it's flex-responsive) without touching pan/zoom — real pan/zoom
+  // now comes from the visitor's own wheel input, via GPUTimeline's onViewportChange below.
+  useEffect(() => {
+    const host = props.hostRef.current
+    if (!host || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect
+      if (!rect) return
+      setViewport((v) =>
+        v.width === rect.width && v.height === rect.height
+          ? v
+          : { ...v, width: rect.width, height: rect.height },
+      )
+    })
+    ro.observe(host)
+    return () => ro.disconnect()
+  }, [props.hostRef])
 
   // Same measurement methodology as the dom/canvas modes above: wall-clock deltas between
   // consecutive requestAnimationFrame callbacks. It runs alongside GPUTimeline's own render
@@ -547,24 +567,6 @@ function WebGpuTimelineInner(props: {
     const tick = (now: number) => {
       const dt = now - last
       last = now
-
-      const host = props.hostRef.current
-      const width = host?.clientWidth ?? 800
-      const height = host?.clientHeight ?? 236
-
-      // The exact same slow zoom/pan oscillation the dom/canvas modes use, re-expressed as a
-      // time-domain window: screenX = (t - timeStart)/(timeEnd - timeStart) * width must equal
-      // (t * zoom + pan) * width, which solves to timeStart = -pan/zoom, timeEnd = (1-pan)/zoom.
-      const phase = (now - start) / 3600
-      const zoom = 1 + Math.sin(phase) * 0.06
-      const pan = Math.sin(phase * 0.7) * 0.02
-      setViewport({
-        timeStart: -pan / zoom,
-        timeEnd: (1 - pan) / zoom,
-        trackCount: TRACKS,
-        width,
-        height,
-      })
 
       if (now - start > 400) {
         acc.push(dt)
@@ -584,7 +586,7 @@ function WebGpuTimelineInner(props: {
 
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- onStats/hostRef are stable identities from the parent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onStats is a stable identity from the parent.
   }, [props.running, props.visible, status])
 
   if (status === 'unsupported') {
@@ -597,5 +599,15 @@ function WebGpuTimelineInner(props: {
   if (status === 'pending') {
     return <div {...stylex.props(s.gpuNotice)}>Requesting a GPU device…</div>
   }
-  return <GPUTimeline spans={props.spans} viewport={viewport} />
+  return (
+    <GPUTimeline
+      spans={props.spans}
+      viewport={viewport}
+      onViewportChange={setViewport}
+      hoveredId={hoveredId}
+      selectedId={selectedId}
+      onHover={setHoveredId}
+      onSelect={setSelectedId}
+    />
+  )
 }

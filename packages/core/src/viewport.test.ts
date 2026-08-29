@@ -1,6 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  pixelXToTime,
+  pixelYToTrack,
   timeToPixelX,
   trackRowHeight,
   trackToPixelY,
@@ -43,5 +45,19 @@ describe("viewport", () => {
     assert.equal(rowHeight, 100);
     assert.equal(trackToPixelY(V, 0), 50);
     assert.equal(trackToPixelY(V, 3), 350);
+  });
+
+  it("pixelXToTime is the inverse of timeToPixelX", () => {
+    for (const t of [0, 2.5, 5, 7.3, 10]) {
+      assert.ok(Math.abs(pixelXToTime(V, timeToPixelX(V, t)) - t) < 1e-9);
+    }
+    assert.equal(pixelXToTime(V, 0), 0);
+    assert.equal(pixelXToTime(V, 800), 10);
+  });
+
+  it("pixelYToTrack is the inverse of trackToPixelY", () => {
+    for (const track of [0, 1, 2, 3]) {
+      assert.ok(Math.abs(pixelYToTrack(V, trackToPixelY(V, track)) - track) < 1e-9);
+    }
   });
 });

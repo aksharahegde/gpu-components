@@ -64,3 +64,18 @@ export function trackToPixelY(v: ViewportState, track: number): number {
 export function trackRowHeight(v: ViewportState): number {
   return v.height / (v.trackCount || 1);
 }
+
+/** Inverse of `timeToPixelX` — the time value under a given CSS-pixel x. For hit-testing and
+ * zoom-at-cursor, where the pointer gives pixels and everything else works in the time domain. */
+export function pixelXToTime(v: ViewportState, pixelX: number): number {
+  const span = v.timeEnd - v.timeStart || 1;
+  return v.timeStart + (pixelX / (v.width || 1)) * span;
+}
+
+/** Inverse of `trackToPixelY` — the (fractional) track index under a given CSS-pixel y. Callers
+ * that need a discrete track for hit-testing round this themselves (`Math.round`), since a caller
+ * comparing against row boundaries may want floor/ceil instead. */
+export function pixelYToTrack(v: ViewportState, pixelY: number): number {
+  const count = v.trackCount || 1;
+  return (pixelY / (v.height || 1)) * count - 0.5;
+}
