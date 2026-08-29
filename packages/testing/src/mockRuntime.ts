@@ -43,6 +43,21 @@ export async function createMockRuntime(opts: MockRuntimeOptions = {}): Promise<
   });
 }
 
+/**
+ * The `GpuRuntimeOptions` fragment for code that must call `GpuRuntime.create()` itself rather
+ * than `createWithGpu()` — chiefly `<GPUProvider>`, whose async effect owns the `create()` call.
+ * Spread into `options`: `createElement(GPUProvider, { options: mockGpuRuntimeOptions() })`.
+ * Reaches `caps.webgpu === true` under `vgpu/mock` with no `navigator.gpu` present (e.g. jsdom).
+ */
+export function mockGpuRuntimeOptions(
+  features: readonly GPUFeatureName[] = [],
+): Pick<GpuRuntimeOptions, "connect" | "reconnect"> {
+  return {
+    connect: () => createMockGpu(features),
+    reconnect: () => createMockGpu(features),
+  };
+}
+
 /** Waits at least one scheduler tick. `frameLoop` falls back to a 16ms `setTimeout` where
  * `requestAnimationFrame` is unavailable (i.e. under Node), so this is a real, if coarse, clock —
  * not a fake timer. */

@@ -10,16 +10,26 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit --pretty"
+    "typecheck": "tsc --noEmit --pretty",
+    "test": "node --experimental-strip-types --test src/*.test.ts"
   },
   "dependencies": {
-    "@gpu-components/core": "*"
+    "@gpu-components/core": "*",
+    "vgpu": "^0.3.1"
   },
   "peerDependencies": {
-    "react": "^18.3.1"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@gpu-components/testing": "*",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@webgpu/types": "^0.1.72",
+    "jsdom": "^30.0.1",
+    "react-dom": "^18.3.1",
     "typescript": "^5.6.3"
   }
 }

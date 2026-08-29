@@ -16,10 +16,14 @@ export interface GpuRuntimeOptions {
   readonly fps?: number;
   readonly onDeviceLost?: (info: GPUDeviceLostInfo) => void;
   readonly onRecovered?: () => void;
-  /** How `recover()` gets a fresh `Gpu` + `Capabilities` after device loss. Defaults to the same
-   * browser probe-then-`init()` path `create()` uses. `@gpu-components/testing`'s mock runtime
-   * overrides this so simulated device loss exercises the real recovery code path without a
-   * `navigator.gpu` to probe. */
+  /** Test-only: overrides how `create()` gets its `Gpu` + `Capabilities`, bypassing the browser
+   * `navigator.gpu` probe and `init()` entirely. `@gpu-components/testing`'s mock runtime uses
+   * this so code that calls `GpuRuntime.create()` itself (e.g. `<GPUProvider>`, which cannot be
+   * pointed at `createWithGpu()`) can still reach `caps.webgpu === true` under `vgpu/mock`. Also
+   * `recover()`'s default reconnect strategy, unless `reconnect` overrides it separately. */
+  readonly connect?: () => Promise<{ gpu: Gpu; caps: Capabilities }>;
+  /** How `recover()` gets a fresh `Gpu` + `Capabilities` after device loss, if different from
+   * `connect`. Defaults to `connect`, and beyond that to the browser probe-then-`init()` path. */
   readonly reconnect?: () => Promise<{ gpu: Gpu; caps: Capabilities }>;
 }
 
@@ -85,6 +89,13 @@ export class GpuRuntime implements RuntimeHandle {
     if (options.adopt) {
       const gpu = await initFromDevice(options.adopt);
       const caps = await probeCapabilities();
+      const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
+      const scheduler = new FrameScheduler(gpu, globals);
+      return new GpuRuntime(gpu, caps, scheduler, globals, registry, options);
+    }
+
+    if (options.connect) {
+      const { gpu, caps } = await options.connect();
       const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
       const scheduler = new FrameScheduler(gpu, globals);
       return new GpuRuntime(gpu, caps, scheduler, globals, registry, options);
@@ -159,6 +170,7 @@ export class GpuRuntime implements RuntimeHandle {
 
     const reconnect =
       this.options.reconnect ??
+      this.options.connect ??
       (async () => {
         const caps = await probeCapabilities();
         if (!caps.webgpu) throw new Error("gpu-components: no adapter available during recovery");
