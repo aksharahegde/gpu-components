@@ -1,0 +1,67 @@
+/*
+ * The StyleX CSS entrypoint. `main.tsx` imports this file so Vite emits a CSS
+ * asset; the StyleX plugin appends all compiled atomic CSS to it at build time.
+ * (The `@stylex;` directive the PostCSS setup needs is not required by the
+ * unplugin — verified: output is byte-identical without it.)
+ *
+ * Everything else in this file is the minimum that StyleX structurally cannot
+ * express: rules targeting elements outside the React root, and the global
+ * reduced-motion override. Component styling belongs in `stylex.create`.
+ *
+ * These rules are unlayered, which is why the plugin runs with
+ * `useCSSLayers: false` — see vite.config.ts.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+/*
+ * `body` sits outside the React root, so it cannot receive stylex.props().
+ * The literals here must stay in sync with `color.bg` (tokens.stylex.ts) and
+ * `lightColor`'s `bg` (theme.stylex.ts); they exist so the page paints the
+ * right colour before hydration rather than flashing the wrong theme. The
+ * inline script in `index.html` sets `data-theme` on `<html>` before paint.
+ */
+body {
+  margin: 0;
+  background: #08090b;
+}
+
+html[data-theme='light'] body {
+  background: #f7f8fa;
+}
+
+/* Element defaults the atomic classes then override (class beats element). */
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote {
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
