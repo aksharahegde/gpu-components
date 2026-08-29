@@ -7,22 +7,22 @@ const TEXTURE_BINDING = 0x04;
 const RENDER_ATTACHMENT = 0x10;
 
 /**
- * A fake `HTMLCanvasElement` whose `getContext('webgpu')` is backed by the mock `GPUDevice`
- * itself: `configure()` records the format, `getCurrentTexture()` allocates a real (mock) texture
- * from `gpu.gpu.createTexture(...)` on demand. `vgpu`'s `surface()` never inspects anything about
- * the canvas beyond `getContext`, `width`/`height`, and (indirectly, through the context) the
- * texture it hands back — so this is enough for `surface(gpu, canvas)` to succeed against a mock
- * `Gpu`, letting `@gpu-components/core`'s real `GpuRuntime.mount()` path run in tests with no DOM.
+ * A minimal `GPUCanvasContext` backed by the mock `GPUDevice` itself: `configure()` records the
+ * format, `getCurrentTexture()` allocates a real (mock) texture from `gpu.gpu.createTexture(...)`
+ * on demand. `vgpu`'s `surface()` never inspects a canvas context beyond `configure`,
+ * `unconfigure`, and `getCurrentTexture` — so this is enough for `surface(gpu, canvas)` to succeed
+ * against a mock `Gpu` on *any* object with a `getContext('webgpu')` that returns one, real DOM
+ * canvas (`@gpu-components/react`'s jsdom tests) or fully synthetic (`createMockCanvas` below).
  */
-export function createMockCanvas(
+export function createMockCanvasContext(
   gpu: Gpu,
   size: readonly [number, number] = [2, 2],
-): HTMLCanvasElement {
+): GPUCanvasContext {
   const [width, height] = size;
   let format: GPUTextureFormat = "rgba8unorm";
   let current: GPUTexture | undefined;
 
-  const context = {
+  return {
     configure(opts: GPUCanvasConfiguration) {
       format = opts.format;
     },
@@ -38,7 +38,19 @@ export function createMockCanvas(
       });
       return current;
     },
-  };
+  } as unknown as GPUCanvasContext;
+}
+
+/**
+ * A fake `HTMLCanvasElement` whose `getContext('webgpu')` returns `createMockCanvasContext(gpu)`,
+ * letting `@gpu-components/core`'s real `GpuRuntime.mount()` path run in tests with no DOM at all.
+ */
+export function createMockCanvas(
+  gpu: Gpu,
+  size: readonly [number, number] = [2, 2],
+): HTMLCanvasElement {
+  const [width, height] = size;
+  const context = createMockCanvasContext(gpu, size);
 
   return {
     width,
