@@ -1,0 +1,19 @@
+{
+  "name": "@gpu-components/wgsl",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Shared WGSL modules (structs and functions only) for gpu-components.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*.wgsl": "./src/*.wgsl"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit --pretty"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
