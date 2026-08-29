@@ -26,6 +26,8 @@ export { GpuRuntime } from "./runtime.ts";
 export type { GpuRuntimeOptions, MountHandle } from "./runtime.ts";
 
 export {
+  pixelXToTime,
+  pixelYToTrack,
   timeToPixelX,
   trackRowHeight,
   trackToPixelY,
@@ -35,3 +37,10 @@ export type { ViewportState, ViewportUniforms } from "./viewport.ts";
 
 export { InstancedQuadLayer } from "./layers/instancedQuad.ts";
 export type { InstancedQuadLayerOptions } from "./layers/instancedQuad.ts";
+
+export { createPointerController } from "./interaction/pointer.ts";
+export type { PointerController, PointerState } from "./interaction/pointer.ts";
+export { normalizeWheel } from "./interaction/wheel.ts";
+export type { NormalizedWheel } from "./interaction/wheel.ts";
+export { createViewportController } from "./interaction/viewportController.ts";
+export type { ViewportBounds, ViewportController } from "./interaction/viewportController.ts";

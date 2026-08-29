@@ -1,5 +1,6 @@
-export { INSTANCE_STRIDE, ingestSpans, packInstances } from "./ingest.ts";
+export { INSTANCE_STRIDE, ingestSpans, packHighlights, packInstances } from "./ingest.ts";
 export type { RawSpan, SpanBuffers } from "./ingest.ts";
+export { hitTestSpans } from "./hitTest.ts";
 export { TimelineComponent } from "./TimelineComponent.ts";
 export type { TimelineProps } from "./TimelineComponent.ts";
 export { describeTimeline, visibleLabels } from "./viewModel.ts";

@@ -11,7 +11,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit --pretty",
-    "test": "node --experimental-strip-types --test src/*.test.ts"
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "vgpu": "^0.3.1"
