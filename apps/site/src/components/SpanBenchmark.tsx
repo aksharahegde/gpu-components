@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import * as stylex from '@stylexjs/stylex'
+import { GPUProvider, useGpu } from '@gpu-components/react'
+import { GPUTimeline, ingestSpans, type RawSpan } from '../../../../registry/timeline'
 import { bp } from '../breakpoints.stylex'
 import { color, font, radius } from '../tokens.stylex'
 import type { SX } from '../ui'
@@ -12,12 +14,12 @@ import type { SX } from '../ui'
  * a trace timeline actually falls over, and it is the scenario a GPU instanced
  * draw collapses into a single call.
  *
- * Everything reported here is measured in the visitor's browser, right now.
- * The WebGPU row is deliberately inert: the runtime is not implemented yet, and
- * this site does not print numbers it cannot produce.
+ * Everything reported here is measured in the visitor's browser, right now,
+ * including the WebGPU row — it renders through the real, in-progress
+ * `GPUTimeline` component (`registry/timeline`), not a placeholder.
  */
 
-type Mode = 'dom' | 'canvas'
+type Mode = 'dom' | 'canvas' | 'webgpu'
 
 const TRACKS = 8
 const DOM_CAP = 20_000
@@ -151,6 +153,18 @@ const s = stylex.create({
   canvas: { display: 'block', width: '100%', height: '100%' },
   domLayer: { position: 'absolute', inset: 0, overflow: 'hidden' },
   hidden: { display: 'none' },
+  gpuNotice: {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    textAlign: 'center',
+    fontFamily: font.mono,
+    fontSize: 13,
+    color: color.textDim,
+  },
   span: { position: 'absolute', borderRadius: 2, willChange: 'transform' },
   readout: {
     display: 'grid',
@@ -248,7 +262,9 @@ export function SpanBenchmark() {
   }, [mode, capped])
 
   useEffect(() => {
-    if (!running || !visible) return
+    // WebGPU mode drives its own render loop (GPUTimeline's runtime) and its own
+    // stats measurement, in WebGpuStage below — this effect only covers dom/canvas.
+    if (!running || !visible || mode === 'webgpu') return
     let raf = 0
     let last = performance.now()
     const acc: number[] = []
@@ -368,10 +384,9 @@ export function SpanBenchmark() {
               Canvas2D
             </button>
             <button
-              disabled
-              title="Not implemented yet — see the roadmap"
-              aria-pressed={false}
-              {...stylex.props(s.segBtn, s.segBtnLast, s.segBtnOff)}
+              onClick={() => setMode('webgpu')}
+              aria-pressed={mode === 'webgpu'}
+              {...stylex.props(s.segBtn, s.segBtnLast, mode === 'webgpu' && s.segBtnOn)}
             >
               WebGPU
             </button>
@@ -411,6 +426,16 @@ export function SpanBenchmark() {
             {...stylex.props(s.canvas)}
           />
         ) : null}
+        {mode === 'webgpu' ? (
+          <WebGpuStage
+            data={data}
+            capped={capped}
+            running={running}
+            visible={visible}
+            hostRef={hostRef}
+            onStats={setStats}
+          />
+        ) : null}
         <div
           ref={domLayerRef}
           aria-hidden="true"
@@ -445,4 +470,132 @@ function Stat({
       <div {...stylex.props(s.statValue, tone)}>{value}</div>
     </div>
   )
+}
+
+/** `Dataset`'s columnar arrays, unpacked into the plain objects `ingestSpans` sorts by
+ * (track, start). No labels: at this zoom level (every span on screen) every span is
+ * already narrower than the DOM label budget, same as the dom/canvas renderings above,
+ * which draw unlabelled coloured blocks too. */
+function datasetToRawSpans(data: Dataset, count: number): RawSpan[] {
+  const spans: RawSpan[] = new Array(count)
+  for (let i = 0; i < count; i++) {
+    spans[i] = {
+      start: data.t0[i]!,
+      duration: data.dur[i]!,
+      track: data.track[i]!,
+      colorIndex: i % COLORS.length,
+    }
+  }
+  return spans
+}
+
+/**
+ * Owns the `<GPUProvider>` so a WebGPU device is only ever requested once a visitor
+ * actually selects this mode — never eagerly on page load.
+ */
+function WebGpuStage(props: {
+  data: Dataset
+  capped: number
+  running: boolean
+  visible: boolean
+  hostRef: RefObject<HTMLDivElement | null>
+  onStats: (stats: { fps: number; p50: number; p95: number; dropped: number }) => void
+}) {
+  const spans = useMemo(() => ingestSpans(datasetToRawSpans(props.data, props.capped)), [props.data, props.capped])
+  return (
+    <GPUProvider>
+      <WebGpuTimelineInner
+        spans={spans}
+        running={props.running}
+        visible={props.visible}
+        hostRef={props.hostRef}
+        onStats={props.onStats}
+      />
+    </GPUProvider>
+  )
+}
+
+function WebGpuTimelineInner(props: {
+  spans: ReturnType<typeof ingestSpans>
+  running: boolean
+  visible: boolean
+  hostRef: RefObject<HTMLDivElement | null>
+  onStats: (stats: { fps: number; p50: number; p95: number; dropped: number }) => void
+}) {
+  const { status } = useGpu()
+  const [viewport, setViewport] = useState({
+    timeStart: 0,
+    timeEnd: 1,
+    trackCount: TRACKS,
+    width: 800,
+    height: 236,
+  })
+
+  // Same measurement methodology as the dom/canvas modes above: wall-clock deltas between
+  // consecutive requestAnimationFrame callbacks. It runs alongside GPUTimeline's own render
+  // loop (owned by its GpuRuntime, not by this component — React never owns GPU state), so a
+  // slow GPU frame delays this callback exactly as it would any other main-thread work.
+  useEffect(() => {
+    if (!props.running || !props.visible || status !== 'ready') return
+    let raf = 0
+    let last = performance.now()
+    const acc: number[] = []
+    let dropped = 0
+    let lastReport = last
+    const start = last
+
+    const tick = (now: number) => {
+      const dt = now - last
+      last = now
+
+      const host = props.hostRef.current
+      const width = host?.clientWidth ?? 800
+      const height = host?.clientHeight ?? 236
+
+      // The exact same slow zoom/pan oscillation the dom/canvas modes use, re-expressed as a
+      // time-domain window: screenX = (t - timeStart)/(timeEnd - timeStart) * width must equal
+      // (t * zoom + pan) * width, which solves to timeStart = -pan/zoom, timeEnd = (1-pan)/zoom.
+      const phase = (now - start) / 3600
+      const zoom = 1 + Math.sin(phase) * 0.06
+      const pan = Math.sin(phase * 0.7) * 0.02
+      setViewport({
+        timeStart: -pan / zoom,
+        timeEnd: (1 - pan) / zoom,
+        trackCount: TRACKS,
+        width,
+        height,
+      })
+
+      if (now - start > 400) {
+        acc.push(dt)
+        if (dt > (1000 / 60) * 1.5) dropped++
+        if (acc.length > 90) acc.shift()
+      }
+
+      if (now - lastReport > 380 && acc.length > 8) {
+        lastReport = now
+        const sorted = [...acc].sort((a, b) => a - b)
+        const p50 = percentile(sorted, 50)
+        props.onStats({ fps: p50 > 0 ? 1000 / p50 : 0, p50, p95: percentile(sorted, 95), dropped })
+      }
+
+      raf = requestAnimationFrame(tick)
+    }
+
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onStats/hostRef are stable identities from the parent.
+  }, [props.running, props.visible, status])
+
+  if (status === 'unsupported') {
+    return (
+      <div {...stylex.props(s.gpuNotice)}>
+        WebGPU is not available in this browser — try a recent Chrome, Edge, or Safari.
+      </div>
+    )
+  }
+  if (status === 'pending') {
+    return <div {...stylex.props(s.gpuNotice)}>Requesting a GPU device…</div>
+  }
+  return <GPUTimeline spans={props.spans} viewport={viewport} />
 }

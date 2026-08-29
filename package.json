@@ -9,7 +9,9 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present && npm run typecheck:registry",
+    "typecheck:registry": "tsc -p registry/tsconfig.json --pretty",
+    "test": "npm run test --workspaces --if-present && npm run test:registry",
+    "test:registry": "node --experimental-strip-types --test registry/timeline/*.test.ts"
   }
 }

@@ -1,0 +1,71 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { frame, target, uniforms } from "vgpu";
+import { createMockGpu } from "@gpu-components/testing";
+import { NO_WEBGPU_CAPABILITIES, ResourceRegistry } from "@gpu-components/core";
+import type { ComponentContext } from "@gpu-components/core";
+import { TimelineComponent } from "./TimelineComponent.ts";
+import { ingestSpans } from "./ingest.ts";
+
+describe("TimelineComponent", () => {
+  it("create/update/plan/dispose all run against a mock Gpu without throwing, and plan() declares one render pass", () => {
+    const setup = (async () => {
+      const { gpu, caps } = await createMockGpu();
+      const surfaceTarget = target(gpu, { size: [4, 4] });
+      const registry = new ResourceRegistry();
+      const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
+
+      let dirty = true;
+      const ctx: ComponentContext = {
+        runtime: { caps: NO_WEBGPU_CAPABILITIES, invalidate: () => {} },
+        gpu,
+        surface: {
+          surface: surfaceTarget,
+          get dirty() {
+            return dirty;
+          },
+          clearDirty: () => {
+            dirty = false;
+          },
+          markDirty: () => {
+            dirty = true;
+          },
+        },
+        globals,
+        registry,
+        caps,
+        onDispose: () => {},
+      };
+
+      const component = new TimelineComponent(8);
+      component.create(ctx);
+
+      const spans = ingestSpans([
+        { start: 0, duration: 1, track: 0, label: "a" },
+        { start: 2, duration: 3, track: 1, label: "b" },
+      ]);
+      component.update({
+        spans,
+        viewport: { timeStart: 0, timeEnd: 10, trackCount: 2, width: 4, height: 4 },
+      });
+
+      const plan = component.plan();
+      assert.equal(plan.computePasses.length, 0);
+      assert.equal(plan.renderPasses.length, 1);
+      assert.equal(plan.renderPasses[0]!.target, "surface");
+
+      // Actually encode the pass against the mock device — exercises the real draw()/storage()/
+      // uniforms() calls, not just the RenderPlan's shape.
+      frame(gpu, (f) => {
+        f.pass({ target: surfaceTarget, clear: true }, (framePass) => {
+          plan.renderPasses[0]!.encode(framePass);
+        });
+      });
+
+      component.dispose();
+      gpu.dispose();
+    })();
+
+    return setup;
+  });
+});
