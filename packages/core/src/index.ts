@@ -24,3 +24,14 @@ export type { SurfaceLike } from "./surface.ts";
 export type { Globals } from "./uniforms.ts";
 export { GpuRuntime } from "./runtime.ts";
 export type { GpuRuntimeOptions, MountHandle } from "./runtime.ts";
+
+export {
+  timeToPixelX,
+  trackRowHeight,
+  trackToPixelY,
+  viewportUniforms,
+} from "./viewport.ts";
+export type { ViewportState, ViewportUniforms } from "./viewport.ts";
+
+export { InstancedQuadLayer } from "./layers/instancedQuad.ts";
+export type { InstancedQuadLayerOptions } from "./layers/instancedQuad.ts";
