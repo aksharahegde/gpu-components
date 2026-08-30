@@ -3,6 +3,9 @@ dist
 .smoke
 *.local
 graphify-out/
+test-results/
+playwright-report/
+blob-report/
 
 # Env files
 .env

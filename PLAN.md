@@ -1313,6 +1313,17 @@ The **warnings pane is the highest-value part** and it is cheap: it encodes vgpu
 **Acceptance:** benchmark harness runs headless in CI and in three browsers; baseline numbers committed with methodology.
 **Benchmark criteria:** all §20.3 baselines measured at all sizes; the numbers, not the hopes, set the phase-4 targets.
 
+> **Status note:** this phase was skipped in initial implementation — Phase 1–3 code landed with no
+> `apps/bench`, no baselines, and no CI, despite this section gating Phase 1 on "phase 0 decisions."
+> Backfilled afterward: `apps/bench/` now exists with the harness, generators, and four real
+> renderers; real (not hypothetical) baseline numbers are committed at
+> `apps/bench/results/BASELINES.md`, and the canvas-per-component-vs-mega-canvas decision record at
+> `apps/bench/results/decision-record.md`. Scope actually delivered vs. the full spec above — one
+> hardware tier (not three), Chromium only (not three browsers, though declared/commented-out for
+> Firefox/WebKit in `playwright.config.ts`), no interaction-latency or memory accounting — is
+> documented honestly in that file's own "Methodology" and "Not yet measured" sections and in
+> `apps/bench/README.md`, not silently claimed as complete here.
+
 ### Phase 1 — GPU runtime *(2 weeks)*
 
 **Goals:** `@gpu-components/core` + `@gpu-components/react`, minimum viable.
