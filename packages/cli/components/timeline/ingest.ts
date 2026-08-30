@@ -33,6 +33,54 @@ export const INSTANCE_STRIDE = 16;
  * v1 — no `Worker` — see PLAN.md's phase split; this is a perf concern for very large datasets, not
  * a correctness one.
  */
+export interface IngestResult {
+  readonly spans: SpanBuffers;
+  /** Rows dropped at ingest, by reason — §24.2: "Invalid rows are dropped with a counted, reported
+   * reason, never silently." */
+  readonly dropped: { readonly nonFinite: number; readonly negativeDuration: number; readonly badTrack: number };
+}
+
+/**
+ * Validates and ingests spans, reporting what it rejected.
+ *
+ * PLAN.md §24.2 requires this and it was missing: "Validate at ingest… before anything touches the
+ * GPU: finite numbers only; `dur >= 0`; `track < trackCount`; ids unique. Invalid rows are dropped
+ * with a counted, reported reason, never silently."
+ *
+ * The concrete failure this prevents: a single NaN `start` used to survive into `computeOrigin`,
+ * whose `s < origin` comparison is false for NaN, so the origin came back `Infinity`, every
+ * `start - origin` became NaN, the NaN reached the viewport uniform, and **the entire canvas went
+ * blank** — the exact outcome §24.2 warns about. A negative duration inverted a quad, and a track
+ * index above 65,535 silently wrapped through `Uint16Array`.
+ */
+export function ingestSpansChecked(spans: readonly RawSpan[], trackCount?: number): IngestResult {
+  const dropped = { nonFinite: 0, negativeDuration: 0, badTrack: 0 };
+  const kept: RawSpan[] = [];
+  for (const span of spans) {
+    if (!Number.isFinite(span.start) || !Number.isFinite(span.duration)) {
+      dropped.nonFinite++;
+      continue;
+    }
+    if (span.duration < 0) {
+      dropped.negativeDuration++;
+      continue;
+    }
+    // Uint16Array wraps silently, so anything outside its range is a bad row, not a big one.
+    if (!Number.isInteger(span.track) || span.track < 0 || span.track > 0xffff) {
+      dropped.badTrack++;
+      continue;
+    }
+    if (trackCount !== undefined && span.track >= trackCount) {
+      dropped.badTrack++;
+      continue;
+    }
+    kept.push(span);
+  }
+  return { spans: ingestSpans(kept), dropped };
+}
+
+/** Ingests spans that are already known to be valid. Prefer `ingestSpansChecked` for data you did
+ * not generate yourself — §24.2 treats span data as untrusted input. */
 export function ingestSpans(spans: readonly RawSpan[]): SpanBuffers {
   const count = spans.length;
   const order = spans.map((_, i) => i).sort((a, b) => {
@@ -72,7 +120,9 @@ export function computeOrigin(spans: SpanBuffers): number {
     const s = spans.start[i]!;
     if (s < origin) origin = s;
   }
-  return spans.count === 0 ? 0 : origin;
+  // `s < origin` is false for NaN, so an all-NaN dataset would leave `origin` at Infinity and
+  // poison every downstream subtraction. Fall back rather than propagate.
+  return Number.isFinite(origin) ? origin : 0;
 }
 
 /**
@@ -89,7 +139,7 @@ export function computeDomainMax(spans: SpanBuffers): number {
     const end = spans.start[i]! + spans.duration[i]!;
     if (end > max) max = end;
   }
-  return spans.count === 0 ? 0 : max;
+  return Number.isFinite(max) ? max : 0;
 }
 
 function writeInstance(

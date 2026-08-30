@@ -24,7 +24,7 @@
         {
           "path": "TimelineComponent.ts",
           "type": "registry:component",
-          "hash": "4d2044593ec8b9b78c7f8d76d5e6357d426ac32ef1dc1453c61bc8a864aa2d90"
+          "hash": "37eb216a6692abee4cd9e843743d7599cfb112259242b501d7f3b7b6b38fbf20"
         },
         {
           "path": "axisRules.ts",
@@ -59,12 +59,12 @@
         {
           "path": "index.ts",
           "type": "registry:component",
-          "hash": "d2d62d458fd6b35cb095649b1f51e055b5a656ec1ad0ae5b3f52787ee91506a6"
+          "hash": "359230f0ae4f8de43eac251ba014ad348d2f9fcc412f4a668c36acc90e3cd12e"
         },
         {
           "path": "ingest.ts",
           "type": "registry:component",
-          "hash": "13dfcb47b3ed121d89f6f1691314d6f9a5b1f5ae0a6eee8a90e9b36810d8d5fc"
+          "hash": "c63e2760c3806f51844293b5c9d5caa5ae8e70a606a8ae5dfbf9277e4d2f9ffd"
         },
         {
           "path": "raster.wgsl.ts",
@@ -108,7 +108,7 @@
         {
           "path": "HeatmapComponent.ts",
           "type": "registry:component",
-          "hash": "91b40ba478da65e11f28830709069136a3b556adbe28344a27ac83b0cffb7e2a"
+          "hash": "961ffa7e9e5563d71ad5286acf212db3fa7551e8a2966238a224f87ffae56867"
         },
         {
           "path": "colormap.ts",
@@ -157,7 +157,7 @@
         {
           "path": "GridComponent.ts",
           "type": "registry:component",
-          "hash": "fa8e83a43652c037351e3fed96170502184bf539bfb1bbdad229e5abb109c45e"
+          "hash": "49aa5ed4af034346b0b17fac39dd94eb97d01937c541989655816ad4e6541819"
         },
         {
           "path": "grid.wgsl.ts",
@@ -201,7 +201,7 @@
         {
           "path": "ScatterComponent.ts",
           "type": "registry:component",
-          "hash": "989726a1e2492f95785e015a6775b333bfe3ce95fc081e30ca2ebbb86a57dfd0"
+          "hash": "0d098d0aa2aca3faa0f81fc40967cd777e7eca92e4693899348960ff9e6775ba"
         },
         {
           "path": "index.ts",
