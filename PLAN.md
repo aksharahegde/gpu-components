@@ -1369,7 +1369,7 @@ The **warnings pane is the highest-value part** and it is cheap: it encodes vgpu
 ### Next phase — closing out Phase 2 before touching Phase 3/4/5 work
 
 **Do not skip ahead to Phase 3/5 items while Phase 2's own acceptance criteria are unmet.** The
-next concrete slice of work, in order:
+next concrete slice of work, in order (updated 2026-08-30):
 
 1. ~~Time-precision spike (`spikes/gpu-time-precision.md`) and the resulting `ingest.ts`/
    `TimelineComponent.ts` fix~~ — **done, 2026-08-30** (see open question #3 above). Was a real,
@@ -1381,17 +1381,18 @@ next concrete slice of work, in order:
    to a place it can be honestly benchmarked; the visibility cull alone helps mid-zoom perf but does
    not bound per-frame cost at extreme zoom-out the way density binning does. Also the prerequisite
    primitive for Phase 3's brush-selection bitset and Phase 5's `GPUHeatmap`/`GPUDataGrid`.
-3. **Investigate the unconfirmed "one device beats N devices" result in
+3. **← current next step: investigate the unconfirmed "one device beats N devices" result in
    `apps/bench/results/BASELINES.md`.** The benchmark's own numbers currently read as *not*
    confirming the architectural bet — shared-device p50 ties independent-device p50, and worst-case
    is measured *worse* for the shared-device path. That is the single foundational claim the whole
    runtime is justified by (§2(a), §11). Either the measurement methodology needs fixing (wrong thing
    measured) or the architecture needs revisiting — leaving a founding claim silently unconfirmed is
    a bigger risk than any single missing feature, and it should be resolved before or alongside the
-   LOD binning work, not after.
-4. Only after 2–3: pick up the remaining Phase 3 interaction items (inertial pan/zoom, brush/lasso
-   selection with a GPU bitset mask, async GPU ID-buffer picking) — all currently absent and flagged
-   as deferred in the code's own doc comments (`TimelineComponent.ts`, `GPUTimeline.tsx`).
+   density-field LOD binning work, not after.
+4. Then, not yet started: the density-field binning + `RasterLayer` compositing carried over from
+   item 2, and the remaining Phase 3 interaction items (inertial pan/zoom, brush/lasso selection
+   with a GPU bitset mask, async GPU ID-buffer picking) — all currently absent and flagged as
+   deferred in the code's own doc comments (`TimelineComponent.ts`, `GPUTimeline.tsx`).
 
 ### Phase 3 — Interaction *(1.5 weeks)*
 
