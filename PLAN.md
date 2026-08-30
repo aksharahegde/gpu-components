@@ -1317,6 +1317,20 @@ GPU Inspector                                    [runtime: 1 device, 3 surfaces]
 
 The **warnings pane is the highest-value part** and it is cheap: it encodes vgpu's documented anti-patterns (uniform writes with no change, targets created in the loop, pipelines compiled during a frame, buffers growing repeatedly, unbatched draws) as automatic detections. It teaches the performance model instead of requiring the docs to.
 
+> **Status note (2026-08-30): Device + Frame + Passes shipped; Components, Resources, and the
+> Warnings pane are not.** `packages/react/src/GpuInspector.ts` — a plain `.ts` component using
+> `createElement()`, matching this package's existing convention of avoiding JSX (no JSX toolchain
+> requirement in `packages/react`'s build) — renders the Device (from `runtime.caps`), Frame (polled
+> from `runtime.profiler.lastFrame`), and Passes (pushed from `runtime.profiler.onGpuResults`,
+> sorted by ms descending) sections against real data the just-shipped `Profiler` produces. When GPU
+> timing isn't enabled, the Passes section says so explicitly rather than rendering an empty table.
+> **Components, Resources, and the warnings pane above — explicitly including "the highest-value
+> part" — are not built.** Each needs instrumentation that doesn't exist yet and wasn't in scope for
+> this increment: a mounted-components accessor on `GpuRuntime` (Components), byte accounting in
+> `ResourceRegistry` (Resources), and anti-pattern detection hooks in `InstancedQuadLayer`/
+> `uniforms`/the pipeline compile path (Warnings). The rendered component itself says
+> "Not yet available: Components, Resources, Warnings" rather than silently omitting them.
+
 ---
 
 ## 29. Roadmap
@@ -1446,13 +1460,15 @@ next concrete slice of work, in order (updated 2026-08-30):
    > methodology ceiling (Round 2) → real signal (Round 3).
 4. Both Phase 3 (inertial pan, brush selection with a GPU bitset mask) and Phase 2's CLI item are
    done or tracked elsewhere; see those sections' own status notes. The founding-claim investigation
-   (item 3) is now closed — confirmed. Phase 4 is now underway — the `Profiler` core primitive
-   (§10.7) shipped 2026-08-30 and was immediately put to use closing item 3. Not yet started: the
-   React `<GpuInspector>` panel + warnings pane (§28.2, the UI layer over the `Profiler` data that
-   now exists); compute-pass GPU timing; adaptive quality; `bundle()` for static chrome; the glyph
-   atlas; the nightly perf regression gate; empirically tuning `lodThreshold`'s default (§31 open
-   question #4, currently `4`, not yet measured against real frame-time data — the `Profiler` also
-   unblocks this); investigating the Round 3 N=24 non-monotonicity, if it turns out to matter.
+   (item 3) is now closed — confirmed. Phase 4 is now underway: the `Profiler` core primitive
+   (§10.7) shipped 2026-08-30 and was immediately put to use closing item 3; the `<GpuInspector>`
+   React component (§28.2) shipped the same day, Device/Frame/Passes only — **not** the Components
+   section, Resources section, or the warnings pane (§28.2's own "highest-value part"), each of
+   which needs instrumentation not yet built (see §28.2's status note for specifics). Not yet
+   started: that instrumentation; compute-pass GPU timing; adaptive quality; `bundle()` for static
+   chrome; the glyph atlas; the nightly perf regression gate; empirically tuning `lodThreshold`'s
+   default (§31 open question #4, currently `4`, not yet measured against real frame-time data — the
+   `Profiler` also unblocks this); investigating the Round 3 N=24 non-monotonicity, if it matters.
 
 ### Phase 3 — Interaction *(1.5 weeks)*
 
