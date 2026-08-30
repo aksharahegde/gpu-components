@@ -8,6 +8,7 @@ import {
   nearestSpanOnTrack,
   nextSpanInTrack,
   prevSpanInTrack,
+  selectSpansInRange,
 } from "./hitTest.ts";
 
 describe("hitTestSpans", () => {
@@ -146,6 +147,40 @@ describe("keyboard-navigation traversal (hitTest.ts)", () => {
       const empty = ingestSpans([]);
       assert.equal(firstSpanIndex(empty), null);
       assert.equal(lastSpanIndex(empty), null);
+    });
+  });
+
+  describe("selectSpansInRange", () => {
+    it("selects spans overlapping the time range on tracks within range", () => {
+      const ids = selectSpansInRange(spans, 0, 0, 0, 5);
+      assert.deepEqual(
+        ids.map((i) => spans.labels[i]).sort(),
+        ["t0-a", "t0-b"],
+      );
+    });
+
+    it("excludes a span entirely outside the time range", () => {
+      const ids = selectSpansInRange(spans, 0, 0, 100, 200);
+      assert.deepEqual(ids, []);
+    });
+
+    it("excludes tracks outside the track range", () => {
+      const ids = selectSpansInRange(spans, 0, 0, 0, 1000);
+      assert.ok(!ids.some((i) => spans.labels[i] === "t1-c"));
+    });
+
+    it("spans a multi-track range", () => {
+      const ids = selectSpansInRange(spans, 0, 1, 0, 1000);
+      assert.deepEqual(
+        ids.map((i) => spans.labels[i]).sort(),
+        ["t0-a", "t0-b", "t1-a", "t1-b", "t1-c"].sort(),
+      );
+    });
+
+    it("normalizes a reversed track range the same as a forward one", () => {
+      const forward = selectSpansInRange(spans, 0, 1, 0, 1000);
+      const reversed = selectSpansInRange(spans, 1, 0, 0, 1000);
+      assert.deepEqual(reversed, forward);
     });
   });
 });

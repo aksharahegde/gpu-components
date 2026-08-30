@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useCanvasRef, useGpuComponent } from "@gpu-components/react";
 import {
+  brushRectFromPixels,
   createPointerController,
   createVelocityTracker,
   createViewportController,
   decayVelocity,
   INERTIA_STOP_VELOCITY,
   normalizeWheel,
+  timeToPixelX,
+  trackRowHeight,
+  trackToPixelY,
 } from "@gpu-components/core";
-import type { ViewportBounds, ViewportState } from "@gpu-components/core";
+import type { BrushRect, ViewportBounds, ViewportState } from "@gpu-components/core";
 import { TimelineComponent, type TimelineProps as TimelineComponentProps } from "./TimelineComponent.ts";
 import {
   firstSpanIndex,
@@ -16,6 +20,7 @@ import {
   nearestSpanOnTrack,
   nextSpanInTrack,
   prevSpanInTrack,
+  selectSpansInRange,
 } from "./hitTest.ts";
 import { describeSpan, describeTimeline, visibleLabels } from "./viewModel.ts";
 import type { SpanBuffers } from "./ingest.ts";
@@ -33,6 +38,11 @@ export interface GPUTimelineProps {
   readonly selectedId?: number | null;
   readonly onHover?: (id: number | null) => void;
   readonly onSelect?: (id: number | null) => void;
+  /** Fires once a click-drag past the movement threshold ends (PLAN.md Phase 3's brush selection) —
+   * `ids` is the final selected set, computed CPU-side (`hitTest.ts`'s `selectSpansInRange`) once,
+   * not per frame; the live highlight while dragging is GPU-only (`TimelineComponent`'s
+   * `brushRect` prop, driven internally, not by this callback). */
+  readonly onBrushSelectionChange?: (rect: BrushRect, ids: readonly number[]) => void;
   readonly style?: CSSProperties;
   readonly className?: string;
 }
@@ -46,6 +56,14 @@ const ANNOUNCE_DEBOUNCE_MS = 500;
  * discrete wheel-event stream leaves between events *during* a swipe, so real ongoing swipes don't
  * get cut off mid-gesture. */
 const WHEEL_IDLE_MS = 80;
+/** CSS pixels of pointer movement between down and up before a gesture counts as a brush drag
+ * rather than a plain click — below this, existing click-select behavior (`onSelect`) applies
+ * unchanged. */
+const DRAG_THRESHOLD_PX = 4;
+
+function pixelDistance(a: { x: number; y: number }, b: { x: number; y: number }): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
 
 /** Visually-hidden-but-screen-reader-visible — the `tl-summary` region and the `aria-live`
  * announcer (PLAN.md §21.1) are real content, not decorative, so `display: none` (which removes
@@ -132,12 +150,22 @@ function revealSpan(
  * `prefers-reduced-motion` (no decay animation at all, per §21/§32) and is cancelled by any new
  * wheel gesture, keyboard pan/zoom, or unmount, so it never fights an explicit interaction.
  *
+ * A click-drag past `DRAG_THRESHOLD_PX` is a brush selection (PLAN.md §9.5's "Hybrid" model,
+ * scoped to an axis-aligned rectangle — see `brush.ts`'s doc comment for why not true lasso): while
+ * dragging, `brushRectFromPixels` recomputes the drag rectangle every pointer move, driving both a
+ * lightweight DOM overlay (this component) and `TimelineComponent`'s live GPU bitset highlight
+ * (`brushSelect.wgsl.ts` — handles millions of spans, not a JS loop). On release, the final id set
+ * is computed once, CPU-side (`hitTest.ts`'s `selectSpansInRange`), and handed to
+ * `onBrushSelectionChange`. A drag that doesn't clear the threshold is treated as a plain click —
+ * the existing `onSelect` path, unchanged.
+ *
  * Not implemented yet (see the migration plan / repo README): Shift+Arrow range selection (needs a
  * broader single-id → set selection model), a shader-pass focus ring (DOM outline only for now),
- * `toAccessibleTable()`, touch gestures, and GPU-picking/brush-lasso selection.
+ * `toAccessibleTable()`, touch gestures, and true lasso/polygon selection.
  */
 export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
-  const { spans, onViewportChange, hoveredId, selectedId, onHover, onSelect, style, className } = props;
+  const { spans, onViewportChange, hoveredId, selectedId, onHover, onSelect, onBrushSelectionChange, style, className } =
+    props;
   const [canvas, ref] = useCanvasRef();
   const appRef = useRef<HTMLDivElement | null>(null);
   const componentRef = useRef<TimelineComponent | null>(null);
@@ -168,6 +196,11 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
   const inertiaFrame = useRef<number | null>(null);
 
   const [focusedId, setFocusedId] = useState<number | null>(null);
+  // Brush selection (PLAN.md Phase 3). `brushRect` is the live drag rectangle — internal state, not
+  // controlled, since it only exists during a gesture; `dragStart` tracks the pointerdown origin so
+  // `onMove`/`onUp` can tell a real drag from a plain click via `DRAG_THRESHOLD_PX`.
+  const [brushRect, setBrushRect] = useState<BrushRect | null>(null);
+  const dragStart = useRef<{ x: number; y: number } | null>(null);
 
   const setViewport = useCallback(
     (next: ViewportState) => {
@@ -250,7 +283,7 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
       return component;
     },
     canvas,
-    { spans, viewport, hoveredId, selectedId },
+    { spans, viewport, hoveredId, selectedId, brushRect },
   );
 
   // Pointer hover/click and wheel pan/zoom, attached directly (not via React's synthetic wheel
@@ -261,12 +294,35 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
 
     const pointer = createPointerController();
     const detachPointer = pointer.attach(canvas);
+    const unsubDown = pointer.onDown((state) => {
+      dragStart.current = { x: state.x, y: state.y };
+    });
     const unsubMove = pointer.onMove((state) => {
+      const start = dragStart.current;
+      if (start && pixelDistance(start, state) >= DRAG_THRESHOLD_PX) {
+        setBrushRect(brushRectFromPixels(viewport, start.x, start.y, state.x, state.y));
+        onHover?.(null); // dragging a brush, not hovering a single span
+        return;
+      }
       const hit = componentRef.current?.hitTest(state.x, state.y) ?? null;
       onHover?.(hit ? Number(hit.id) : null);
     });
     const unsubLeave = pointer.onLeave(() => onHover?.(null));
     const unsubUp = pointer.onUp((state) => {
+      const start = dragStart.current;
+      dragStart.current = null;
+
+      if (start && pixelDistance(start, state) >= DRAG_THRESHOLD_PX) {
+        // A completed brush drag — the final id set is computed once here, not per frame; the
+        // live highlight the visitor was seeing while dragging came from the GPU bitset instead.
+        const rect = brushRectFromPixels(viewport, start.x, start.y, state.x, state.y);
+        const ids = selectSpansInRange(spans, rect.trackMin, rect.trackMax, rect.timeStart, rect.timeEnd);
+        onBrushSelectionChange?.(rect, ids);
+        setBrushRect(null);
+        return;
+      }
+
+      setBrushRect(null); // no-op if a drag never crossed the threshold
       const hit = componentRef.current?.hitTest(state.x, state.y) ?? null;
       const id = hit ? Number(hit.id) : null;
       onSelect?.(id);
@@ -303,13 +359,14 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
 
     return () => {
       detachPointer();
+      unsubDown();
       unsubMove();
       unsubLeave();
       unsubUp();
       canvas.removeEventListener("wheel", handleWheel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- viewport/bounds are read fresh via closures rebuilt each render through this effect's own deps; onHover/onSelect/cancelInertia/startInertia are assumed stable per the calling convention used elsewhere in this codebase.
-  }, [canvas, viewport, bounds, onHover, onSelect, setViewport, cancelInertia, startInertia]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- viewport/bounds are read fresh via closures rebuilt each render through this effect's own deps; onHover/onSelect/onBrushSelectionChange/cancelInertia/startInertia are assumed stable per the calling convention used elsewhere in this codebase.
+  }, [canvas, viewport, bounds, spans, onHover, onSelect, onBrushSelectionChange, setViewport, cancelInertia, startInertia]);
 
   // Keyboard navigation (PLAN.md §21.2), attached to the component root, not the canvas — the
   // canvas is `aria-hidden` and never a focus/tab target itself.
@@ -441,6 +498,25 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
           </span>
         ))}
       </div>
+      {brushRect && (
+        // Lightweight DOM selection-box overlay for the drag in progress — cheap, standard UX,
+        // no GPU/canvas work. The live *highlight of matching spans* is a separate, GPU-only
+        // concern (TimelineComponent's brushRect prop -> brushSelect.wgsl.ts's bitset).
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: timeToPixelX(viewport, brushRect.timeStart),
+            top: trackToPixelY(viewport, brushRect.trackMin) - trackRowHeight(viewport) / 2,
+            width: timeToPixelX(viewport, brushRect.timeEnd) - timeToPixelX(viewport, brushRect.timeStart),
+            height: trackRowHeight(viewport) * (brushRect.trackMax - brushRect.trackMin + 1),
+            border: "1px solid rgba(255, 255, 255, 0.8)",
+            background: "rgba(255, 255, 255, 0.12)",
+            pointerEvents: "none",
+            boxSizing: "border-box",
+          }}
+        />
+      )}
       <div id={summaryId} style={SR_ONLY}>
         {summary.label}. Showing {viewport.timeStart.toFixed(2)} to {viewport.timeEnd.toFixed(2)}.
       </div>

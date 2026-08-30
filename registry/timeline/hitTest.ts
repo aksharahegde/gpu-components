@@ -101,3 +101,33 @@ export function firstSpanIndex(spans: SpanBuffers): number | null {
 export function lastSpanIndex(spans: SpanBuffers): number | null {
   return spans.count > 0 ? spans.count - 1 : null;
 }
+
+/**
+ * Brush selection's final id set (PLAN.md §9.5) — called once when a drag gesture ends, not per
+ * frame, so a per-track *linear* scan (not a tight asymptotic bound) is the right tradeoff here:
+ * simplicity over cleverness for a non-hot-path operation, same call `hitTestSpans` itself already
+ * makes for within-track overlap handling. The live per-frame visual feedback during the drag comes
+ * from the GPU bitset (`brushSelect.wgsl.ts`), not this function — this only supplies the id list an
+ * app's `onBrushSelectionChange` callback receives.
+ */
+export function selectSpansInRange(
+  spans: SpanBuffers,
+  trackMin: number,
+  trackMax: number,
+  timeStart: number,
+  timeEnd: number,
+): number[] {
+  const result: number[] = [];
+  const lo = Math.max(0, Math.min(trackMin, trackMax));
+  const hi = Math.max(trackMin, trackMax);
+  for (let track = lo; track <= hi; track++) {
+    const trackStart = lowerBound(spans.track, 0, spans.count, track);
+    const trackEnd = lowerBound(spans.track, trackStart, spans.count, track + 1);
+    for (let i = trackStart; i < trackEnd; i++) {
+      const start = spans.start[i]!;
+      const end = start + spans.duration[i]!;
+      if (end >= timeStart && start <= timeEnd) result.push(i);
+    }
+  }
+  return result;
+}

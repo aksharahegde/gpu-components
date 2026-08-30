@@ -1,5 +1,13 @@
 import { InstancedQuadLayer, RasterLayer, pixelXToTime, pixelYToTrack, viewportUniforms } from "@gpu-components/core";
-import type { ComponentContext, GpuComponent, HitResult, RenderPlan, ViewportState, ViewportUniforms } from "@gpu-components/core";
+import type {
+  BrushRect,
+  ComponentContext,
+  GpuComponent,
+  HitResult,
+  RenderPlan,
+  ViewportState,
+  ViewportUniforms,
+} from "@gpu-components/core";
 import { compute, storage, uniforms } from "vgpu";
 import type { Compute, Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { computeDomainMax, computeOrigin, INSTANCE_STRIDE, packHighlights, packInstances } from "./ingest.ts";
@@ -11,12 +19,16 @@ import { CULL_WGSL } from "./cull.wgsl.ts";
 import { DENSITY_BIN_WGSL } from "./densityBin.wgsl.ts";
 import { REDUCE_DENSITY_WGSL } from "./reduceDensity.wgsl.ts";
 import { RASTER_WGSL } from "./raster.wgsl.ts";
+import { BRUSH_SELECT_WGSL } from "./brushSelect.wgsl.ts";
 
 export interface TimelineProps {
   readonly spans: SpanBuffers;
   readonly viewport: ViewportState;
   readonly hoveredId?: number | null;
   readonly selectedId?: number | null;
+  /** PLAN.md §9.5's brush selection — a live GPU bitset highlight (`brushSelect.wgsl.ts`), distinct
+   * from `selectedId`'s single-span highlight. `null`/omitted means no active brush. */
+  readonly brushRect?: BrushRect | null;
 }
 
 interface CullUniforms extends Record<string, unknown> {
@@ -28,6 +40,14 @@ interface CullUniforms extends Record<string, unknown> {
 interface DensityUniforms extends Record<string, unknown> {
   readonly pixelColumns: number;
   readonly trackCount: number;
+}
+
+interface BrushUniforms extends Record<string, unknown> {
+  readonly timeStart: number;
+  readonly timeEnd: number;
+  readonly trackMin: number;
+  readonly trackMax: number;
+  readonly count: number;
 }
 
 /** `cull.wgsl.ts`/`densityBin.wgsl.ts`/`reduceDensity.wgsl.ts`'s shared `@workgroup_size`. */
@@ -53,11 +73,14 @@ let nextId = 0;
  * `lodThreshold`, this switches to a `RasterLayer` density field instead (`densityBin.wgsl.ts` +
  * `reduceDensity.wgsl.ts` + `raster.wgsl.ts`) so extreme zoom-out over a huge dataset draws one
  * value per pixel column, not every span — PLAN.md §12.2's full two-mode frame. Plus CPU hit-testing
- * (§9.5's primary mechanism for Timeline, not a GPU-picking fallback) and a small second
+ * (§9.5's primary mechanism for Timeline, not a GPU-picking fallback), a small second
  * `InstancedQuadLayer` for the hover/selection highlight, drawn uncompacted (at most two instances —
- * culling would cost more than it saves). Keyboard navigation and the accessibility overlay are
- * wired in `GPUTimeline.tsx` (see its own doc comment); touch gestures and brush/lasso selection
- * remain deferred.
+ * culling would cost more than it saves), and brush selection (`brushSelect.wgsl.ts`, PLAN.md §9.5's
+ * "Hybrid" model): a per-span GPU bitset the main render shader reads directly, no separate draw or
+ * CPU set, so it scales the same way the rest of the render path does. Keyboard navigation and the
+ * accessibility overlay are wired in `GPUTimeline.tsx` (see its own doc comment); touch gestures and
+ * true lasso/polygon selection remain out of scope (a rectangle is the natural shape for a 2D
+ * track-row × time grid — see `brush.ts`'s doc comment).
  */
 export class TimelineComponent implements GpuComponent<TimelineProps> {
   readonly id: string;
@@ -95,6 +118,19 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
   /** `computeDomainMax(spans) - originTime` — the dataset's total time extent, cached alongside
    * `originTime` (recomputed only when `spans` identity changes) for the LOD heuristic. */
   private domainSpan = 0;
+
+  private brushPipeline: Compute | null = null;
+  private brushParams: SharedUniforms<BrushUniforms> | null = null;
+  private selectionMask: StorageBuffer | null = null;
+  /** Zero-fill source for `selectionMask`, resized alongside it in `ensureSelectionCapacity`. */
+  private zeroSelectionMask = new Uint32Array(0);
+  /** Capacity in *words* (32 spans/word), not spans — matches `selectionMask`'s own packing. */
+  private selectionWordCapacity = 0;
+  private currentBrushRect: BrushRect | null = null;
+  /** True while the previous frame had an active brush — lets `update()` detect the non-null → null
+   * transition and zero `selectionMask` with one JS write (not a dispatch) so stale bits don't keep
+   * rendering spans as selected after the brush clears. */
+  private hadBrush = false;
 
   private uploadedSpans: SpanBuffers | null = null;
   /** Dataset-local time origin (spikes/gpu-time-precision.md) — recomputed only when `spans`
@@ -159,6 +195,12 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
     this.trackCapacity = 0;
     this.ensureDensityCapacity(this.currentViewport?.trackCount ?? 1);
 
+    this.brushPipeline = compute(ctx.gpu, BRUSH_SELECT_WGSL);
+    this.brushParams = uniforms(ctx.gpu, { timeStart: 0, timeEnd: 0, trackMin: 0, trackMax: 0, count: 0 });
+    this.brushPipeline.set({ params: this.brushParams });
+    this.selectionWordCapacity = 0;
+    this.ensureSelectionCapacity(this.uploadedSpans?.count ?? this.initialCapacity);
+
     // The buffers allocated above are fresh GPU state with no data — re-upload whatever this
     // component last received, both on the very first create() and after a device-loss replay.
     // `originTime` is derived purely from `uploadedSpans` (not GPU state), so it already reflects
@@ -167,6 +209,7 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       this.layer.upload(packInstances(this.uploadedSpans, this.originTime), this.uploadedSpans.count);
       this.cullPipeline.set({ instances: this.layer.instances });
       this.densityBinPipeline.set({ instances: this.layer.instances });
+      this.brushPipeline.set({ instances: this.layer.instances });
       this.uploadHighlights(this.uploadedSpans);
     }
   }
@@ -196,21 +239,47 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
     this.raster?.bind({ density: this.densityBuffer, maxPerTrack: this.maxPerTrackBuffer });
   }
 
+  /** Grows `selectionMask` (1 bit/span, packed 32/word — hence the `/32` capacity check, unlike
+   * `ensureCullCapacity`'s 1-slot-per-span buffers) if `spanCount` needs more words than currently
+   * allocated. Bound to both `brushPipeline` and the main render `layer` — always, not just while a
+   * brush is active, since `timeline.wgsl.ts`'s `isSelected()` reads it unconditionally (all-zero
+   * words read as "nothing selected," which is exactly correct with no brush active). */
+  private ensureSelectionCapacity(spanCount: number): void {
+    const words = Math.max(1, Math.ceil(spanCount / 32));
+    if (!this.gpu || words <= this.selectionWordCapacity) return;
+    this.selectionWordCapacity = words;
+    this.selectionMask = storage(this.gpu, this.selectionWordCapacity * 4, "read-write");
+    this.zeroSelectionMask = new Uint32Array(this.selectionWordCapacity);
+    this.brushPipeline?.set({ selectionMask: this.selectionMask });
+    this.layer?.bind({ selectionMask: this.selectionMask });
+  }
+
   update(props: TimelineProps): void {
     if (props.spans !== this.uploadedSpans) {
       this.originTime = computeOrigin(props.spans);
       this.domainSpan = computeDomainMax(props.spans) - this.originTime;
       this.layer?.upload(packInstances(props.spans, this.originTime), props.spans.count);
       this.ensureCullCapacity(props.spans.count);
+      this.ensureSelectionCapacity(props.spans.count);
       if (this.layer) {
         this.cullPipeline?.set({ instances: this.layer.instances });
         this.densityBinPipeline?.set({ instances: this.layer.instances });
+        this.brushPipeline?.set({ instances: this.layer.instances });
       }
       this.uploadedSpans = props.spans;
     }
     this.currentViewport = props.viewport;
     this.ensureDensityCapacity(props.viewport.trackCount);
     this.lodMode = this.estimateLodMode(props.spans, props.viewport);
+
+    const brushRect = props.brushRect ?? null;
+    if (!brushRect && this.hadBrush) {
+      // The brush just cleared — one JS-side zero-fill, not a dispatch, so stale bits don't keep
+      // rendering spans as selected after this transition.
+      this.selectionMask?.write(this.zeroSelectionMask);
+    }
+    this.hadBrush = brushRect != null;
+    this.currentBrushRect = brushRect;
     this.viewportUniform?.set(
       viewportUniforms({
         ...props.viewport,
@@ -265,13 +334,20 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
   plan(): RenderPlan {
     this.dirty = false;
     const raster = this.lodMode === "raster";
+    const computePasses = raster
+      ? [
+          { name: "timeline-density-bin", dispatch: () => this.dispatchDensityBin() },
+          { name: "timeline-reduce-density", dispatch: () => this.dispatchReduceDensity() },
+        ]
+      : [{ name: "timeline-cull", dispatch: () => this.dispatchCull() }];
+    // Only declared while a brush is active — a cleared brush already zero-filled `selectionMask`
+    // in `update()` via a plain write, no dispatch needed (PLAN.md §10.2: a clean component/pass
+    // contributes nothing).
+    if (this.currentBrushRect) {
+      computePasses.push({ name: "timeline-brush-select", dispatch: () => this.dispatchBrushSelect() });
+    }
     return {
-      computePasses: raster
-        ? [
-            { name: "timeline-density-bin", dispatch: () => this.dispatchDensityBin() },
-            { name: "timeline-reduce-density", dispatch: () => this.dispatchReduceDensity() },
-          ]
-        : [{ name: "timeline-cull", dispatch: () => this.dispatchCull() }],
+      computePasses,
       renderPasses: [
         {
           name: "timeline",
@@ -345,6 +421,27 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
     if (!viewport || viewport.trackCount === 0) return;
     const total = PIXEL_COLUMNS * viewport.trackCount;
     this.reduceDensityPipeline.dispatch(Math.ceil(total / CULL_WORKGROUP_SIZE));
+  }
+
+  /** Resets `selectionMask` to zero and dispatches `brushSelect.wgsl.ts` against the current
+   * `currentBrushRect` — only called from `plan()`'s compute pass, which itself is only declared
+   * while a brush is active (`plan()`'s own comment), so `currentBrushRect` is always set here. */
+  private dispatchBrushSelect(): void {
+    if (!this.selectionMask || !this.brushPipeline || !this.brushParams) return;
+    this.selectionMask.write(this.zeroSelectionMask);
+
+    const spans = this.uploadedSpans;
+    const rect = this.currentBrushRect;
+    if (!spans || !rect || spans.count === 0) return;
+
+    this.brushParams.set({
+      timeStart: rect.timeStart - this.originTime,
+      timeEnd: rect.timeEnd - this.originTime,
+      trackMin: rect.trackMin,
+      trackMax: rect.trackMax,
+      count: spans.count,
+    });
+    this.brushPipeline.dispatch(Math.ceil(spans.count / CULL_WORKGROUP_SIZE));
   }
 
   dispose(): void {

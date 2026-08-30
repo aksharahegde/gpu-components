@@ -114,4 +114,40 @@ describe("TimelineComponent", () => {
 
     return setup;
   });
+
+  it("adds a brush-select compute pass only while brushRect is set, and clears it on the transition back to null", () => {
+    const setup = (async () => {
+      const { gpu, caps } = await createMockGpu();
+      const surfaceTarget = target(gpu, { size: [4, 4] });
+      const ctx = { ...makeCtx(gpu, surfaceTarget), caps };
+
+      const component = new TimelineComponent(8);
+      component.create(ctx);
+
+      const spans = ingestSpans([
+        { start: 0, duration: 1, track: 0, label: "a" },
+        { start: 2, duration: 3, track: 1, label: "b" },
+      ]);
+      const viewport = { timeStart: 0, timeEnd: 10, trackCount: 2, width: 4, height: 4 };
+
+      component.update({ spans, viewport });
+      // No brush: instanced mode's usual single (cull) compute pass — brush adds nothing when unset.
+      assert.equal(component.plan().computePasses.length, 1);
+
+      component.update({ spans, viewport, brushRect: { timeStart: 0, timeEnd: 5, trackMin: 0, trackMax: 1 } });
+      const withBrush = component.plan();
+      assert.equal(withBrush.computePasses.length, 2);
+      runPlan(gpu, surfaceTarget, withBrush);
+
+      // Clearing the brush drops back to one compute pass (the JS-side mask reset in update() needs
+      // no dispatch of its own).
+      component.update({ spans, viewport, brushRect: null });
+      assert.equal(component.plan().computePasses.length, 1);
+
+      component.dispose();
+      gpu.dispose();
+    })();
+
+    return setup;
+  });
 });

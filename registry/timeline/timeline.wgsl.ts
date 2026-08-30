@@ -25,10 +25,21 @@ struct SpanInstance {
 // Written by cull.wgsl.ts's compute pass: the indices of spans visible in the current viewport,
 // compacted so \`instanceIndex\` here walks 0..visibleCount, not 0..totalSpanCount.
 @group(0) @binding(2) var<storage, read> visibleIndices: array<u32>;
+// Written by brushSelect.wgsl.ts's compute pass — 1 bit per span, packed 32/word. Bound whenever
+// TimelineComponent exists (not just during an active brush); all-zero when no brush is active, so
+// isSelected() is always safe to call.
+@group(0) @binding(3) var<storage, read> selectionMask: array<u32>;
+
+fn isSelected(i: u32) -> bool {
+  let word = selectionMask[i / 32u];
+  let bit = 1u << (i % 32u);
+  return (word & bit) != 0u;
+}
 
 struct VertexOut {
   @builtin(position) position: vec4f,
   @location(0) @interpolate(flat) colorIndex: u32,
+  @location(1) @interpolate(flat) spanIndex: u32,
 }
 
 const ROW_FRACTION: f32 = 0.7;
@@ -44,7 +55,8 @@ fn vs_main(
     vec2f(0.0, 1.0), vec2f(1.0, 0.0), vec2f(1.0, 1.0),
   );
   let corner = corners[vertexIndex];
-  let span = instances[visibleIndices[instanceIndex]];
+  let spanIndex = visibleIndices[instanceIndex];
+  let span = instances[spanIndex];
 
   let xStart = span.start * viewport.timeToClip.x + viewport.timeToClip.y;
   var xEnd = (span.start + span.duration) * viewport.timeToClip.x + viewport.timeToClip.y;
@@ -62,6 +74,7 @@ fn vs_main(
   var out: VertexOut;
   out.position = vec4f(x, y, 0.0, 1.0);
   out.colorIndex = span.colorIndex;
+  out.spanIndex = spanIndex;
   return out;
 }
 
@@ -76,6 +89,12 @@ const PALETTE = array<vec4f, 6>(
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
-  return PALETTE[in.colorIndex % 6u];
+  var color = PALETTE[in.colorIndex % 6u];
+  if (isSelected(in.spanIndex)) {
+    // Brighten toward white — visually distinct from the separate hover/click highlight
+    // (highlight.wgsl.ts), which outlines rather than tints.
+    color = mix(color, vec4f(1.0, 1.0, 1.0, 1.0), 0.4);
+  }
+  return color;
 }
 `;
