@@ -37,6 +37,8 @@ export type { ViewportState, ViewportUniforms } from "./viewport.ts";
 
 export { InstancedQuadLayer } from "./layers/instancedQuad.ts";
 export type { InstancedQuadLayerOptions } from "./layers/instancedQuad.ts";
+export { RasterLayer } from "./layers/rasterLayer.ts";
+export type { RasterLayerOptions } from "./layers/rasterLayer.ts";
 
 export { createPointerController } from "./interaction/pointer.ts";
 export type { PointerController, PointerState } from "./interaction/pointer.ts";

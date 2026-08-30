@@ -1359,12 +1359,26 @@ The **warnings pane is the highest-value part** and it is cheap: it encodes vgpu
 > frame," and the "Indirect dispatch/draw" row of §8.2's subsystem table is now exercised. Verified
 > against `vgpu/mock` (wiring/binding correctness — atomics, bind-by-name, no `VGPU-*` errors — not
 > pixel-level culling correctness, which needs `vgpu/node`/browser testing, not yet done).
-> **Still missing, deliberately scoped out of that change:** the full §12.2 frame's density-field
-> binning + `RasterLayer` compositing for extreme zoom-out (this pass does time-range visibility
-> culling only, not per-pixel-column density reduction) — a separate, larger piece of work, needed
-> before the 5M-span/extreme-zoom-out perf targets can be honestly claimed. Also still missing: the
-> CLI `add` deliverable (no `packages/cli`, no `registry.json` anywhere in the repo — that work
-> hasn't started; treat it as still-Phase-6-scoped, not a Phase-2 regression).
+> **Updated (2026-08-30): the density-field LOD binning gap is now closed too.** Added
+> `densityBin.wgsl.ts` (one thread per span, atomically bucketing it into a `trackCount ×
+> PIXEL_COLUMNS(512)` density grid by its *start time* only — a stated, bounded approximation, not a
+> full per-span coverage scan; see that file's doc comment), `reduceDensity.wgsl.ts` (per-track max,
+> for independent color normalization per track), `raster.wgsl.ts` (a full-screen `effect()` fragment
+> shader reading the density/max buffers directly — no `GPUTexture` involved, see
+> `packages/core/src/layers/rasterLayer.ts`'s doc comment for why), and `RasterLayer`, the fourth
+> §12.1 core primitive, alongside `InstancedQuadLayer`. `TimelineComponent` now runs a CPU-only LOD
+> heuristic each `update()` (`estimateSpansPerPixelColumn` vs. a `lodThreshold` constructor option,
+> default 4 per §31 open question #4) and `plan()` branches its `computePasses`/render encoding
+> between the existing visibility-cull+indirect-draw path and this new density-raster path — no GPU
+> readback in the decision itself. Verified against `vgpu/mock` (wiring/binding correctness) *and* a
+> real headless-Chromium WebGPU backend (`apps/bench/tests/sharedContextOnly.spec.ts`, which exercises
+> this code path with real payload every frame) — the new shaders compile and run for real, not just
+> against the lenient mock.
+> **Still missing:** the CLI `add` deliverable (no `packages/cli`, no `registry.json` anywhere in the
+> repo — that work hasn't started; treat it as still-Phase-6-scoped, not a Phase-2 regression). The
+> LOD heuristic itself is a CPU estimate, not measured against real frame-time data — tuning
+> `lodThreshold`'s default empirically (as §31 open question #4 asks) needs the Phase 4 benchmark
+> work, not done here.
 
 ### Next phase — closing out Phase 2 before touching Phase 3/4/5 work
 
@@ -1375,12 +1389,12 @@ next concrete slice of work, in order (updated 2026-08-30):
    `TimelineComponent.ts` fix~~ — **done, 2026-08-30** (see open question #3 above). Was a real,
    present-day correctness bug (up to 1s of error at epoch scale), not a hypothetical risk.
 2. ~~Time-range visibility-cull compute pass + indirect draw for `TimelineComponent`~~ — **done,
-   2026-08-30** (`cull.wgsl.ts`, `InstancedQuadLayer.drawIndirect()`). **Remaining part of this
-   deliverable, not yet done:** the density-field binning + `RasterLayer` compositing for extreme
-   zoom-out (§12.2's `reduceDensity` + raster step) — this is what actually gets the 5M-span target
-   to a place it can be honestly benchmarked; the visibility cull alone helps mid-zoom perf but does
-   not bound per-frame cost at extreme zoom-out the way density binning does. Also the prerequisite
-   primitive for Phase 3's brush-selection bitset and Phase 5's `GPUHeatmap`/`GPUDataGrid`.
+   2026-08-30** (`cull.wgsl.ts`, `InstancedQuadLayer.drawIndirect()`). ~~Density-field binning +
+   `RasterLayer` compositing for extreme zoom-out~~ — **also done, 2026-08-30**
+   (`densityBin.wgsl.ts`, `reduceDensity.wgsl.ts`, `raster.wgsl.ts`, `RasterLayer`, and the CPU-only
+   `estimateSpansPerPixelColumn` LOD switch in `TimelineComponent.plan()`). PLAN.md §12.2's full
+   two-mode Timeline frame is now implemented end to end. `RasterLayer` is the prerequisite primitive
+   for Phase 5's `GPUHeatmap` reuse test; brush-selection's GPU bitset mask (Phase 3) is still open.
 3. ~~Investigate the unconfirmed "one device beats N devices" result~~ — **investigated across two
    rounds, 2026-08-30** (`apps/bench/results/decision-record.md`). **Round 1:** root cause found and
    fixed — the benchmark measured bare `requestAnimationFrame` cadence, not the runtime;
@@ -1403,10 +1417,12 @@ next concrete slice of work, in order (updated 2026-08-30):
 4. Not yet started: a version of item 3's scenario using direct encode/submit timing instead of
    `requestAnimationFrame`-interval measurement (needs the Phase 4 `Profiler`/`timer(gpu)` spans —
    the actual way to get a real signal on the architectural bet, per item 3's conclusion); the
-   density-field binning + `RasterLayer` compositing carried over from item 2; and the remaining
-   Phase 3 interaction items (inertial pan/zoom, brush/lasso selection with a GPU bitset mask, async
-   GPU ID-buffer picking) — all currently absent and flagged as deferred in the code's own doc
-   comments (`TimelineComponent.ts`, `GPUTimeline.tsx`).
+   remaining Phase 3 interaction items (inertial pan/zoom, brush/lasso selection with a GPU bitset
+   mask, async GPU ID-buffer picking) — all currently absent and flagged as deferred in the code's own
+   doc comments (`TimelineComponent.ts`, `GPUTimeline.tsx`); and empirically tuning `lodThreshold`'s
+   default (currently `4`, per §31 open question #4, not yet measured against real frame-time data).
+   With items 1-2 done, Phase 2's own deliverables are now essentially complete except the CLI `add`
+   command (Phase 6-scoped) — Phase 3 interaction is the natural next slice of work.
 
 ### Phase 3 — Interaction *(1.5 weeks)*
 

@@ -75,6 +75,23 @@ export function computeOrigin(spans: SpanBuffers): number {
   return spans.count === 0 ? 0 : origin;
 }
 
+/**
+ * The dataset's time domain end (maximum `start + duration` across every track) — paired with
+ * `computeOrigin`, gives the total time extent `TimelineComponent`'s LOD heuristic needs to estimate
+ * spans-per-pixel-column without a GPU readback (PLAN.md §31 open question #4). Kept as a separate
+ * function rather than folding into `computeOrigin`'s return shape, since that one's already shipped
+ * and tested as returning a bare number. Same cost/cadence contract as `computeOrigin`: an O(n) scan,
+ * call once per dataset change, not per frame.
+ */
+export function computeDomainMax(spans: SpanBuffers): number {
+  let max = -Infinity;
+  for (let i = 0; i < spans.count; i++) {
+    const end = spans.start[i]! + spans.duration[i]!;
+    if (end > max) max = end;
+  }
+  return spans.count === 0 ? 0 : max;
+}
+
 function writeInstance(
   view: DataView,
   offset: number,
