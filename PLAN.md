@@ -1381,26 +1381,32 @@ next concrete slice of work, in order (updated 2026-08-30):
    to a place it can be honestly benchmarked; the visibility cull alone helps mid-zoom perf but does
    not bound per-frame cost at extreme zoom-out the way density binning does. Also the prerequisite
    primitive for Phase 3's brush-selection bitset and Phase 5's `GPUHeatmap`/`GPUDataGrid`.
-3. ~~Investigate the unconfirmed "one device beats N devices" result~~ — **investigated, 2026-08-30**
-   (`apps/bench/results/decision-record.md`). Root cause found and fixed: the benchmark measured bare
-   `requestAnimationFrame` cadence, not the runtime — `GpuRuntime.invalidate()` only marks surfaces
-   dirty, not components, so the scheduler's `active` list was empty for every "measured" frame and
-   nothing was ever encoded or submitted; the original "shared is worse" reading was a single
-   anomalous dropped frame in an otherwise fully-idle loop, not a real finding. Fixed
-   (`sharedContextScenario.ts` now keeps components genuinely active) and re-run scaled to 2/4/8
-   components. **Result: inconclusive, honestly reported as such** — every configuration at every
-   count ties at the vsync floor; an empty-payload component's per-frame cost (a 0-instance indirect
-   draw, a 16-byte buffer write) is far too cheap, even ×8 devices, to approach the 16.6ms frame
-   budget, so this measurement currently has no signal on the architectural bet either way. Getting a
-   real signal needs non-trivial per-component payload or a component count high enough to risk a
-   browser's `GPUDevice` cap — neither done; explicitly flagged as open, not silently left implied as
-   resolved.
-4. Not yet started: a version of item 3's scenario with non-trivial per-component payload (the actual
-   way to get a real signal on the architectural bet); the density-field binning + `RasterLayer`
-   compositing carried over from item 2; and the remaining Phase 3 interaction items (inertial
-   pan/zoom, brush/lasso selection with a GPU bitset mask, async GPU ID-buffer picking) — all
-   currently absent and flagged as deferred in the code's own doc comments (`TimelineComponent.ts`,
-   `GPUTimeline.tsx`).
+3. ~~Investigate the unconfirmed "one device beats N devices" result~~ — **investigated across two
+   rounds, 2026-08-30** (`apps/bench/results/decision-record.md`). **Round 1:** root cause found and
+   fixed — the benchmark measured bare `requestAnimationFrame` cadence, not the runtime;
+   `GpuRuntime.invalidate()` only marks surfaces dirty, not components, so the scheduler's `active`
+   list was empty for every "measured" frame in both configurations and nothing was ever encoded or
+   submitted. The original "shared is worse" reading was a single anomalous dropped frame in an
+   otherwise fully-idle loop, not a real finding. **Round 2:** gave each component real (small)
+   payload driven every frame through an oscillating-viewport `update()` (matching
+   `renderers/webgpu.ts`'s own pattern, replacing the Round-1 `animating` shortcut), and pushed
+   component/device count to 24 (committed) and spot-checked to 48. **Result: still inconclusive,
+   more thoroughly this time** — every configuration at every count from 2 to 48 ties at the vsync
+   floor. Root cause is now understood, not just observed: `requestAnimationFrame`-interval
+   measurement has a hard floor at the display's vsync rate and cannot show a sub-vsync difference no
+   matter how much payload or how many devices, until total per-tick work actually exceeds one
+   frame's budget — which nothing tried so far does. **What would actually produce a signal:**
+   bracket the encode/submit step directly with `performance.now()` (bypassing vsync), or use
+   `vgpu`'s `timer(gpu)` GPU timestamp-query spans — i.e. build the Phase 4 `Profiler` (§10.7),
+   currently not implemented, before attempting this measurement again. Recorded honestly: the
+   founding claim is still neither confirmed nor contradicted.
+4. Not yet started: a version of item 3's scenario using direct encode/submit timing instead of
+   `requestAnimationFrame`-interval measurement (needs the Phase 4 `Profiler`/`timer(gpu)` spans —
+   the actual way to get a real signal on the architectural bet, per item 3's conclusion); the
+   density-field binning + `RasterLayer` compositing carried over from item 2; and the remaining
+   Phase 3 interaction items (inertial pan/zoom, brush/lasso selection with a GPU bitset mask, async
+   GPU ID-buffer picking) — all currently absent and flagged as deferred in the code's own doc
+   comments (`TimelineComponent.ts`, `GPUTimeline.tsx`).
 
 ### Phase 3 — Interaction *(1.5 weeks)*
 

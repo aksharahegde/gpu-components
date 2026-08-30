@@ -96,12 +96,12 @@ export function renderMarkdown(
       "See `decision-record.md` for the full canvas-per-component-vs-mega-canvas writeup, including " +
         "the 2026-08-30 root-cause fix (the original scenario measured bare `requestAnimationFrame` " +
         "cadence, not scheduling/submit overhead — a harness bug, not an architecture finding) and " +
-        "why this now runs at several component counts instead of a fixed two: at trivial per-frame " +
-        "work, both configurations tie at the vsync floor regardless of which is actually cheaper, " +
-        "so a real difference only has room to appear once total work approaches the frame budget. " +
-        "`N` × `TimelineComponent`s mounted empty (no span data — this isolates scheduling/submit " +
-        "overhead, not rendering throughput) under one shared `GpuRuntime` vs. `N` fully independent " +
-        "`GpuRuntime`s (each its own device).",
+        "the round-2 methodology: each component carries a small real span payload and is driven " +
+        "every measured frame through an oscillating-viewport `update()` (real work, never a cached " +
+        "repaint), scaling component count higher, since fixed per-device/per-submit overhead — not " +
+        "GPU compute/render cost — is the thing this scenario is actually trying to isolate. One " +
+        "shared `GpuRuntime` (N components, 1 device, 1 submit/tick) vs. N fully independent " +
+        "`GpuRuntime`s (N devices, N submits/tick).",
       "",
       "| Components (N) | Configuration | p50 (ms) | p95 (ms) | worst (ms) | dropped |",
       "| ---: | --- | ---: | ---: | ---: | ---: |",
@@ -109,11 +109,22 @@ export function renderMarkdown(
     for (const run of sharedContext) {
       lines.push(
         `| ${run.componentCount} | Shared \`GpuRuntime\` (1 device, 1 submit) | ${run.sharedRuntime.p50.toFixed(3)} | ${run.sharedRuntime.p95.toFixed(3)} | ${run.sharedRuntime.worst.toFixed(3)} | ${run.sharedRuntime.droppedFrames} |`,
-        `| ${run.componentCount} | Independent \`GpuRuntime\`s (${run.componentCount} devices) | ${run.independentRuntimes.p50.toFixed(3)} | ${run.independentRuntimes.p95.toFixed(3)} | ${run.independentRuntimes.worst.toFixed(3)} | ${run.independentRuntimes.droppedFrames} |`,
+        run.independentRuntimes
+          ? `| ${run.componentCount} | Independent \`GpuRuntime\`s (${run.componentCount} devices) | ${run.independentRuntimes.p50.toFixed(3)} | ${run.independentRuntimes.p95.toFixed(3)} | ${run.independentRuntimes.worst.toFixed(3)} | ${run.independentRuntimes.droppedFrames} |`
+          : `| ${run.componentCount} | Independent \`GpuRuntime\`s (${run.componentCount} devices) | skipped | skipped | skipped | — |`,
       );
     }
     lines.push("");
     for (const run of sharedContext) {
+      if (!run.independentRuntimes) {
+        lines.push(
+          `**N=${run.componentCount}: skipped** — could not create ${run.componentCount} independent ` +
+            `\`GPUDevice\`s (${run.independentSkippedReason ?? "unknown error"}). Likely a browser ` +
+            "concurrent-device cap, not a scenario bug; component-count scaling stops at the first " +
+            "count this happens at.",
+        );
+        continue;
+      }
       // Round to the same 3 decimals the table shows — sub-millisecond float noise (both configs
       // are frequently equal to the ~1e-13ms rounding error of `performance.now()` deltas) should
       // read as a tie, not a false "does not confirm" from comparing raw unrounded floats.

@@ -29,20 +29,23 @@ Generated 2026-08-30T09:05:21.294Z on `Mozilla/5.0 (Windows NT 10.0; Win64; x64)
 
 ## Phase 0 goal (a): shared context vs. independent devices
 
-See `decision-record.md` for the full canvas-per-component-vs-mega-canvas writeup, including the 2026-08-30 root-cause fix (the original scenario measured bare `requestAnimationFrame` cadence, not scheduling/submit overhead — a harness bug, not an architecture finding) and why this now runs at several component counts instead of a fixed two: at trivial per-frame work, both configurations tie at the vsync floor regardless of which is actually cheaper, so a real difference only has room to appear once total work approaches the frame budget. `N` × `TimelineComponent`s mounted empty (no span data — this isolates scheduling/submit overhead, not rendering throughput) under one shared `GpuRuntime` vs. `N` fully independent `GpuRuntime`s (each its own device).
+See `decision-record.md` for the full canvas-per-component-vs-mega-canvas writeup, including the 2026-08-30 root-cause fix (the original scenario measured bare `requestAnimationFrame` cadence, not scheduling/submit overhead — a harness bug, not an architecture finding) and the round-2 methodology: each component carries a small real span payload and is driven every measured frame through an oscillating-viewport `update()` (real work, never a cached repaint), scaling component count higher, since fixed per-device/per-submit overhead — not GPU compute/render cost — is the thing this scenario is actually trying to isolate. One shared `GpuRuntime` (N components, 1 device, 1 submit/tick) vs. N fully independent `GpuRuntime`s (N devices, N submits/tick).
 
 | Components (N) | Configuration | p50 (ms) | p95 (ms) | worst (ms) | dropped |
 | ---: | --- | ---: | ---: | ---: | ---: |
 | 2 | Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.700 | 16.800 | 0 |
-| 2 | Independent `GpuRuntime`s (2 devices) | 16.700 | 16.700 | 16.800 | 0 |
-| 4 | Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.700 | 16.800 | 0 |
-| 4 | Independent `GpuRuntime`s (4 devices) | 16.700 | 16.800 | 16.800 | 0 |
-| 8 | Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.700 | 16.800 | 0 |
+| 2 | Independent `GpuRuntime`s (2 devices) | 16.700 | 16.800 | 16.800 | 0 |
+| 8 | Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.800 | 16.800 | 0 |
 | 8 | Independent `GpuRuntime`s (8 devices) | 16.700 | 16.700 | 16.800 | 0 |
+| 16 | Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.700 | 16.800 | 0 |
+| 16 | Independent `GpuRuntime`s (16 devices) | 16.700 | 16.700 | 16.800 | 0 |
+| 24 | Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.800 | 16.800 | 0 |
+| 24 | Independent `GpuRuntime`s (24 devices) | 16.700 | 16.800 | 16.800 | 0 |
 
 **N=2: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
-**N=4: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
 **N=8: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
+**N=16: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
+**N=24: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
 
 ## shallow-wide
 
