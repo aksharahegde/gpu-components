@@ -5,6 +5,7 @@ export { createRecordingContext2D } from "./recordingContext2d.ts";
 export type {
   RecordedCall,
   RecordedFillRect,
+  RecordedFillText,
   RecordedPutImageData,
   RecordedStroke,
   RecordingContext2D,

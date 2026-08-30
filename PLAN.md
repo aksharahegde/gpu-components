@@ -1936,6 +1936,30 @@ next concrete slice of work, in order (updated 2026-08-30):
 > nice-to-have — it is the only layer that has caught any of these three defects.
 **Benchmark criteria:** DataGrid vs glide-data-grid vs AG Grid on scroll, sort-1M, filter-1M, and conditional formatting — published honestly, including where we lose.
 
+> **Status (2026-08-30): `GPUDataGrid` v1 shipped, read-only.** `registry/grid/**` — cell chrome and
+> per-cell conditional formatting on the GPU in one `RasterLayer` pass, column and row rules through
+> `LineLayer`, **text through a Canvas2D layer** per `spikes/grid-text-budget.md`, 2D scrolling on
+> the viewport the heatmap generalised, CPU hit-testing, keyboard navigation and an accessibility
+> layer. Four Dawn pixel tests, written with the component, assert zebra alternation, that
+> conditional formatting tracks the value in numeric columns only, and that scrolling moves the
+> column rules.
+>
+> **`core` needed zero changes this time.** Three components in, the runtime hosted the flagship
+> without modification — which is the result §29 was actually asking for, arrived at one component
+> later than hoped. `RasterLayer` is now carrying its third distinct consumer (density field,
+> matrix, cell chrome), and `LineLayer` its second.
+>
+> **The honest positioning, per §8.1.** 2,400 visible cells is nothing for either renderer, so the
+> grid's case is *not* draw-call count. What the GPU actually buys here is conditional formatting
+> evaluated per pixel against a full column range with no CPU pass, and hover/selection as a uniform
+> write rather than a re-render. The docs must say that rather than implying a throughput win.
+>
+> **Not built, deliberately:** editing, copy/paste, column resize/reorder, RTL and IME — §8.1's
+> "largest correctness surface", and the reason v1 is read-only. Also not built: the TanStack Table
+> adapter (§4.3's "a renderer, not a Table replacement"). `GridData` is shaped so a `getRowModel()`
+> result maps onto it directly, and the adapter is the obvious next step; GPU-side sort/filter/
+> aggregate is the step after, and is where the grid's remaining claims live.
+
 ### Phase 6 — CLI & distribution *(1.5 weeks)*
 
 **Goals:** installation is boring and reliable.

@@ -6,6 +6,7 @@ import { GPUProvider, GpuInspector, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUTimeline, ingestSpans, type RawSpan, type SpanBuffers } from '../../../../registry/timeline'
 import { GPUHeatmap, ingestMatrix, type HeatmapData } from '../../../../registry/heatmap'
+import { GPUDataGrid, ingestRows, type GridColumn } from '../../../../registry/grid'
 import { color, font, radius } from '../tokens.stylex'
 
 /**
@@ -112,6 +113,7 @@ export function Playground() {
     <GPUProvider options={{ profiling: true }}>
       <Stage />
       <HeatmapStage />
+      <GridStage />
     </GPUProvider>
   )
 }
@@ -443,6 +445,107 @@ function Hint({ keys, children }: { keys: string; children: React.ReactNode }) {
   )
 }
 
+const GRID_COLUMNS: GridColumn[] = [
+  { key: 'id', label: 'ID', width: 70, numeric: true, align: 'right' },
+  { key: 'service', label: 'Service', width: 150 },
+  { key: 'endpoint', label: 'Endpoint', width: 230 },
+  { key: 'p95', label: 'p95 (ms)', width: 100, numeric: true, align: 'right' },
+  { key: 'rps', label: 'Req/s', width: 100, numeric: true, align: 'right' },
+  { key: 'errors', label: 'Errors', width: 90, numeric: true, align: 'right' },
+  { key: 'region', label: 'Region', width: 110 },
+]
+
+const SERVICES = ['checkout', 'catalog', 'identity', 'billing', 'search', 'inventory']
+const REGIONS = ['us-east-1', 'eu-west-2', 'ap-south-1']
+const ENDPOINTS = ['/v1/orders', '/v1/items/:id', '/v1/session', '/v1/invoice', '/v1/query', '/health']
+
+function GridStage() {
+  const { status } = useGpu()
+  const ROWS = 5_000
+  const data = useMemo(() => {
+    const rnd = mulberry32(0x91d)
+    return ingestRows(
+      Array.from({ length: ROWS }, (_, i) => ({
+        id: i,
+        service: SERVICES[i % SERVICES.length],
+        endpoint: ENDPOINTS[(i * 7) % ENDPOINTS.length],
+        p95: Math.round(rnd() * rnd() * 800 * 10) / 10,
+        rps: Math.round(rnd() * 4000),
+        errors: Math.round(rnd() * rnd() * 120),
+        region: REGIONS[i % REGIONS.length],
+      })),
+      GRID_COLUMNS,
+    )
+  }, [])
+
+  const stageRef = useRef<HTMLDivElement | null>(null)
+  const [box, setBox] = useState({ width: 900, height: 380 })
+  const [selected, setSelected] = useState<number | null>(null)
+
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setBox({ width: el.clientWidth, height: el.clientHeight }))
+    ro.observe(el)
+    setBox({ width: el.clientWidth, height: el.clientHeight })
+    return () => ro.disconnect()
+  }, [])
+
+  const VISIBLE_ROWS = 16
+  const [viewport, setViewport] = useState(() => ({
+    timeStart: 0,
+    timeEnd: 1,
+    trackCount: ROWS,
+    rowStart: 0,
+    rowEnd: VISIBLE_ROWS,
+    width: box.width,
+    height: box.height,
+  }))
+
+  useEffect(() => {
+    setViewport((v) => ({ ...v, width: box.width, height: box.height }))
+  }, [box.width, box.height])
+
+  return (
+    <div {...stylex.props(s.root)}>
+      <div {...stylex.props(s.heatHead)}>
+        <span {...stylex.props(s.panelTitle)}>GPUDataGrid — the flagship, built last on purpose</span>
+        <span {...stylex.props(s.readoutValue)}>
+          {selected == null ? <span {...stylex.props(s.dim)}>click a row</span> : `row ${selected}`}
+        </span>
+      </div>
+      <div ref={stageRef} {...stylex.props(s.gridStage)}>
+        {status === 'ready' && box.width > 1 && (
+          <GPUDataGrid
+            data={data}
+            viewport={viewport}
+            onViewportChange={setViewport}
+            selectedRow={selected}
+            onSelectRow={setSelected}
+            aria-label="Service latency grid"
+          />
+        )}
+      </div>
+      <div {...stylex.props(s.hints)}>
+        <Hint keys="wheel">scroll rows</Hint>
+        <Hint keys="shift + wheel">scroll columns</Hint>
+        <Hint keys="click">select a row</Hint>
+        <Hint keys="Tab then arrows">walk rows</Hint>
+      </div>
+      <p {...stylex.props(s.footnote)}>
+        A hybrid, and the split is measured rather than assumed. The GPU draws zebra striping and
+        the per-cell conditional formatting — every numeric cell tinted by where its value sits in
+        that column&apos;s full range, evaluated in the fragment shader. The text is a Canvas2D
+        layer, because <code>spikes/grid-text-budget.md</code> measured 2,400 cells of it at 2.9ms
+        per frame with zero dropped frames, against a glyph atlas that PLAN.md ranked as the largest
+        schedule risk in the phase. The DOM draws nothing per cell: it dropped every frame past
+        ~1,200 nodes. Read-only in v1 — editing, copy/paste and column resize are the grid semantics
+        §8.1 warns will consume a schedule.
+      </p>
+    </div>
+  )
+}
+
 const s = stylex.create({
   root: { display: 'flex', flexDirection: 'column', gap: 14 },
   controls: { display: 'flex', flexWrap: 'wrap', gap: 18, alignItems: 'flex-end' },
@@ -544,6 +647,15 @@ const s = stylex.create({
   inspector: { fontSize: 11, fontFamily: font.mono, color: color.textDim, overflowX: 'auto' },
   footnote: { margin: 0, fontSize: 12.5, lineHeight: 1.7, color: color.textFaint },
   heatHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' },
+  gridStage: {
+    position: 'relative',
+    height: 380,
+    minHeight: 380,
+    overflow: 'hidden',
+    backgroundColor: color.bgRaised,
+    border: `1px solid ${color.border}`,
+    borderRadius: radius.md,
+  },
   heatStage: {
     position: 'relative',
     height: 320,
