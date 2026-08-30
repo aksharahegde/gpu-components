@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,6 +32,24 @@ function optionsFor(size: number): Partial<RunOptions> {
 
 test.describe.configure({ mode: "serial" });
 
+/**
+ * Retries `page.goto` a few times with a short backoff. Observed in practice: after a large-N
+ * cell crashes the Chromium renderer, the very next reload can hit `ERR_CONNECTION_REFUSED` —
+ * the Vite dev server transiently isn't accepting connections yet, not permanently dead. A short
+ * retry survives that without needing to restart the whole matrix run by hand.
+ */
+async function gotoWithRetry(page: Page, url: string, attempts = 5) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      await page.goto(url);
+      return;
+    } catch (err) {
+      if (i === attempts - 1) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 2000 * (i + 1)));
+    }
+  }
+}
+
 test("benchmark matrix", async ({ page }) => {
   test.setTimeout(0); // this test's own duration is the whole point — no per-test cap
 
@@ -53,13 +71,15 @@ test("benchmark matrix", async ({ page }) => {
         // Chromium's renderer process died mid-run with "Execution context was destroyed"). A
         // reload is cheap next to what a large cell itself costs, and it means one cell crashing
         // doesn't take the whole matrix down with it — results are also written after every cell,
-        // not just at the end, so a genuine crash still leaves real partial data on disk.
-        await page.goto("/index.html");
-        await page.waitForFunction(() => "__bench" in window);
-        if (!userAgent) userAgent = await page.evaluate(() => navigator.userAgent);
-
+        // not just at the end, so a genuine crash still leaves real partial data on disk. The
+        // whole cell (goto included, not just the measurement) is inside the try/catch — an
+        // earlier version only wrapped `page.evaluate`, so a `page.goto` failure (observed:
+        // `ERR_CONNECTION_REFUSED` right after a crash) still took the entire run down.
         let result: RunResult;
         try {
+          await gotoWithRetry(page, "/index.html");
+          await page.waitForFunction(() => "__bench" in window);
+          if (!userAgent) userAgent = await page.evaluate(() => navigator.userAgent);
           result = await page.evaluate(
             ([r, s, n, opts]) =>
               window.__bench.runCell(r as RendererId, s as Shape, n as number, opts as Partial<RunOptions>),
@@ -86,7 +106,7 @@ test("benchmark matrix", async ({ page }) => {
     }
   }
 
-  await page.goto("/index.html");
+  await gotoWithRetry(page, "/index.html");
   await page.waitForFunction(() => "__bench" in window);
   const sharedContext: SharedContextResult = await page.evaluate(() => window.__bench.runSharedContext());
   writeResults(sharedContext);
