@@ -10,10 +10,39 @@ export interface ViewportState {
   /** Domain start/end — seconds, or a normalized [0,1] range; whatever unit the caller's spans use. */
   readonly timeStart: number;
   readonly timeEnd: number;
+  /** Total rows in the dataset. Also the default y extent when `rowStart`/`rowEnd` are omitted. */
   readonly trackCount: number;
+  /**
+   * Visible row range, exclusive of `rowEnd` — the y-axis equivalent of `timeStart`/`timeEnd`.
+   *
+   * Omit both (the Timeline's case) and the viewport shows every row at once, which is the
+   * behaviour this model had before vertical panning existed: `[0, trackCount]`. Supply them and
+   * the y axis pans and zooms exactly as x does.
+   *
+   * Added for `GPUHeatmap` (PLAN.md §29 Phase 5), whose two axes are both continuous. The
+   * generalisation is deliberately arithmetic-compatible: at `[0, trackCount]` the derived
+   * scale/offset are *identical* to what this function produced before, so every existing shader,
+   * label placement and hit-test keeps its exact pixel behaviour. See
+   * `registry/heatmap/CORE-WISHLIST.md` for why the fuller rename this implies is still deferred.
+   */
+  readonly rowStart?: number;
+  readonly rowEnd?: number;
   /** CSS pixels of the canvas this viewport maps onto. */
   readonly width: number;
   readonly height: number;
+}
+
+/** The visible row range, defaulting to "all of them" for callers that never set one. */
+export function rowRange(v: ViewportState): readonly [number, number] {
+  const start = v.rowStart ?? 0;
+  const end = v.rowEnd ?? v.trackCount;
+  return end > start ? [start, end] : [start, start + 1];
+}
+
+/** How many rows are visible — the y-axis counterpart of `timeEnd - timeStart`. */
+export function visibleRows(v: ViewportState): number {
+  const [start, end] = rowRange(v);
+  return end - start;
 }
 
 export interface ViewportUniforms extends Record<string, unknown> {
@@ -30,12 +59,20 @@ function timeToClipScaleOffset(v: ViewportState): readonly [number, number] {
   return [scale, offset];
 }
 
-/** scale/offset such that `track * scale + offset` lands on that row's clip-space vertical center,
- * track 0 at the top (clip y near +1), `trackCount - 1` at the bottom (clip y near -1). */
+/**
+ * scale/offset such that `track * scale + offset` lands on that row's clip-space vertical center,
+ * with the first visible row at the top (clip y near +1) and the last at the bottom (near -1).
+ *
+ * The shader passes a row *index* and this bakes the half-row centring in, which is why the offset
+ * carries a `- 1/span` term. Written generally over the visible row range: at `[0, trackCount]` it
+ * reduces to the original `[-2/count, 1 - 1/count]` exactly, so nothing that predates vertical
+ * panning changes by a single ulp.
+ */
 function trackToClipScaleOffset(v: ViewportState): readonly [number, number] {
-  const count = v.trackCount || 1;
-  const scale = -2 / count;
-  const offset = 1 - 1 / count;
+  const [start, end] = rowRange(v);
+  const span = end - start || 1;
+  const scale = -2 / span;
+  const offset = 1 + (2 * start - 1) / span;
   return [scale, offset];
 }
 
@@ -56,13 +93,13 @@ export function timeToPixelX(v: ViewportState, t: number): number {
 
 /** CSS-pixel y within the canvas, top edge, of a track's row center. */
 export function trackToPixelY(v: ViewportState, track: number): number {
-  const count = v.trackCount || 1;
-  return ((track + 0.5) / count) * v.height;
+  const [start, end] = rowRange(v);
+  return ((track + 0.5 - start) / (end - start)) * v.height;
 }
 
 /** CSS-pixel height of one track row. */
 export function trackRowHeight(v: ViewportState): number {
-  return v.height / (v.trackCount || 1);
+  return v.height / visibleRows(v);
 }
 
 /** Inverse of `timeToPixelX` — the time value under a given CSS-pixel x. For hit-testing and
@@ -76,6 +113,6 @@ export function pixelXToTime(v: ViewportState, pixelX: number): number {
  * that need a discrete track for hit-testing round this themselves (`Math.round`), since a caller
  * comparing against row boundaries may want floor/ceil instead. */
 export function pixelYToTrack(v: ViewportState, pixelY: number): number {
-  const count = v.trackCount || 1;
-  return (pixelY / (v.height || 1)) * count - 0.5;
+  const [start, end] = rowRange(v);
+  return start + (pixelY / (v.height || 1)) * (end - start) - 0.5;
 }

@@ -76,12 +76,12 @@ interface Rendered {
   readonly component: HeatmapComponent;
 }
 
-async function render(gpu: Gpu): Promise<Rendered> {
+async function render(gpu: Gpu, viewport = VIEWPORT): Promise<Rendered> {
   const surfaceTarget = target(gpu, { size: [W, H] });
   const ctx = makeCtx(gpu, surfaceTarget);
   const component = new HeatmapComponent();
   component.create(ctx);
-  component.update({ data: DATA, viewport: VIEWPORT });
+  component.update({ data: DATA, viewport });
 
   const plan = component.plan();
   for (const pass of plan.computePasses) pass.dispatch();
@@ -156,6 +156,27 @@ describe("GPUHeatmap render correctness (real Dawn pixels)", () => {
     assert.ok(highest[0]! > 200 && highest[1]! > 180 && highest[2]! < 90, `expected yellow, got ${highest}`);
     assert.ok(lowest[2]! > lowest[1]!, `expected the dark end to be purple-ish, got ${lowest}`);
     component.dispose();
+  });
+
+  it("scrolls vertically — the capability core gained for this component", async (t) => {
+    if (!gpu) return t.skip("vgpu/node (Dawn) unavailable on this machine");
+
+    // Rows 0-1 of the 4x4 matrix, zoomed 2x vertically: each row is now 32px tall, not 16.
+    const top = await render(gpu, { ...VIEWPORT, rowStart: 0, rowEnd: 2 });
+    // Scrolled to rows 2-3. The same screen position must now show different data — that is the
+    // whole point, and before the row range existed this render was impossible to express.
+    const bottom = await render(gpu, { ...VIEWPORT, rowStart: 2, rowEnd: 4 });
+
+    // Column 0, first visible row, in both renders: value 0 vs value 8.
+    const topCell = luminance(rgb(top.pixels, 8, 16));
+    const bottomCell = luminance(rgb(bottom.pixels, 8, 16));
+    assert.ok(
+      bottomCell > topCell + 40,
+      `scrolling to later rows should show brighter (higher) values: ${topCell.toFixed(0)} -> ${bottomCell.toFixed(0)}`,
+    );
+
+    top.component.dispose();
+    bottom.component.dispose();
   });
 
   it("increases monotonically across the row, cell by cell", async (t) => {

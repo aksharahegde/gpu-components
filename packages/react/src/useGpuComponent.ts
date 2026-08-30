@@ -26,6 +26,10 @@ export function useGpuComponent<Props>(
   const componentRef = useRef<GpuComponent<Props> | null>(null);
   const factoryRef = useRef(factory);
   factoryRef.current = factory;
+  const propsRef = useRef(props);
+  propsRef.current = props;
+  /** The component instance that has already received at least one `update()`. */
+  const seeded = useRef<GpuComponent<Props> | null>(null);
 
   useEffect(() => {
     if (!runtime || status !== "ready" || !canvas) return;
@@ -36,14 +40,42 @@ export function useGpuComponent<Props>(
       return component;
     }, canvas, surfaceOpts);
 
+    // Seed the newly mounted component with the props it already has, unless the update effect
+    // below already got there first.
+    //
+    // Without this, a caller that memoises its props object never delivers the first update and
+    // renders nothing at all. The canvas arrives through `setState` from a ref callback, so this
+    // mount effect cannot run until render #2 — by which time a memoised `props` has not changed,
+    // so the `[props]` effect does not re-fire and `update()` is never called on the component
+    // that now exists. Passing a fresh object literal every render hides the bug, which is what
+    // `GPUTimeline` happened to do; `GPUHeatmap` memoised its props, as the React docs encourage,
+    // and rendered a blank canvas.
+    //
+    // Deferred to a microtask rather than called inline: an inline call re-enters while the mount
+    // effect is still running, which deadlocks a component whose `update()` touches the scheduler.
+    // By the time the microtask runs, React has flushed the effects for this commit, so the
+    // `seeded` guard correctly sees whether the update effect already delivered.
+    queueMicrotask(() => {
+      const component = componentRef.current;
+      if (!component || seeded.current === component) return;
+      seeded.current = component;
+      component.update(propsRef.current);
+    });
+
     return () => {
       handle.unmount();
       componentRef.current = null;
+      seeded.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `surfaceOpts` intentionally excluded, see useGpuCanvas.
   }, [runtime, status, canvas]);
 
   useEffect(() => {
-    componentRef.current?.update(props);
+    const component = componentRef.current;
+    if (!component) return;
+    // Records that this instance has been seeded, so the mount effect's microtask does not deliver
+    // the same props a second time.
+    seeded.current = component;
+    component.update(props);
   }, [props]);
 }

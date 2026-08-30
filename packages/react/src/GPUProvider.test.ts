@@ -189,6 +189,50 @@ describe("GPUProvider", () => {
     }
   });
 
+  it("delivers the first update() even when props are memoised (never change identity)", async () => {
+    // The blank-canvas bug `GPUHeatmap` hit. The canvas arrives via setState from a ref callback,
+    // so the component mounts on render #2 — and a caller passing a stable, memoised props object
+    // (what the React docs encourage) never re-fires the `[props]` effect, so the component that
+    // now exists is never given its data. `GPUTimeline` only worked because it happened to pass a
+    // fresh object literal every render.
+    let instance: TestComponent | null = null;
+    const STABLE_PROPS = { n: 1 };
+
+    function Widget() {
+      const [canvas, ref] = useCanvasRef();
+      useGpuComponent<{ n: number }>(
+        () => {
+          instance = new TestComponent("memoised-props");
+          return instance;
+        },
+        canvas,
+        STABLE_PROPS, // deliberately the same object on every render
+      );
+      return createElement("canvas", { ref, width: 2, height: 2 });
+    }
+
+    host.innerHTML = "";
+    const root = createRoot(host);
+    await act(async () => {
+      root.render(createElement(GPUProvider, { options: testConnectOptions() }, createElement(Widget, null)));
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    assert.ok(instance, "component should be mounted");
+    const mounted = instance as unknown as TestComponent;
+    assert.equal(mounted.createCalls, 1);
+    assert.equal(mounted.updateCalls, 1, "a memoised props object must still produce exactly one initial update");
+    assert.deepEqual(mounted.lastProps, STABLE_PROPS);
+
+    // Unmount so the provider disposes its runtime and stops the frame loop — a live loop driven by
+    // the mocked rAF keeps this test file's process alive after the assertions pass.
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("calls update() on prop change without remounting", async () => {
     let instance: TestComponent | null = null;
 

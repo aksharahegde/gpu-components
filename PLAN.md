@@ -1906,6 +1906,34 @@ next concrete slice of work, in order (updated 2026-08-30):
 > candidate for §10.5's "ship reusable *kernels*, not a `ComputeManager`".
 >
 > So the claim holds for the rendering and compute half, and has a named, evidenced expiry date.
+
+> **Final result (2026-08-30): all six stages shipped. The claim is falsified — `core` needed
+> exactly two changes, and the second one matters more than the first.**
+>
+> **1. The predicted one.** `ViewportState` gained a visible row range and `ViewportController`
+> gained `zoomAtY` plus a `deltaY` on `panByPixels`. Done arithmetic-compatibly: at
+> `[0, trackCount]` the derived scale/offset are *identical* to before, so the Timeline needed no
+> changes and every shader kept its exact pixel behaviour. The fuller rename this implies is still
+> deferred — the mechanism now generalises, only the vocabulary is wrong, and renaming touches 25
+> files for zero behavioural gain. Do it with the DataGrid as the third consumer.
+>
+> **2. The unpredicted one, which is the real return on this phase.** `GPUHeatmap` rendered a
+> completely blank canvas while every test passed. The cause was in `core`'s React adapter:
+> `useGpuComponent` delivered props only from a `useEffect` keyed on `[props]`, but the canvas
+> arrives through `setState` from a ref callback, so a component cannot mount until render #2 — by
+> which time a **memoised** props object has not changed identity, the effect does not re-fire, and
+> the component that now exists is never told what to draw. `GPUTimeline` was unaffected purely by
+> accident: it passes a fresh object literal every render. The bug had been latent since Phase 1 and
+> *could not surface* until a second component was written by someone with different, more
+> conventional React habits.
+>
+> That is precisely what §29 says this phase is for. The runtime abstraction was not wrong; it had a
+> shape assumption nobody knew it was making. Finding it now, in a heatmap, costs a day. Finding it
+> in the DataGrid would have cost a week of looking in the wrong place.
+>
+> **Method note, for the third time this session:** the blank canvas was invisible to the entire
+> test suite and visible instantly in a browser. §23.4's visual-regression corpus is no longer a
+> nice-to-have — it is the only layer that has caught any of these three defects.
 **Benchmark criteria:** DataGrid vs glide-data-grid vs AG Grid on scroll, sort-1M, filter-1M, and conditional formatting — published honestly, including where we lose.
 
 ### Phase 6 — CLI & distribution *(1.5 weeks)*
