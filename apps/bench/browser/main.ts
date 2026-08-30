@@ -7,6 +7,7 @@ import type { RendererDef } from "../src/renderers/shared.ts";
 import { DEFAULT_OPTIONS, measureRenderer, type RunOptions } from "../src/harness/runner.ts";
 import { runSharedContextScenario } from "../src/harness/sharedContextScenario.ts";
 import { runGpuTimingScenario } from "../src/harness/gpuTimingScenario.ts";
+import { runTextBudgetScenario } from "../src/harness/textBudgetScenario.ts";
 import type { RendererId } from "../src/types.ts";
 // `Window.__bench`'s type comes from the ambient `./global.d.ts` in this directory — picked up
 // automatically by `include` in tsconfig.json, no import needed (and importing a `.d.ts` as a
@@ -36,5 +37,9 @@ window.__bench = {
   async runGpuTiming() {
     stage.innerHTML = "";
     return runGpuTimingScenario(stage);
+  },
+  async runTextBudget() {
+    stage.innerHTML = "";
+    return runTextBudgetScenario(stage);
   },
 };
