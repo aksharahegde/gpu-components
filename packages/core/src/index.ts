@@ -40,10 +40,35 @@ export {
 } from "./viewport.ts";
 export type { ViewportState, ViewportUniforms } from "./viewport.ts";
 
+export {
+  CANVAS2D_CAPS,
+  clipToPixelX,
+  clipToPixelY,
+  cssColor,
+  gpuPass,
+  samplingStride,
+} from "./passEncoder.ts";
+export type { Canvas2DPassEncoder, GpuPassEncoder, PassEncoder } from "./passEncoder.ts";
+
 export { InstancedQuadLayer } from "./layers/instancedQuad.ts";
-export type { InstancedQuadLayerOptions } from "./layers/instancedQuad.ts";
+export type {
+  InstancedQuadLayerOptions,
+  QuadFallbackPolicy,
+  QuadRect,
+} from "./layers/instancedQuad.ts";
 export { RasterLayer } from "./layers/rasterLayer.ts";
-export type { RasterLayerOptions } from "./layers/rasterLayer.ts";
+export type { RasterFallbackPolicy, RasterLayerOptions } from "./layers/rasterLayer.ts";
+export {
+  LINE_FLAG_CLIP_X,
+  LINE_FLAG_CLIP_Y,
+  LINE_INSTANCE_STRIDE,
+  LineLayer,
+  packLines,
+  packRgba8,
+  writeLine,
+} from "./layers/lineLayer.ts";
+export type { LineInstance, LineLayerOptions } from "./layers/lineLayer.ts";
+export { LINE_WGSL } from "./layers/lineLayer.wgsl.ts";
 
 export { createPointerController } from "./interaction/pointer.ts";
 export type { PointerController, PointerState } from "./interaction/pointer.ts";

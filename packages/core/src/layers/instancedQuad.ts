@@ -1,5 +1,42 @@
-import { draw, storage, type BlendPreset, type Draw, type FramePass, type Gpu, type StorageBuffer } from "vgpu";
+import { draw, storage, type BlendPreset, type Draw, type Gpu, type StorageBuffer } from "vgpu";
 import type { WarningsLog } from "../warnings.ts";
+import {
+  CANVAS2D_CAPS,
+  clipToPixelX,
+  clipToPixelY,
+  cssColor,
+  samplingStride,
+  type Canvas2DPassEncoder,
+  type PassEncoder,
+} from "../passEncoder.ts";
+import type { ViewportUniforms } from "../viewport.ts";
+
+/** A decoded quad in clip space, ready for the Canvas2D backend. */
+export interface QuadRect {
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+  /** Packed `0xRRGGBBAA`, as `packRgba8()` produces. */
+  readonly color: number;
+}
+
+/**
+ * The Canvas2D fallback policy for a quad layer (PLAN.md §16.1 assigns "its Canvas2D fallback
+ * *policy*" to the component, not to `core`).
+ *
+ * This exists because a quad layer cannot decode its own instances: on the GPU path the component
+ * supplies WGSL that interprets the bytes, so `core` only ever knows the stride, never the meaning.
+ * A component that wants a fallback therefore hands over the one thing `core` cannot infer — how to
+ * read one instance — and gets the entire Canvas2D backend, cap enforcement and degradation
+ * reporting for free. A component that omits it renders nothing in fallback mode, loudly.
+ */
+export interface QuadFallbackPolicy {
+  /** Decodes instance `index` from the CPU mirror into clip space, or `null` to skip it (the
+   * fallback's equivalent of a culled instance). `viewport` carries the same scale/offset values
+   * the shader reads, so both paths transform identically. */
+  decode(view: DataView, index: number, viewport: ViewportUniforms): QuadRect | null;
+}
 
 export interface InstancedQuadLayerOptions {
   readonly gpu: Gpu;
@@ -16,6 +53,10 @@ export interface InstancedQuadLayerOptions {
    * onward (see `upload()`'s comment for why the first growth doesn't count). Optional: omit to skip
    * detection entirely, e.g. in a context with no `WarningsLog` to report into. */
   readonly warnings?: WarningsLog;
+  /** Enables the Canvas2D backend for this layer. Retaining the CPU mirror it needs costs
+   * `capacity × stride` bytes, so it is opt-in rather than always-on — at 5M spans that is a real
+   * amount of memory to hold for a path most sessions never take. */
+  readonly fallback?: QuadFallbackPolicy;
 }
 
 /**
@@ -36,6 +77,11 @@ export class InstancedQuadLayer {
   private count = 0;
   private readonly warnings: WarningsLog | undefined;
   private growthCount = 0;
+  private readonly fallback: QuadFallbackPolicy | undefined;
+  /** CPU mirror of the last `upload()`, retained only when a fallback policy is configured. This is
+   * a partial step toward PLAN.md §14.1(c)'s mandatory mirror — device-loss replay still relies on
+   * the component's own source of truth, not on this. */
+  private mirror: DataView | null = null;
 
   constructor(opts: InstancedQuadLayerOptions) {
     this.gpu = opts.gpu;
@@ -44,6 +90,7 @@ export class InstancedQuadLayer {
     this.blend = opts.blend ?? "alpha";
     this.label = opts.label;
     this.warnings = opts.warnings;
+    this.fallback = opts.fallback;
     this.capacity = Math.max(1, opts.capacity);
     this.buffer = storage(this.gpu, this.capacity * this.stride, "read");
     this.drawable = draw(this.gpu, {
@@ -102,20 +149,82 @@ export class InstancedQuadLayer {
     }
     this.buffer.write(bytes);
     this.count = count;
+    if (this.fallback) {
+      // Copy, not a view onto the caller's buffer: callers reuse scratch buffers between uploads
+      // (TimelineComponent's rule scratch does exactly this), so aliasing would leave the fallback
+      // rendering whatever the next frame happened to write.
+      const copy = new Uint8Array(count * this.stride);
+      copy.set(new Uint8Array(bytes.buffer, bytes.byteOffset, count * this.stride));
+      this.mirror = new DataView(copy.buffer);
+    }
   }
 
-  /** Encodes the instanced draw against the frame pass the scheduler opened. A no-op at `count === 0`. */
-  draw(pass: FramePass): void {
+  /** Encodes the instanced draw against whichever backend the scheduler opened. A no-op at
+   * `count === 0`. */
+  draw(pass: PassEncoder): void {
     if (this.count === 0) return;
-    pass.draw(this.drawable, { instances: this.count });
+    if (pass.kind === "canvas2d") {
+      this.drawCanvas2D(pass, this.count);
+      return;
+    }
+    pass.frame.draw(this.drawable, { instances: this.count });
+  }
+
+  /**
+   * PLAN.md §22.2's `InstancedQuadLayer` row: "`fillRect` loop with batched `fillStyle` runs",
+   * capped at ~50k quads/frame. Above the cap it samples at an even stride and reports, rather than
+   * truncating to the first 50k — truncation would silently blank everything past a point on
+   * screen, while sampling degrades density uniformly across the whole view.
+   */
+  private drawCanvas2D(pass: Canvas2DPassEncoder, count: number): void {
+    if (!this.fallback || !this.mirror) {
+      pass.report(
+        `${this.label ?? "InstancedQuadLayer"}: no Canvas2D fallback policy — nothing drawn for ` +
+          `${count} instances`,
+      );
+      return;
+    }
+
+    const stride = samplingStride(count, CANVAS2D_CAPS.quads);
+    if (stride > 1) {
+      pass.report(
+        `${this.label ?? "InstancedQuadLayer"}: ${count} quads exceeds the Canvas2D budget of ` +
+          `${CANVAS2D_CAPS.quads} — drawing every ${stride}th`,
+      );
+    }
+
+    const { ctx, width, height, viewport } = pass;
+    let lastColor = -1;
+    for (let i = 0; i < count; i += stride) {
+      const rect = this.fallback.decode(this.mirror, i, viewport);
+      if (!rect) continue;
+      if (rect.color !== lastColor) {
+        ctx.fillStyle = cssColor(rect.color);
+        lastColor = rect.color;
+      }
+      const x = clipToPixelX(rect.x0, width);
+      const y = clipToPixelY(rect.y1, height); // clip y is +1 at the top, so y1 is the top edge
+      const w = Math.max(1, clipToPixelX(rect.x1, width) - x);
+      const h = Math.max(1, clipToPixelY(rect.y0, height) - y);
+      ctx.fillRect(x, y, w, h);
+    }
   }
 
   /** GPU-driven draw: the GPU reads vertex/instance counts from `indirect` (written by a preceding
    * compute pass — PLAN.md §12.2's `binSpans`), so no CPU-side count round-trips. `indirect` must be
    * a buffer created with `storage(gpu, bytes, { indirect: true })`, holding the non-indexed
    * `drawIndirect` layout: `[vertexCount, instanceCount, firstVertex, firstInstance]`. */
-  drawIndirect(pass: FramePass, indirect: StorageBuffer): void {
-    pass.draw(this.drawable, { indirect });
+  drawIndirect(pass: PassEncoder, indirect: StorageBuffer): void {
+    if (pass.kind === "canvas2d") {
+      // The whole point of an indirect draw is that the count lives on the GPU and never round-trips
+      // (PLAN.md §12.2). With no GPU there is no such count, so the fallback falls back further: draw
+      // every uploaded instance and let `decode()` cull. That is the CPU equivalent of what the
+      // culling kernel was doing, which is exactly what §22.2's "compute passes → CPU equivalents"
+      // row anticipates.
+      this.drawCanvas2D(pass, this.count);
+      return;
+    }
+    pass.frame.draw(this.drawable, { indirect });
   }
 
   /** No-op: `StorageBuffer`'s public interface has no `destroy()` (see `upload()`'s comment) — the
