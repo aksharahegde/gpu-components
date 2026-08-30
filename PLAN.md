@@ -832,6 +832,27 @@ The brief asks whether this JSX form beats generated TypeScript wrappers. **It l
 
 The v1 choice is what makes the Timeline shippable in four weeks. It is not a compromise we are hiding — it is the reason this component was selected.
 
+> **Measured (2026-08-30), see `spikes/grid-text-budget.md`. The v2 trigger was wrong: the DataGrid
+> does not force a glyph atlas.** At the grid's 2,400-cell reference, a **Canvas2D text layer costs
+> 2.9ms p50 / 3.6ms worst with zero dropped frames** — inside a 16.6ms budget with ~4.5× headroom,
+> and still fine at 4,800 cells. The atlas moves from prerequisite to optimisation, which removes
+> the largest schedule risk in Phase 5 (§30 risk 2).
+>
+> The table's ~400-label DOM budget is **confirmed by measurement**, not merely asserted: pooled
+> `<span>`s with transform-only updates start missing frames between 400 and 600 labels and drop
+> *every* frame at 1,200+. So the Timeline's v1 row stands as written; only the "needed when the
+> DataGrid lands" claim in the v2 row is retracted.
+>
+> The trap worth remembering: DOM had the **lowest CPU time of all three strategies** while dropping
+> every frame, because style/layout/paint land outside the `performance.now()` bracket. Reading only
+> the CPU column would have produced the opposite conclusion. That is twice now this project has
+> been misled by measuring the wrong quantity — rAF intervals in the shared-device investigation,
+> JS-callback time here.
+>
+> **The cost of the verdict, unresolved:** Canvas2D text is not selectable or copyable, and §21.2
+> makes selectable label text an accessibility requirement. The grid needs a separate answer — a DOM
+> overlay for the focused row only, or leaning on `toAccessibleTable()` — designed before it ships.
+
 ### 13.5 Hot reload, errors, validation
 
 - **Hot reload:** the Vite/webpack loaders already invalidate on `.wgsl` change and report dependencies via `onDependency`. Our components re-create their `draw`/`compute` on module change; nothing else moves.
@@ -1941,6 +1962,13 @@ To be resolved in phase 0/1, each with a proposed default so nothing blocks:
 4. **LOD crossover threshold** — spans-per-pixel-column at which we switch from instanced quads to the raster density field. *Default: 4; tune empirically, expose as a prop.*
 5. **Async GPU picking latency budget.** One frame late is acceptable for hover; is it acceptable for click? *Default: CPU hit-test for click (exact, immediate), GPU picking only for layers without a CPU index.*
 6. **DOM label reconciliation cost at 400 nodes/frame.** *Default: keyed pooling with `transform`-only updates; measure and fall back to fewer labels or a canvas text layer.*
+   > **Resolved (2026-08-30), see `spikes/grid-text-budget.md`.** The proposed default was measured
+   > — keyed pooling with transform-only updates — and it holds at 400 but not beyond: DOM starts
+   > missing frames between 400 and 600 labels and drops every frame at 1,200+. So the Timeline's
+   > 400-label budget is confirmed, and this question's own documented fallback — "a canvas text
+   > layer" — is the answer above a few hundred labels, at 2.9ms per frame for 2,400 cells.
+   > Counter-intuitively the DOM path shows the *lowest* JS time of any strategy while dropping
+   > every frame, because layout and paint fall outside the measured bracket.
 7. **Worker transfer strategy** — `Transferable` (zero-copy, source detached) vs `SharedArrayBuffer` (requires COOP/COEP headers, which many apps cannot set). *Default: Transferable; SAB as an opt-in for apps that already have the headers.*
 8. **Does `bundle()` help the Timeline at all**, given nearly everything is dynamic? *Default: no in v1; re-evaluate when static chrome layers exist.*
 9. **Multi-provider dedupe key.** How do two independently-mounted providers agree to share a device? *Default: an explicit opt-in `deviceKey` prop; implicit sharing is too magical.*
