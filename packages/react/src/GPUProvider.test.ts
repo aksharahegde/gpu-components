@@ -20,8 +20,12 @@ g.HTMLCanvasElement = dom.window.HTMLCanvasElement;
 g.Node = dom.window.Node;
 g.Element = dom.window.Element;
 g.getComputedStyle = dom.window.getComputedStyle;
+// The spec's rAF callback timestamp is a `DOMHighResTimeStamp` — `performance.now()`'s clock, not
+// `Date.now()`'s epoch millis. Anything that computes a frame delta from this argument (as
+// GPUTimeline.test.tsx's inertia test does) would see a multi-trillion-ms "delta" against a
+// `performance.now()`-seeded `last` otherwise.
 g.requestAnimationFrame = (cb: FrameRequestCallback) =>
-  setTimeout(() => cb(Date.now()), 16) as unknown as number;
+  setTimeout(() => cb(performance.now()), 16) as unknown as number;
 g.cancelAnimationFrame = (id: number) => clearTimeout(id);
 g.IS_REACT_ACT_ENVIRONMENT = true;
 

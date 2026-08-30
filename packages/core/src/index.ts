@@ -46,3 +46,5 @@ export { normalizeWheel } from "./interaction/wheel.ts";
 export type { NormalizedWheel } from "./interaction/wheel.ts";
 export { createViewportController } from "./interaction/viewportController.ts";
 export type { ViewportBounds, ViewportController } from "./interaction/viewportController.ts";
+export { createVelocityTracker, decayVelocity, INERTIA_STOP_VELOCITY } from "./interaction/inertia.ts";
+export type { VelocityTracker } from "./interaction/inertia.ts";

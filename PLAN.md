@@ -1433,6 +1433,28 @@ next concrete slice of work, in order (updated 2026-08-30):
 **Acceptance:** hover ≤16ms at 5M spans; brush-select 100k spans without a frame drop; gestures behave identically in all three engines.
 **Benchmark criteria:** interaction latency table across all sizes and browsers.
 
+> **Status note (2026-08-30): inertial pan shipped, everything else in this phase still open.** Added
+> `packages/core/src/interaction/inertia.ts` (`createVelocityTracker`/`decayVelocity` — pure
+> kinematics, no rAF loop or event listeners, same DOM-agnostic shape as `wheel.ts`/`pointer.ts`) and
+> wired it into `GPUTimeline.tsx`: wheel events feed the tracker, `WHEEL_IDLE_MS` after the last one
+> a `requestAnimationFrame` loop decays the velocity and keeps panning until it settles below
+> `INERTIA_STOP_VELOCITY`, honoring `prefers-reduced-motion` (no animation at all when set, per
+> §21/§32) and cancelled by any new wheel gesture, keyboard pan/zoom, or unmount. Zoom momentum was
+> deliberately not implemented — unusual UX (most map/timeline UIs only animate pan momentum) and not
+> asked for by this section's own wording ("inertial pan/zoom" describes the gesture pair the
+> feature applies to, not a requirement that zoom itself gets momentum). Covered by real
+> `core`-level unit tests (pure math) and a jsdom integration test in `GPUTimeline.test.tsx` that
+> dispatches real wheel events and observes continued panning after the gesture ends, plus the
+> reduced-motion branch — this also caught and fixed a real latent bug in the shared jsdom test
+> harness (`GPUProvider.test.ts`/`GPUTimeline.test.tsx`'s mocked `requestAnimationFrame` was passing
+> `Date.now()`'s epoch-millis clock instead of the spec's `performance.now()`-based
+> `DOMHighResTimeStamp` — harmless until something first depended on the callback's timestamp
+> argument, which this feature is the first to do).
+> **Still open:** CPU hit-testing was already done in Phase 2 (§9.5's primary mechanism, listed here
+> too since it's this phase's own deliverable line); touch gesture state machines; async GPU
+> ID-buffer picking (an opt-in path for future components without a cheap CPU index — not needed for
+> Timeline itself, which already has one); and brush/lasso selection with a GPU bitset mask.
+
 ### Phase 4 — Performance & tooling *(2 weeks)*
 
 **Goals:** hit or publicly revise the targets; ship the inspector.

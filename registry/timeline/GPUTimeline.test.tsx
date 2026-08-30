@@ -20,9 +20,14 @@ g.HTMLCanvasElement = dom.window.HTMLCanvasElement;
 g.Node = dom.window.Node;
 g.Element = dom.window.Element;
 g.KeyboardEvent = dom.window.KeyboardEvent;
+g.WheelEvent = dom.window.WheelEvent;
 g.getComputedStyle = dom.window.getComputedStyle;
+// The spec's rAF callback timestamp is a `DOMHighResTimeStamp` — `performance.now()`'s clock, not
+// `Date.now()`'s epoch millis. The inertial-pan test below computes a frame delta from this
+// argument against a `performance.now()`-seeded `last`; a `Date.now()` mismatch there would produce
+// a multi-trillion-ms "delta" on the very first decay frame.
 g.requestAnimationFrame = (cb: FrameRequestCallback) =>
-  setTimeout(() => cb(Date.now()), 16) as unknown as number;
+  setTimeout(() => cb(performance.now()), 16) as unknown as number;
 g.cancelAnimationFrame = (id: number) => clearTimeout(id);
 g.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -126,6 +131,90 @@ describe("GPUTimeline accessibility", () => {
       assert.ok(a, "expected a listitem whose aria-label starts with the span's own name");
       assert.match(a!.getAttribute("aria-label")!, /^a, [\d.]+ms, track 0, starts at [\d.]+$/);
     });
+  });
+});
+
+function wheel(el: Element, deltaX: number) {
+  el.dispatchEvent(
+    new dom.window.WheelEvent("wheel", { deltaX, deltaY: 0, deltaMode: 0, clientX: 5, clientY: 5, bubbles: true, cancelable: true }),
+  );
+}
+
+function summaryTimeStart(app: Element): number {
+  const describedBy = app.getAttribute("aria-describedby")!;
+  const text = dom.window.document.getElementById(describedBy)?.textContent ?? "";
+  const match = /Showing (-?[\d.]+) to/.exec(text);
+  assert.ok(match, `expected a "Showing X to Y" summary, got: ${text}`);
+  return Number(match![1]);
+}
+
+describe("GPUTimeline inertial pan (PLAN.md Phase 3)", () => {
+  it("keeps panning after the wheel gesture ends, then settles", async () => {
+    // A wide bounds — the point is observing inertia's own decay, not bounds clamping.
+    const bounds = { timeMin: -1000, timeMax: 1000 };
+    await withTimeline({ spans: testSpans(), viewport: VIEWPORT, bounds }, async (app) => {
+      const canvas = host.querySelector("canvas")!;
+
+      // A short burst of same-direction wheel events — a real trackpad swipe's discrete event
+      // stream — to build up velocity in the tracker.
+      for (let i = 0; i < 4; i++) {
+        await act(async () => wheel(canvas, 40));
+        await act(async () => await new Promise((resolve) => setTimeout(resolve, 15)));
+      }
+      const afterGesture = summaryTimeStart(app);
+      assert.ok(afterGesture > VIEWPORT.timeStart, "the wheel gesture itself should have panned");
+
+      // No further input — just let WHEEL_IDLE_MS elapse and inertia's rAF chain (this file's
+      // mocked requestAnimationFrame, a 16ms setTimeout) run for a while.
+      await act(async () => await new Promise((resolve) => setTimeout(resolve, 400)));
+      const afterInertia = summaryTimeStart(app);
+      assert.ok(
+        afterInertia > afterGesture,
+        `expected inertia to keep panning past ${afterGesture} without further input, got ${afterInertia}`,
+      );
+
+      // Long enough for decay to fall under INERTIA_STOP_VELOCITY and stop scheduling frames.
+      await act(async () => await new Promise((resolve) => setTimeout(resolve, 1500)));
+      const settled = summaryTimeStart(app);
+      await act(async () => await new Promise((resolve) => setTimeout(resolve, 200)));
+      const afterSettling = summaryTimeStart(app);
+      assert.ok(
+        Math.abs(afterSettling - settled) < 1e-6,
+        `expected inertia to have settled by now (no more movement), moved from ${settled} to ${afterSettling}`,
+      );
+    });
+  });
+
+  it("does not animate when prefers-reduced-motion is set", async () => {
+    const originalMatchMedia = dom.window.matchMedia;
+    dom.window.matchMedia = ((query: string) => ({
+      matches: query.includes("prefers-reduced-motion"),
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    })) as unknown as typeof dom.window.matchMedia;
+    g.matchMedia = dom.window.matchMedia;
+    try {
+      const bounds = { timeMin: -1000, timeMax: 1000 };
+      await withTimeline({ spans: testSpans(), viewport: VIEWPORT, bounds }, async (app) => {
+        const canvas = host.querySelector("canvas")!;
+        for (let i = 0; i < 4; i++) {
+          await act(async () => wheel(canvas, 40));
+          await act(async () => await new Promise((resolve) => setTimeout(resolve, 15)));
+        }
+        const afterGesture = summaryTimeStart(app);
+
+        await act(async () => await new Promise((resolve) => setTimeout(resolve, 400)));
+        const afterWait = summaryTimeStart(app);
+        assert.ok(
+          Math.abs(afterWait - afterGesture) < 1e-6,
+          `expected no inertia movement with prefers-reduced-motion set, moved from ${afterGesture} to ${afterWait}`,
+        );
+      });
+    } finally {
+      dom.window.matchMedia = originalMatchMedia;
+      delete g.matchMedia;
+    }
   });
 });
 
