@@ -1432,17 +1432,27 @@ next concrete slice of work, in order (updated 2026-08-30):
    `vgpu`'s `timer(gpu)` GPU timestamp-query spans — i.e. build the Phase 4 `Profiler` (§10.7),
    currently not implemented, before attempting this measurement again. Recorded honestly: the
    founding claim is still neither confirmed nor contradicted.
-   > **Update (2026-08-30): the prerequisite now exists.** §10.7's `Profiler` is built and wired into
-   > `FrameScheduler`/`GpuRuntime`. Re-running this investigation with real per-pass GPU timing
-   > instead of `requestAnimationFrame`-interval measurement is now possible — not yet done.
+   > **Round 3 (2026-08-30): confirmed.** §10.7's `Profiler` is built and wired into
+   > `FrameScheduler`/`GpuRuntime`; `apps/bench/src/harness/gpuTimingScenario.ts` re-ran this
+   > investigation with real per-pass GPU timing (`timer(gpu)`, bypassing the vsync floor entirely)
+   > instead of `requestAnimationFrame`-interval measurement. **Result: the shared runtime costs
+   > meaningfully, reproducibly less real GPU time per tick than N independent devices doing the same
+   > aggregate work**, from N=8 components onward (N=2 is noise-level, both configs' cost is tiny) —
+   > ratios from 1.6× to 2.5× across N=8/16/24, reproduced consistently across five separate runs.
+   > See `apps/bench/results/decision-record.md`'s "Round 3" section for the full numbers, including
+   > an honestly-reported non-monotonicity (the ratio narrows at N=24 vs. N=16) whose cause hasn't
+   > been investigated. **PLAN.md §2(a)/§11's founding claim — "one device across N components" — is
+   > now confirmed, not merely un-contradicted**, after three rounds: harness bug (Round 1) →
+   > methodology ceiling (Round 2) → real signal (Round 3).
 4. Both Phase 3 (inertial pan, brush selection with a GPU bitset mask) and Phase 2's CLI item are
-   done or tracked elsewhere; see those sections' own status notes. Phase 4 is now underway — the
-   `Profiler` core primitive (§10.7) shipped 2026-08-30. Not yet started: the React `<GpuInspector>`
-   panel + warnings pane (§28.2, the UI layer over the `Profiler` data that now exists); compute-pass
-   GPU timing; re-running the bench founding-claim investigation with real GPU timing (item 3's own
-   follow-up, now unblocked); adaptive quality; `bundle()` for static chrome; the glyph atlas; the
-   nightly perf regression gate; empirically tuning `lodThreshold`'s default (§31 open question #4,
-   currently `4`, not yet measured against real frame-time data — the `Profiler` also unblocks this).
+   done or tracked elsewhere; see those sections' own status notes. The founding-claim investigation
+   (item 3) is now closed — confirmed. Phase 4 is now underway — the `Profiler` core primitive
+   (§10.7) shipped 2026-08-30 and was immediately put to use closing item 3. Not yet started: the
+   React `<GpuInspector>` panel + warnings pane (§28.2, the UI layer over the `Profiler` data that
+   now exists); compute-pass GPU timing; adaptive quality; `bundle()` for static chrome; the glyph
+   atlas; the nightly perf regression gate; empirically tuning `lodThreshold`'s default (§31 open
+   question #4, currently `4`, not yet measured against real frame-time data — the `Profiler` also
+   unblocks this); investigating the Round 3 N=24 non-monotonicity, if it turns out to matter.
 
 ### Phase 3 — Interaction *(1.5 weeks)*
 

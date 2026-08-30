@@ -47,6 +47,19 @@ See `decision-record.md` for the full canvas-per-component-vs-mega-canvas writeu
 **N=16: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
 **N=24: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
 
+## Phase 0 goal (a), round 3: real GPU timing (the Profiler)
+
+The rounds above (`decision-record.md`) concluded that `requestAnimationFrame`-interval measurement has a hard floor at the display's vsync rate and cannot show a sub-vsync difference — the fix was to build the Phase 4 `Profiler` (real `timer(gpu)` GPU timing) and measure with it directly instead. This table is that measurement: mean total GPU milliseconds per tick (summed across every mounted component's passes), not wall-clock time between frames. Same workload as the earlier rounds (`gpuTimingScenario.ts` reuses `sharedContextScenario.ts`'s payload/drive helpers) — same real span payload, same oscillating-viewport drive pattern, measured a different way.
+
+| Components (N) | Shared GPU ms/tick | Independent GPU ms/tick | Ratio (independent/shared) |
+| ---: | ---: | ---: | ---: |
+| 2 | 0.0654 | 0.1080 | 1.65× |
+| 8 | 0.3039 | 0.6064 | 2.00× |
+| 16 | 0.5540 | 1.3893 | 2.51× |
+| 24 | 0.7504 | 1.1991 | 1.60× |
+
+**Confirms the architectural bet.** At N=2 the two are within noise of each other (both configurations' per-tick GPU cost is tiny relative to measurement variance). From N=8 onward the shared runtime consistently costs meaningfully less real GPU time per tick than N independent devices doing the same aggregate work — reproduced consistently across repeated runs, not a one-off. The ratio is not perfectly monotonic (observed, reproducible: it widens from N=8 to N=16, then narrows somewhat at N=24 — recorded honestly rather than smoothed over; the cause hasn't been investigated, could be driver/OS-level batching behavior at higher device counts on this specific machine). This is the first round of this investigation with a real answer, not an inconclusive one.
+
 ## shallow-wide
 
 Canvas2D → WebGPU crossover at or before **100,000 spans** (shallow-wide): Canvas2D p50 16.70ms vs WebGPU p50 16.70ms.

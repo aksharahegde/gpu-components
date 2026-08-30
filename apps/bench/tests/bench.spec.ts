@@ -7,6 +7,7 @@ import type { BenchReport, RendererId, RunResult, Shape } from "../src/types.ts"
 import { RENDERERS, SHAPES, SIZES } from "../src/types.ts";
 import type { RunOptions } from "../src/harness/runner.ts";
 import type { SharedContextResult } from "../src/harness/sharedContextScenario.ts";
+import type { GpuTimingResult } from "../src/harness/gpuTimingScenario.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RESULTS_DIR = path.resolve(__dirname, "../results");
@@ -56,11 +57,14 @@ test("benchmark matrix", async ({ page }) => {
   const results: RunResult[] = [];
   let userAgent = "";
 
-  function writeResults(sharedContext: SharedContextResult | null) {
+  function writeResults(sharedContext: SharedContextResult | null, gpuTiming: GpuTimingResult | null) {
     const report: BenchReport = { generatedAt: new Date().toISOString(), userAgent, results };
     mkdirSync(RESULTS_DIR, { recursive: true });
-    writeFileSync(path.join(RESULTS_DIR, "baselines.json"), JSON.stringify({ report, sharedContext }, null, 2));
-    writeFileSync(path.join(RESULTS_DIR, "BASELINES.md"), renderMarkdown(report, sharedContext, shapes));
+    writeFileSync(
+      path.join(RESULTS_DIR, "baselines.json"),
+      JSON.stringify({ report, sharedContext, gpuTiming }, null, 2),
+    );
+    writeFileSync(path.join(RESULTS_DIR, "BASELINES.md"), renderMarkdown(report, sharedContext, shapes, gpuTiming));
   }
 
   for (const shape of shapes as readonly Shape[]) {
@@ -101,7 +105,7 @@ test("benchmark matrix", async ({ page }) => {
           ? `p50=${result.stats.p50.toFixed(2)}ms p95=${result.stats.p95.toFixed(2)}ms`
           : `skipped (${result.skippedReason})`;
         console.log(`  ${shape}/${renderer}/${size.toLocaleString("en-US")}: ${status}`);
-        writeResults(null); // no shared-context numbers yet — refreshed with the real ones below
+        writeResults(null, null); // no shared-context/gpu-timing numbers yet — refreshed below
       }
     }
   }
@@ -109,7 +113,12 @@ test("benchmark matrix", async ({ page }) => {
   await gotoWithRetry(page, "/index.html");
   await page.waitForFunction(() => "__bench" in window);
   const sharedContext: SharedContextResult = await page.evaluate(() => window.__bench.runSharedContext());
-  writeResults(sharedContext);
+  writeResults(sharedContext, null);
+
+  await gotoWithRetry(page, "/index.html");
+  await page.waitForFunction(() => "__bench" in window);
+  const gpuTiming: GpuTimingResult = await page.evaluate(() => window.__bench.runGpuTiming());
+  writeResults(sharedContext, gpuTiming);
 
   expect(results.length).toBeGreaterThan(0);
 });
