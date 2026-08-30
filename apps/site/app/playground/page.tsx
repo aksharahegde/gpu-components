@@ -40,6 +40,12 @@ const COMPONENTS = [
     blurb: 'Force-directed layout running entirely on the GPU, settling in front of you.',
     note: 'The only one that animates, and the only one that cannot hit-test on the CPU.',
   },
+  {
+    slug: 'imagediff',
+    name: 'GPUImageDiff',
+    blurb: 'Split, onion-skin, difference and heat comparison of two images, with a GPU pixel count.',
+    note: 'The only one that uses real textures — and it filled a hole in the plan’s own contract.',
+  },
 ] as const
 
 export default function PlaygroundIndex() {
