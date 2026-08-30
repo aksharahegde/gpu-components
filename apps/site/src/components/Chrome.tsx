@@ -1,8 +1,9 @@
+'use client'
+
 import { useState, type ReactNode } from 'react'
 import * as stylex from '@stylexjs/stylex'
-import { Link, useIsCurrent } from '../router'
+import { Link, useIsCurrent } from '../link'
 import { useTheme } from '../theme'
-import { bp } from '../breakpoints.stylex'
 import { color, font, radius, size } from '../tokens.stylex'
 import { Btn, Small, Stack, Wrap, typo, util } from '../ui'
 
@@ -13,6 +14,9 @@ const ROUTES = [
   { to: '/roadmap', label: 'Roadmap' },
   { to: '/start', label: 'Get started' },
 ]
+
+/** Inlined rather than shared — see `ui.tsx`'s equivalent comment. */
+const NAV = '@media (max-width: 720px)'
 
 const s = stylex.create({
   header: {
@@ -38,42 +42,42 @@ const s = stylex.create({
     textDecoration: { default: 'none', ':hover': 'none' },
   },
   links: {
-    display: { default: 'flex', [bp.nav]: 'none' },
+    display: { default: 'flex', [NAV]: 'none' },
     gap: 22,
     marginInlineStart: 'auto',
     alignItems: 'center',
   },
   // Only the mobile branch differs; on desktop the open state is a no-op.
   linksOpen: {
-    display: { default: 'flex', [bp.nav]: 'flex' },
-    position: { default: 'static', [bp.nav]: 'absolute' },
-    insetBlockStart: { default: 'auto', [bp.nav]: size.navHeight },
-    insetInlineStart: { default: 'auto', [bp.nav]: 0 },
-    insetInlineEnd: { default: 'auto', [bp.nav]: 0 },
-    flexDirection: { default: 'row', [bp.nav]: 'column' },
-    gap: { default: 22, [bp.nav]: 0 },
-    alignItems: { default: 'center', [bp.nav]: 'stretch' },
-    backgroundColor: { default: 'transparent', [bp.nav]: color.bgRaised },
-    borderBottomWidth: { default: 0, [bp.nav]: 1 },
+    display: { default: 'flex', [NAV]: 'flex' },
+    position: { default: 'static', [NAV]: 'absolute' },
+    insetBlockStart: { default: 'auto', [NAV]: size.navHeight },
+    insetInlineStart: { default: 'auto', [NAV]: 0 },
+    insetInlineEnd: { default: 'auto', [NAV]: 0 },
+    flexDirection: { default: 'row', [NAV]: 'column' },
+    gap: { default: 22, [NAV]: 0 },
+    alignItems: { default: 'center', [NAV]: 'stretch' },
+    backgroundColor: { default: 'transparent', [NAV]: color.bgRaised },
+    borderBottomWidth: { default: 0, [NAV]: 1 },
     borderBottomStyle: 'solid',
-    borderBottomColor: { default: 'transparent', [bp.nav]: color.border },
-    padding: { default: 0, [bp.nav]: '8px 24px 16px' },
+    borderBottomColor: { default: 'transparent', [NAV]: color.border },
+    padding: { default: 0, [NAV]: '8px 24px 16px' },
   },
   link: {
     color: { default: color.textDim, ':hover': color.text },
     fontSize: 14,
-    paddingBlock: { default: 4, [bp.nav]: 10 },
+    paddingBlock: { default: 4, [NAV]: 10 },
     borderBottomWidth: 1.5,
     borderBottomStyle: 'solid',
-    borderBottomColor: { default: 'transparent', [bp.nav]: color.border },
-    width: { default: 'auto', [bp.nav]: '100%' },
+    borderBottomColor: { default: 'transparent', [NAV]: color.border },
+    width: { default: 'auto', [NAV]: '100%' },
     textDecoration: { default: 'none', ':hover': 'none' },
   },
   // The active indicator is applied from router state — StyleX has no
   // attribute selectors, and `aria-current` is set on the element anyway.
   linkCurrent: { color: color.text, borderBottomColor: color.accent },
   toggle: {
-    display: { default: 'none', [bp.nav]: 'inline-flex' },
+    display: { default: 'none', [NAV]: 'inline-flex' },
     marginInlineStart: 'auto',
     paddingBlock: 6,
     paddingInline: 10,
