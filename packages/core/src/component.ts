@@ -3,6 +3,7 @@ import type { Capabilities } from "./capabilities.ts";
 import type { ResourceRegistry } from "./registry.ts";
 import type { Globals } from "./uniforms.ts";
 import type { SurfaceLike } from "./surface.ts";
+import type { WarningsLog } from "./warnings.ts";
 
 /** Something a `RenderPlan` reads or writes. Declared, unused in v1 (see PLAN.md §11.3) — reserved
  * for a future topological sort if pass count ever grows past ~20. */
@@ -49,6 +50,9 @@ export interface FrameContext {
 export interface RuntimeHandle {
   readonly caps: Capabilities;
   invalidate(reason?: string): void;
+  /** PLAN.md §28.2's warnings pane — a component (or a `core` layer it constructs, e.g.
+   * `InstancedQuadLayer`) reports anti-patterns into this, and `GpuInspector` reads them back. */
+  readonly warnings: WarningsLog;
 }
 
 export interface ComponentContext {

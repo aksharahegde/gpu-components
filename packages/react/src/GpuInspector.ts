@@ -1,5 +1,5 @@
 import { createElement, useContext, useEffect, useState, type ReactElement } from "react";
-import type { Capabilities, FrameStats, GpuRuntime } from "@gpu-components/core";
+import type { Capabilities, FrameStats, GpuRuntime, Warning } from "@gpu-components/core";
 import { GpuContext } from "./GPUProvider.ts";
 
 export interface GpuInspectorProps {
@@ -86,12 +86,36 @@ function passesSection(enabled: boolean, spans: Readonly<Record<string, number>>
   );
 }
 
+function warningsSection(warnings: readonly Warning[]): ReactElement {
+  return createElement(
+    "div",
+    { style: SECTION_STYLE },
+    createElement("div", { style: HEADING_STYLE }, "Warnings"),
+    warnings.length > 0
+      ? createElement(
+          "div",
+          null,
+          ...warnings.map((w) =>
+            createElement(
+              "div",
+              { style: MONO_STYLE, key: `${w.code} ${w.source}` },
+              `${w.source}: ${w.message}${w.count > 1 ? ` (×${w.count})` : ""}`,
+            ),
+          ),
+        )
+      : createElement("div", { style: DIM_STYLE }, "none detected — buffer-growth and redundant-uniform-write only"),
+  );
+}
+
 /**
- * PLAN.md §28.2's inspector — Device/Frame/Passes only, backed entirely by data the `Profiler`
- * (`packages/core/src/profiler.ts`) already produces. Components, Resources, and the Warnings pane
- * (§28.2's own "highest-value part") are **not implemented** — each needs instrumentation that
- * doesn't exist yet (a mounted-components accessor on `GpuRuntime`; byte accounting in
- * `ResourceRegistry`; anti-pattern detection hooks) — and this component says so in its own
+ * PLAN.md §28.2's inspector — Device/Frame/Passes/Warnings, backed entirely by data the `Profiler`
+ * (`packages/core/src/profiler.ts`) and `WarningsLog` (`packages/core/src/warnings.ts`) already
+ * produce. The warnings pane only covers two of §28.2's five documented anti-patterns
+ * (buffer-growth, redundant-uniform-write — see `warnings.ts`'s own doc comments for which
+ * components report into it) — targets-created-in-the-loop, pipelines-compiled-mid-frame, and
+ * unbatched-draws detection are **not implemented**, and neither are the Components/Resources
+ * sections (each needs instrumentation that doesn't exist yet: a mounted-components accessor on
+ * `GpuRuntime`; byte accounting in `ResourceRegistry`) — and this component says so in its own
  * rendered output, not just in this comment, matching §28.1's "say what's not available rather than
  * estimate" principle applied to this library's own gaps, not only WebGPU's.
  */
@@ -102,18 +126,23 @@ export function GpuInspector(props: GpuInspectorProps): ReactElement {
 
   const [frame, setFrame] = useState<FrameStats | null>(null);
   const [gpuSpans, setGpuSpans] = useState<Readonly<Record<string, number>> | null>(null);
+  const [warnings, setWarnings] = useState<readonly Warning[]>([]);
 
   useEffect(() => {
     setFrame(null);
     setGpuSpans(null);
+    setWarnings([]);
     if (!runtime) return;
 
     setFrame(runtime.profiler.lastFrame);
+    setWarnings(runtime.warnings.recent); // anything already logged before this mount
     const interval = setInterval(() => setFrame(runtime.profiler.lastFrame), pollIntervalMs);
-    const unsubscribe = runtime.profiler.onGpuResults((spans) => setGpuSpans(spans));
+    const unsubGpu = runtime.profiler.onGpuResults((spans) => setGpuSpans(spans));
+    const unsubWarnings = runtime.warnings.onWarning(() => setWarnings(runtime.warnings.recent));
     return () => {
       clearInterval(interval);
-      unsubscribe();
+      unsubGpu();
+      unsubWarnings();
     };
   }, [runtime, pollIntervalMs]);
 
@@ -128,6 +157,7 @@ export function GpuInspector(props: GpuInspectorProps): ReactElement {
     deviceSection(runtime.caps),
     frameSection(frame),
     passesSection(runtime.profiler.enabled, gpuSpans),
-    createElement("div", { style: DIM_STYLE }, "Not yet available: Components, Resources, Warnings."),
+    warningsSection(warnings),
+    createElement("div", { style: DIM_STYLE }, "Not yet available: Components, Resources."),
   );
 }

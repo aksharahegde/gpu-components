@@ -4,6 +4,7 @@ import type { ComponentContext, GpuComponent, RuntimeHandle } from "./component.
 import { createProfiler, DISABLED_PROFILER, type Profiler } from "./profiler.ts";
 import { ResourceRegistry } from "./registry.ts";
 import { FrameScheduler } from "./scheduler.ts";
+import { createWarningsLog, type WarningsLog } from "./warnings.ts";
 import { SurfaceHandle } from "./surface.ts";
 import type { Globals } from "./uniforms.ts";
 
@@ -60,6 +61,9 @@ export class GpuRuntime implements RuntimeHandle {
   private scheduler: FrameScheduler | null;
   private globalsRef: SharedUniforms<Globals> | null;
   registry: ResourceRegistry;
+  /** PLAN.md §28.2 — a plain log, not GPU state, so (unlike `profiler`) it's created once and
+   * persists across device-loss recovery rather than being rebuilt per-`Gpu`. */
+  readonly warnings: WarningsLog = createWarningsLog();
 
   private readonly surfaces = new Map<HTMLCanvasElement, SurfaceHandle>();
   private readonly mounts = new Map<string, MountRecord>();

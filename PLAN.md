@@ -1317,19 +1317,34 @@ GPU Inspector                                    [runtime: 1 device, 3 surfaces]
 
 The **warnings pane is the highest-value part** and it is cheap: it encodes vgpu's documented anti-patterns (uniform writes with no change, targets created in the loop, pipelines compiled during a frame, buffers growing repeatedly, unbatched draws) as automatic detections. It teaches the performance model instead of requiring the docs to.
 
-> **Status note (2026-08-30): Device + Frame + Passes shipped; Components, Resources, and the
-> Warnings pane are not.** `packages/react/src/GpuInspector.ts` — a plain `.ts` component using
-> `createElement()`, matching this package's existing convention of avoiding JSX (no JSX toolchain
-> requirement in `packages/react`'s build) — renders the Device (from `runtime.caps`), Frame (polled
-> from `runtime.profiler.lastFrame`), and Passes (pushed from `runtime.profiler.onGpuResults`,
-> sorted by ms descending) sections against real data the just-shipped `Profiler` produces. When GPU
-> timing isn't enabled, the Passes section says so explicitly rather than rendering an empty table.
-> **Components, Resources, and the warnings pane above — explicitly including "the highest-value
-> part" — are not built.** Each needs instrumentation that doesn't exist yet and wasn't in scope for
-> this increment: a mounted-components accessor on `GpuRuntime` (Components), byte accounting in
-> `ResourceRegistry` (Resources), and anti-pattern detection hooks in `InstancedQuadLayer`/
-> `uniforms`/the pipeline compile path (Warnings). The rendered component itself says
-> "Not yet available: Components, Resources, Warnings" rather than silently omitting them.
+> **Status note (2026-08-30): Device + Frame + Passes shipped; two of five warnings-pane
+> anti-patterns shipped; Components/Resources sections and the other three anti-patterns are not.**
+> `packages/react/src/GpuInspector.ts` — a plain `.ts` component using `createElement()`, matching
+> this package's existing convention of avoiding JSX (no JSX toolchain requirement in
+> `packages/react`'s build) — renders Device (from `runtime.caps`), Frame (polled from
+> `runtime.profiler.lastFrame`), Passes (pushed from `runtime.profiler.onGpuResults`, sorted by ms
+> descending), and now Warnings (pushed from `runtime.warnings.onWarning`, deduped with a running
+> `(×N)` repeat count). When GPU timing isn't enabled, Passes says so explicitly rather than
+> rendering an empty table; Warnings does the same when nothing's been detected.
+> **Warnings pane, round 1 (2026-08-30): 2 of 5 anti-patterns, as real generic `core` primitives, not
+> UI stubs.** `packages/core/src/warnings.ts`'s `WarningsLog` (dedup by `(code, source)`, running
+> count, capped ring buffer) is now on `RuntimeHandle`/`ComponentContext.runtime.warnings`, so any
+> component or the layers it constructs can report into it. Two detectors wired to real call sites:
+> **buffers growing repeatedly** — `InstancedQuadLayer.upload()`'s existing capacity-growth branch
+> now reports from the *second* growth onward (the first is just "the initial guess was a little
+> off," not a bug), wired into both of `TimelineComponent`'s layers. **Uniform writes with no
+> change** — a new `trackedUniforms()` wrapper around `uniforms()` (shallow-compares each `.set()`
+> against the last value, reports after `UNCHANGED_WARN_THRESHOLD` consecutive unchanged calls),
+> wired into `TimelineComponent.viewportUniform` specifically (its most-frequently-set uniform) —
+> deliberately *not* retrofitted into the component's other three uniform objects, to keep this
+> change's blast radius on already-solid, tested code small.
+> **Still not built:** targets-created-in-the-loop and pipelines-compiled-during-a-frame detection
+> (need wrapping vgpu's `target()`/`compile()` factories globally — a different, larger integration
+> point than a single layer's existing hook); unbatched-draws detection (needs a per-frame
+> draw-call/instance-count heuristic); the Components section (needs a mounted-components accessor
+> on `GpuRuntime`); the Resources section (needs byte accounting in `ResourceRegistry`). The rendered
+> component says "Not yet available: Components, Resources" — Warnings dropped from that line since
+> it's now real, even if partial.
 
 ---
 
