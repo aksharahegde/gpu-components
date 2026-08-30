@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { computeOrigin, INSTANCE_STRIDE, ingestSpans, packInstances } from "./ingest.ts";
+import { computeDomainMax, computeOrigin, INSTANCE_STRIDE, ingestSpans, packInstances } from "./ingest.ts";
 
 describe("ingestSpans", () => {
   it("sorts by (track, start)", () => {
@@ -49,6 +49,21 @@ describe("computeOrigin", () => {
 
   it("is 0 for an empty dataset", () => {
     assert.equal(computeOrigin(ingestSpans([])), 0);
+  });
+});
+
+describe("computeDomainMax", () => {
+  it("returns the maximum (start + duration) across all tracks, not the last span in sort order", () => {
+    // Sorted by (track, start): track 1's span ends latest (2 + 10 = 12), but it isn't last overall.
+    const spans = ingestSpans([
+      { start: 5, duration: 1, track: 0 },
+      { start: 2, duration: 10, track: 1 },
+    ]);
+    assert.equal(computeDomainMax(spans), 12);
+  });
+
+  it("is 0 for an empty dataset", () => {
+    assert.equal(computeDomainMax(ingestSpans([])), 0);
   });
 });
 
