@@ -47,6 +47,14 @@ export class InstancedQuadLayer {
     this.drawable.set({ instances: this.buffer });
   }
 
+  /** The underlying per-instance storage buffer — an escape hatch for a compute pass (e.g. a
+   * culling/binning kernel, PLAN.md §12.2) that needs to read the exact same instance data a
+   * render pass draws, not a copy. Re-`.set()` it on the compute pipeline after every `upload()`
+   * that might have grown the buffer (growth replaces the underlying `StorageBuffer` object). */
+  get instances(): StorageBuffer {
+    return this.buffer;
+  }
+
   /** Binds the shared (or component-owned) viewport uniform block by its WGSL name. */
   bindViewport(uniforms: unknown): void {
     this.drawable.set({ viewport: uniforms });
@@ -79,6 +87,14 @@ export class InstancedQuadLayer {
   draw(pass: FramePass): void {
     if (this.count === 0) return;
     pass.draw(this.drawable, { instances: this.count });
+  }
+
+  /** GPU-driven draw: the GPU reads vertex/instance counts from `indirect` (written by a preceding
+   * compute pass — PLAN.md §12.2's `binSpans`), so no CPU-side count round-trips. `indirect` must be
+   * a buffer created with `storage(gpu, bytes, { indirect: true })`, holding the non-indexed
+   * `drawIndirect` layout: `[vertexCount, instanceCount, firstVertex, firstInstance]`. */
+  drawIndirect(pass: FramePass, indirect: StorageBuffer): void {
+    pass.draw(this.drawable, { indirect });
   }
 
   /** No-op: `StorageBuffer`'s public interface has no `destroy()` (see `upload()`'s comment) — the

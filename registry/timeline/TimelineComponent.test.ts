@@ -50,12 +50,17 @@ describe("TimelineComponent", () => {
       });
 
       const plan = component.plan();
-      assert.equal(plan.computePasses.length, 0);
+      assert.equal(plan.computePasses.length, 1);
       assert.equal(plan.renderPasses.length, 1);
       assert.equal(plan.renderPasses[0]!.target, "surface");
 
-      // Actually encode the pass against the mock device — exercises the real draw()/storage()/
-      // uniforms() calls, not just the RenderPlan's shape.
+      // Actually dispatch the cull compute pass and encode the render pass against the mock
+      // device — exercises the real compute()/storage()/draw()/uniforms() calls and binding
+      // wiring (cull.wgsl.ts's atomics, the indirect draw args), not just the RenderPlan's shape.
+      // vgpu/mock is a deterministic no-GPU mock (`guides/browser-testing.docs.md`): this proves
+      // the wiring is well-formed, not that culling's atomic-append math produces correct pixels —
+      // that's a `vgpu/node`/browser-level concern.
+      plan.computePasses[0]!.dispatch();
       frame(gpu, (f) => {
         f.pass({ target: surfaceTarget, clear: true }, (framePass) => {
           plan.renderPasses[0]!.encode(framePass);

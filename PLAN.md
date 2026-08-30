@@ -1344,6 +1344,55 @@ The **warnings pane is the highest-value part** and it is cheap: it encodes vgpu
 **Acceptance:** 1M spans render correctly; pan/zoom smooth; labels correct at every zoom; keyboard navigation complete; `axe-core` clean; `npx gpu-components add timeline` works in a fresh Vite and a fresh Next.js app.
 **Benchmark criteria:** 1M spans p95 ≤ 8ms; upload ≤ 150ms; measured Canvas2D crossover published.
 
+> **Status note (2026-08-30, audited against real code, not commit messages):** partially shipped.
+> Done: `InstancedQuadLayer` + viewport model (`a7153d5`), CPU hit-testing + hover/select (`be0d474`),
+> and a genuinely thorough accessibility/keyboard-nav layer (`3d7943c`) — `role="application"`,
+> `aria-activedescendant`, an `aria-live` announcer, keyboard traversal over the *full* dataset via
+> `hitTest.ts`, and the DOM label overlay doubling as the a11y tree, exactly as designed in §21. Time
+> precision was audited and fixed as part of resolving open question #3 above.
+> **Updated (2026-08-30):** the compute pass / indirect draw gap is closed, partially. Added
+> `registry/timeline/cull.wgsl.ts` — a compute pass, one invocation per span, that culls to the
+> current viewport's time range and compacts survivors into `visibleIndices` via an atomic append,
+> writing the append count straight into a `drawIndirect` args buffer (`InstancedQuadLayer` gained a
+> `drawIndirect()` method and an `instances` getter for this). `TimelineComponent.plan()` now
+> declares that compute pass, and the render pass draws through it — no more "every span, every
+> frame," and the "Indirect dispatch/draw" row of §8.2's subsystem table is now exercised. Verified
+> against `vgpu/mock` (wiring/binding correctness — atomics, bind-by-name, no `VGPU-*` errors — not
+> pixel-level culling correctness, which needs `vgpu/node`/browser testing, not yet done).
+> **Still missing, deliberately scoped out of that change:** the full §12.2 frame's density-field
+> binning + `RasterLayer` compositing for extreme zoom-out (this pass does time-range visibility
+> culling only, not per-pixel-column density reduction) — a separate, larger piece of work, needed
+> before the 5M-span/extreme-zoom-out perf targets can be honestly claimed. Also still missing: the
+> CLI `add` deliverable (no `packages/cli`, no `registry.json` anywhere in the repo — that work
+> hasn't started; treat it as still-Phase-6-scoped, not a Phase-2 regression).
+
+### Next phase — closing out Phase 2 before touching Phase 3/4/5 work
+
+**Do not skip ahead to Phase 3/5 items while Phase 2's own acceptance criteria are unmet.** The
+next concrete slice of work, in order:
+
+1. ~~Time-precision spike (`spikes/gpu-time-precision.md`) and the resulting `ingest.ts`/
+   `TimelineComponent.ts` fix~~ — **done, 2026-08-30** (see open question #3 above). Was a real,
+   present-day correctness bug (up to 1s of error at epoch scale), not a hypothetical risk.
+2. ~~Time-range visibility-cull compute pass + indirect draw for `TimelineComponent`~~ — **done,
+   2026-08-30** (`cull.wgsl.ts`, `InstancedQuadLayer.drawIndirect()`). **Remaining part of this
+   deliverable, not yet done:** the density-field binning + `RasterLayer` compositing for extreme
+   zoom-out (§12.2's `reduceDensity` + raster step) — this is what actually gets the 5M-span target
+   to a place it can be honestly benchmarked; the visibility cull alone helps mid-zoom perf but does
+   not bound per-frame cost at extreme zoom-out the way density binning does. Also the prerequisite
+   primitive for Phase 3's brush-selection bitset and Phase 5's `GPUHeatmap`/`GPUDataGrid`.
+3. **Investigate the unconfirmed "one device beats N devices" result in
+   `apps/bench/results/BASELINES.md`.** The benchmark's own numbers currently read as *not*
+   confirming the architectural bet — shared-device p50 ties independent-device p50, and worst-case
+   is measured *worse* for the shared-device path. That is the single foundational claim the whole
+   runtime is justified by (§2(a), §11). Either the measurement methodology needs fixing (wrong thing
+   measured) or the architecture needs revisiting — leaving a founding claim silently unconfirmed is
+   a bigger risk than any single missing feature, and it should be resolved before or alongside the
+   LOD binning work, not after.
+4. Only after 2–3: pick up the remaining Phase 3 interaction items (inertial pan/zoom, brush/lasso
+   selection with a GPU bitset mask, async GPU ID-buffer picking) — all currently absent and flagged
+   as deferred in the code's own doc comments (`TimelineComponent.ts`, `GPUTimeline.tsx`).
+
 ### Phase 3 — Interaction *(1.5 weeks)*
 
 **Goals:** the interaction primitives, in `core`, reusable.
@@ -1405,6 +1454,19 @@ To be resolved in phase 0/1, each with a proposed default so nothing blocks:
 1. **Canvas-per-component vs one mega-canvas.** *Default: canvas-per-component.* Resolve by measuring N-swapchain cost at N=1,3,6,12 and comparing against the layout complexity of a mega-canvas with scissor rects.
 2. **Optimal span stride.** 32B (`f64 start`, `f32 dur`, `u16 track`, `u8 depth`, `u8 cat`, `u32 id`, padding) vs 20B with quantised time. Directly determines the max-span ceiling under `maxStorageBufferBindingSize`. *Default: 32B; measure the quantisation error at extreme zoom before shrinking.*
 3. **`f64` time on the GPU.** WGSL has no `f64`. Traces span nanoseconds to hours, so we must split time into a two-`f32` (hi/lo) representation or rebase against a per-viewport origin. *Default: rebase per viewport to `f32` relative time — simpler and sufficient — but validate precision at 1ns resolution over a 24h trace.* **This is the single most likely source of subtle visual bugs and should be spiked first.**
+   > **Resolved (2026-08-30), see `spikes/gpu-time-precision.md`.** Measured, not assumed: the code as
+   > shipped through commit `4e3c7b4` did *no* rebasing at all — `SpanBuffers` narrowed absolute
+   > (epoch-scale) time to `f32` at ingest, and `TimelineComponent` fed the raw absolute viewport into
+   > `viewportUniforms()`. Measured error at epoch scale: up to **1 second** for a 1-second time
+   > difference — a live, present-day bug, not a hypothetical one. Shipped fix: a **dataset-local
+   > origin**, computed once per dataset (`computeOrigin`, `min(start)` across all tracks) and
+   > subtracted before the f32 narrowing, applied consistently to both the packed GPU buffers and the
+   > viewport uniforms. Measured error after the fix: ~0 near the origin, rising to low-millisecond
+   > at the far edge of a 24h dataset — about 1000× better than before, but *not* the literal "1ns
+   > over 24h at any zoom" target, which requires a dynamic per-viewport hi/lo (two-f32,
+   > compensated-subtraction) representation that was **not** implemented (bigger lift: buffer-layout
+   > change + shader math change; not required by any §32 acceptance criterion). Deferred to
+   > whichever of the LOD-binning work or a real ns-precision consumer request comes first.
 4. **LOD crossover threshold** — spans-per-pixel-column at which we switch from instanced quads to the raster density field. *Default: 4; tune empirically, expose as a prop.*
 5. **Async GPU picking latency budget.** One frame late is acceptable for hover; is it acceptable for click? *Default: CPU hit-test for click (exact, immediate), GPU picking only for layers without a CPU index.*
 6. **DOM label reconciliation cost at 400 nodes/frame.** *Default: keyed pooling with `transform`-only updates; measure and fall back to fewer labels or a canvas text layer.*

@@ -7,8 +7,15 @@ export interface RawSpan {
 }
 
 export interface SpanBuffers {
-  readonly start: Float32Array;
-  readonly duration: Float32Array;
+  /** Absolute time domain (same units/magnitude as the `RawSpan`s this was built from — e.g. raw
+   * Unix epoch seconds). Kept as `Float64Array`, not `Float32Array`: this is the CPU-side source of
+   * truth hit-testing, label placement, and viewport math (§10.6) read from, and downcasting an
+   * epoch-scale absolute timestamp to f32 loses whole seconds of precision before any GPU code runs
+   * (spikes/gpu-time-precision.md). GPU upload, where WGSL's f32-only storage buffers actually force
+   * a narrowing, happens separately in `packInstances`/`packHighlights`, rebased to a dataset-local
+   * origin so the narrowing loses microseconds instead of seconds. */
+  readonly start: Float64Array;
+  readonly duration: Float64Array;
   readonly track: Uint16Array;
   readonly colorIndex: Uint8Array;
   readonly labels: readonly (string | undefined)[];
@@ -34,8 +41,8 @@ export function ingestSpans(spans: readonly RawSpan[]): SpanBuffers {
     return spans[a]!.start - spans[b]!.start;
   });
 
-  const start = new Float32Array(count);
-  const duration = new Float32Array(count);
+  const start = new Float64Array(count);
+  const duration = new Float64Array(count);
   const track = new Uint16Array(count);
   const colorIndex = new Uint8Array(count);
   const labels: (string | undefined)[] = new Array(count);
@@ -52,6 +59,22 @@ export function ingestSpans(spans: readonly RawSpan[]): SpanBuffers {
   return { start, duration, track, colorIndex, labels, count };
 }
 
+/**
+ * The dataset-local time origin (minimum `start` across every track) used to rebase spans before
+ * they're narrowed to f32 for the GPU (`packInstances`/`packHighlights`) — see
+ * spikes/gpu-time-precision.md. Spans are sorted by `(track, start)`, not by `start` alone, so this
+ * is a real O(n) scan, not `spans.start[0]`. Callers should compute this once per dataset (when
+ * `spans` identity changes) and reuse it for every pack call against that dataset, not per frame.
+ */
+export function computeOrigin(spans: SpanBuffers): number {
+  let origin = Infinity;
+  for (let i = 0; i < spans.count; i++) {
+    const s = spans.start[i]!;
+    if (s < origin) origin = s;
+  }
+  return spans.count === 0 ? 0 : origin;
+}
+
 function writeInstance(
   view: DataView,
   offset: number,
@@ -66,13 +89,21 @@ function writeInstance(
   view.setUint32(offset + 12, colorIndex, true);
 }
 
-/** Packs `spans` into the flat byte layout `timeline.wgsl.ts`'s `array<SpanInstance>` expects.
- * WebGPU storage buffers are host-byte-order (little-endian) on every supported platform. */
-export function packInstances(spans: SpanBuffers): Uint8Array<ArrayBuffer> {
+/**
+ * Packs `spans` into the flat byte layout `timeline.wgsl.ts`'s `array<SpanInstance>` expects.
+ * WebGPU storage buffers are host-byte-order (little-endian) on every supported platform.
+ *
+ * `origin` (default 0, from `computeOrigin`) is subtracted from `start` before the f32 narrowing —
+ * the GPU only ever sees dataset-relative time, not the absolute (possibly epoch-scale) value in
+ * `SpanBuffers.start`. Callers that also feed a viewport transform to the same shader (as
+ * `TimelineComponent` does) MUST subtract the same `origin` from the viewport before computing
+ * `viewportUniforms`, or clip-space positions won't line up with these instances.
+ */
+export function packInstances(spans: SpanBuffers, origin = 0): Uint8Array<ArrayBuffer> {
   const buffer = new ArrayBuffer(spans.count * INSTANCE_STRIDE);
   const view = new DataView(buffer);
   for (let i = 0; i < spans.count; i++) {
-    writeInstance(view, i * INSTANCE_STRIDE, spans.start[i]!, spans.duration[i]!, spans.track[i]!, spans.colorIndex[i]!);
+    writeInstance(view, i * INSTANCE_STRIDE, spans.start[i]! - origin, spans.duration[i]!, spans.track[i]!, spans.colorIndex[i]!);
   }
   return new Uint8Array(buffer);
 }
@@ -86,6 +117,7 @@ export function packHighlights(
   spans: SpanBuffers,
   hoveredId: number | null,
   selectedId: number | null,
+  origin = 0,
 ): { readonly bytes: Uint8Array<ArrayBuffer>; readonly count: number } {
   const ids: Array<{ id: number; kind: number }> = [];
   if (hoveredId !== null && hoveredId >= 0 && hoveredId < spans.count) {
@@ -98,7 +130,7 @@ export function packHighlights(
   const buffer = new ArrayBuffer(Math.max(1, ids.length) * INSTANCE_STRIDE);
   const view = new DataView(buffer);
   ids.forEach(({ id, kind }, i) => {
-    writeInstance(view, i * INSTANCE_STRIDE, spans.start[id]!, spans.duration[id]!, spans.track[id]!, kind);
+    writeInstance(view, i * INSTANCE_STRIDE, spans.start[id]! - origin, spans.duration[id]!, spans.track[id]!, kind);
   });
   return { bytes: new Uint8Array(buffer), count: ids.length };
 }
