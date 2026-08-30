@@ -1,0 +1,27 @@
+{
+  "name": "gpu-components",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Copy GPU component source into your repo. The runtime stays an npm dependency.",
+  "bin": {
+    "gpu-components": "./bin/gpu-components.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit --pretty",
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
+    "build": "node scripts/buildRegistry.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "registry.json",
+    "components"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.6.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

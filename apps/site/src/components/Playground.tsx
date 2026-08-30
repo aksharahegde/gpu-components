@@ -152,7 +152,7 @@ function HeatmapStage() {
     return () => ro.disconnect()
   }, [])
 
-  const [viewport, setViewport] = useState(() => ({
+  const [viewport, setViewport] = useState<ViewportState>(() => ({
     timeStart: 0,
     timeEnd: COLS,
     trackCount: ROWS,
@@ -488,7 +488,7 @@ function ScatterStage() {
     return () => ro.disconnect()
   }, [])
 
-  const [viewport, setViewport] = useState(() => ({
+  const [viewport, setViewport] = useState<ViewportState>(() => ({
     timeStart: data.bounds.xMin,
     timeEnd: data.bounds.xMax,
     trackCount: 1,
@@ -588,7 +588,7 @@ function GridStage() {
   }, [])
 
   const VISIBLE_ROWS = 16
-  const [viewport, setViewport] = useState(() => ({
+  const [viewport, setViewport] = useState<ViewportState>(() => ({
     timeStart: 0,
     timeEnd: 1,
     trackCount: ROWS,

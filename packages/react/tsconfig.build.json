@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // The publishable build. `rewriteRelativeImportExtensions` (TypeScript 5.7+) is what makes this
+    // possible without touching a single source file: the sources keep their explicit `.ts` import
+    // specifiers — which Node's `--experimental-strip-types` test runner requires — and the emitted
+    // JavaScript gets `.js`. Before this flag existed the two requirements were in direct conflict.
+    "noEmit": false,
+    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsx": "react-jsx"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

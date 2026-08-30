@@ -1,0 +1,229 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "gpu-components",
+  "homepage": "https://github.com/gpu-components/gpu-components",
+  "version": "0.1.0",
+  "items": [
+    {
+      "name": "timeline",
+      "type": "registry:component",
+      "title": "GPUTimeline",
+      "description": "Trace, span and event timeline. Instanced spans, LOD density binning, brush selection, and a DOM label layer that doubles as the accessibility tree.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUTimeline.tsx",
+          "type": "registry:component",
+          "hash": "c69facb82df88f0af581ea864cb7ce3b38c7e1cf9ea3e137477d53b1bce9ccc8"
+        },
+        {
+          "path": "TimelineComponent.ts",
+          "type": "registry:component",
+          "hash": "4d2044593ec8b9b78c7f8d76d5e6357d426ac32ef1dc1453c61bc8a864aa2d90"
+        },
+        {
+          "path": "axisRules.ts",
+          "type": "registry:component",
+          "hash": "de432b1973e8c211034772777cf7254175ea05509cf4afb62fae7130694f4c93"
+        },
+        {
+          "path": "brushSelect.wgsl.ts",
+          "type": "registry:component",
+          "hash": "c853a910d0b11f7736191ec93c5a53b523562e2685b609c29d6fc22e596a3e57"
+        },
+        {
+          "path": "cull.wgsl.ts",
+          "type": "registry:component",
+          "hash": "b2b29513f003aa9ccb57a792895caec851f623bd5e84a894a90009a338668c5c"
+        },
+        {
+          "path": "densityBin.wgsl.ts",
+          "type": "registry:component",
+          "hash": "755b794946898f6a677874ba66be149a1472505a38476e9e3fc454baaab21880"
+        },
+        {
+          "path": "highlight.wgsl.ts",
+          "type": "registry:component",
+          "hash": "a0b93e845195bc945360c3c9970718a46df6710ed0b2fad3ac12e7df066e4a41"
+        },
+        {
+          "path": "hitTest.ts",
+          "type": "registry:component",
+          "hash": "3d05b9fbf5e3f3abaf72d6acec8b4033183a57792610d630583bab6d3ede7861"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "d2d62d458fd6b35cb095649b1f51e055b5a656ec1ad0ae5b3f52787ee91506a6"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "13dfcb47b3ed121d89f6f1691314d6f9a5b1f5ae0a6eee8a90e9b36810d8d5fc"
+        },
+        {
+          "path": "raster.wgsl.ts",
+          "type": "registry:component",
+          "hash": "4c14ba6180e160a65d7059ce051954b23022c1bcc2d697a79e13c7ddc84779aa"
+        },
+        {
+          "path": "reduceDensity.wgsl.ts",
+          "type": "registry:component",
+          "hash": "a474d54a29181664ddab1cdc00cdc088996762c7832f8ad5d6a8dbb975383e53"
+        },
+        {
+          "path": "timeline.wgsl.ts",
+          "type": "registry:component",
+          "hash": "d2511095139fb096ae48a6ba644b7da45acf2e3c71a35bba65100c00228ef0ef"
+        },
+        {
+          "path": "viewModel.ts",
+          "type": "registry:component",
+          "hash": "782d03e533562367a6af2a2e30e89b1ba6351b3a384cfc616c096e3685112fc1"
+        }
+      ]
+    },
+    {
+      "name": "heatmap",
+      "type": "registry:component",
+      "title": "GPUHeatmap",
+      "description": "Dense matrix surface with a GPU colormap, GPU min/max auto-ranging, and two-axis pan and zoom.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUHeatmap.tsx",
+          "type": "registry:component",
+          "hash": "7a37104917761209695e76547c4de38abb18a06f53f243b4c9103163319f990d"
+        },
+        {
+          "path": "HeatmapComponent.ts",
+          "type": "registry:component",
+          "hash": "91b40ba478da65e11f28830709069136a3b556adbe28344a27ac83b0cffb7e2a"
+        },
+        {
+          "path": "colormap.ts",
+          "type": "registry:component",
+          "hash": "3ba054ec22ee00572000e80b2e5745bc55efab11eb64cfa45fb2aebc9cfcb721"
+        },
+        {
+          "path": "heatmap.wgsl.ts",
+          "type": "registry:component",
+          "hash": "a03d06709bfc6627f15dbe4a74ea6f3162c9e8b53d4a1dd1ac7e79deba7bcc4a"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "1b0980ceb72681c1e40ae26ba9c1764343f10343c366aa2a0ac77a39f4d07f35"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "d35fada47a6142e7c9fa1e607b1ddfdb645a6b95c94a58b4eb035f5d59afa418"
+        },
+        {
+          "path": "reduce.wgsl.ts",
+          "type": "registry:component",
+          "hash": "b0d16d0bd9dd623dada712b29bc63e8bf923f4e33ccaea8bb6825c9a06d6bbac"
+        }
+      ]
+    },
+    {
+      "name": "grid",
+      "type": "registry:component",
+      "title": "GPUDataGrid",
+      "description": "Read-only data grid. GPU cell chrome and per-cell conditional formatting, Canvas2D text, and an accessible table mirror.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUDataGrid.tsx",
+          "type": "registry:component",
+          "hash": "5ef77f9d111160a497b501291fc81b02a404a23761d4d58afa80119aaf704a0e"
+        },
+        {
+          "path": "GridComponent.ts",
+          "type": "registry:component",
+          "hash": "fa8e83a43652c037351e3fed96170502184bf539bfb1bbdad229e5abb109c45e"
+        },
+        {
+          "path": "grid.wgsl.ts",
+          "type": "registry:component",
+          "hash": "5387faf9bd7f81d6d77cf7872b7adc829eb9dd65953a44fdf3838d335f716d12"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "ba7ce4e271d9a90c703c1e88771689777dfec7a5efa00d4daf99bc045cf5ec4b"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "122beb1341eb9cd31c2ebbf1337a441d1629a0ceac1f6af164526b7e2a9a580c"
+        },
+        {
+          "path": "textLayer.ts",
+          "type": "registry:component",
+          "hash": "c718c2cd2c247a29f1f654074d5477ce431a115f1fea6902f89c77424b63804f"
+        }
+      ]
+    },
+    {
+      "name": "scatter",
+      "type": "registry:component",
+      "title": "GPUScatter",
+      "description": "Dense point cloud. One instanced draw call, uniform-write filtering, and exact CPU hover through a spatial index.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUScatter.tsx",
+          "type": "registry:component",
+          "hash": "0344785367cda4494340cb23f7d0f965d883225c8f9a639eb37a04564cbe1bbe"
+        },
+        {
+          "path": "ScatterComponent.ts",
+          "type": "registry:component",
+          "hash": "989726a1e2492f95785e015a6775b333bfe3ce95fc081e30ca2ebbb86a57dfd0"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "d5d2530e0c50e9e9cd9e1887f90a994e5b2a8bccdb85d7aaa82b7f28f637fc5c"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "65823d8a556affcb5c452dd6acf2465d314bbeb8167808269bfd4754b3609b1a"
+        },
+        {
+          "path": "scatter.wgsl.ts",
+          "type": "registry:component",
+          "hash": "dd48ca887f1b366c2ba568a1c745c40a65c548260eab402d399d16ef21db3e21"
+        },
+        {
+          "path": "spatialIndex.ts",
+          "type": "registry:component",
+          "hash": "f3282726321ef7489acbe48c5669d7daf9c14e9490aa01fbeb31a5c20981908b"
+        }
+      ]
+    }
+  ]
+}
