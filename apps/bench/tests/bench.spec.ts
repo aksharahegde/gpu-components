@@ -34,34 +34,62 @@ test.describe.configure({ mode: "serial" });
 
 test("benchmark matrix", async ({ page }) => {
   test.setTimeout(0); // this test's own duration is the whole point — no per-test cap
-  await page.goto("/index.html");
-  await page.waitForFunction(() => "__bench" in window);
 
   const results: RunResult[] = [];
+  let userAgent = "";
+
+  function writeResults(sharedContext: SharedContextResult | null) {
+    const report: BenchReport = { generatedAt: new Date().toISOString(), userAgent, results };
+    mkdirSync(RESULTS_DIR, { recursive: true });
+    writeFileSync(path.join(RESULTS_DIR, "baselines.json"), JSON.stringify({ report, sharedContext }, null, 2));
+    writeFileSync(path.join(RESULTS_DIR, "BASELINES.md"), renderMarkdown(report, sharedContext, shapes));
+  }
+
   for (const shape of shapes as readonly Shape[]) {
     for (const size of sizes) {
       for (const renderer of RENDERERS as readonly RendererId[]) {
-        const result = await page.evaluate(
-          ([r, s, n, opts]) => window.__bench.runCell(r as RendererId, s as Shape, n as number, opts as Partial<RunOptions>),
-          [renderer, shape, size, optionsFor(size)] as const,
-        );
+        // Fresh page per cell: a long-lived tab accumulates GPU/DOM/canvas memory across 60+
+        // cells, and a large-N Canvas2D/DOM cell alone can push it over the edge (observed:
+        // Chromium's renderer process died mid-run with "Execution context was destroyed"). A
+        // reload is cheap next to what a large cell itself costs, and it means one cell crashing
+        // doesn't take the whole matrix down with it — results are also written after every cell,
+        // not just at the end, so a genuine crash still leaves real partial data on disk.
+        await page.goto("/index.html");
+        await page.waitForFunction(() => "__bench" in window);
+        if (!userAgent) userAgent = await page.evaluate(() => navigator.userAgent);
+
+        let result: RunResult;
+        try {
+          result = await page.evaluate(
+            ([r, s, n, opts]) =>
+              window.__bench.runCell(r as RendererId, s as Shape, n as number, opts as Partial<RunOptions>),
+            [renderer, shape, size, optionsFor(size)] as const,
+          );
+        } catch (err) {
+          result = {
+            renderer,
+            shape,
+            size,
+            stats: null,
+            skippedReason: `crashed: ${err instanceof Error ? err.message : String(err)}`,
+            uploadMs: null,
+            runs: [],
+          };
+        }
         results.push(result);
         const status = result.stats
           ? `p50=${result.stats.p50.toFixed(2)}ms p95=${result.stats.p95.toFixed(2)}ms`
           : `skipped (${result.skippedReason})`;
         console.log(`  ${shape}/${renderer}/${size.toLocaleString("en-US")}: ${status}`);
+        writeResults(null); // no shared-context numbers yet — refreshed with the real ones below
       }
     }
   }
 
+  await page.goto("/index.html");
+  await page.waitForFunction(() => "__bench" in window);
   const sharedContext: SharedContextResult = await page.evaluate(() => window.__bench.runSharedContext());
-
-  const userAgent = await page.evaluate(() => navigator.userAgent);
-  const report: BenchReport = { generatedAt: new Date().toISOString(), userAgent, results };
-
-  mkdirSync(RESULTS_DIR, { recursive: true });
-  writeFileSync(path.join(RESULTS_DIR, "baselines.json"), JSON.stringify({ report, sharedContext }, null, 2));
-  writeFileSync(path.join(RESULTS_DIR, "BASELINES.md"), renderMarkdown(report, sharedContext, shapes));
+  writeResults(sharedContext);
 
   expect(results.length).toBeGreaterThan(0);
 });
