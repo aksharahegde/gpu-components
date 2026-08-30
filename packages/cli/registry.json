@@ -224,6 +224,45 @@
           "hash": "f3282726321ef7489acbe48c5669d7daf9c14e9490aa01fbeb31a5c20981908b"
         }
       ]
+    },
+    {
+      "name": "imagediff",
+      "type": "registry:component",
+      "title": "GPUImageDiff",
+      "description": "Image comparison. Split, onion-skin, difference and heat modes sampled from real textures, with a changed-pixel count computed by a compute pass.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUImageDiff.tsx",
+          "type": "registry:component",
+          "hash": "f5afbc5b57fbdcbd6f9c4278138f14e947e062f17d28f1b34617bc82cdca7b98"
+        },
+        {
+          "path": "ImageDiffComponent.ts",
+          "type": "registry:component",
+          "hash": "055a45202ea65deed6602c183e2e1914e0caec512be411917dd6ded538a034f2"
+        },
+        {
+          "path": "imagediff.wgsl.ts",
+          "type": "registry:component",
+          "hash": "05d8aaeb289730bfa76582a7a24cebec55c1254778970fb496c63a461f3ad83b"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "f59055fea778e4a8b19e3f709447e956d67ff724e9f62bd1caa1a9e33f1d2db7"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "f06d59f4d4cde831940bcd18c67d18b9898589e124129fdd57cbe56aa631bb44"
+        }
+      ]
     }
   ]
 }

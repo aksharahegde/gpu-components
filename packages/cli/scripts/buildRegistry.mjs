@@ -37,6 +37,13 @@ const ITEMS = {
     description:
       "Dense point cloud. One instanced draw call, uniform-write filtering, and exact CPU hover through a spatial index.",
   },
+  imagediff: {
+    title: "GPUImageDiff",
+    description:
+      "Image comparison. Split, onion-skin, difference and heat modes sampled from real textures, with a changed-pixel count computed by a compute pass.",
+  },
+  // GPUGraph is deliberately absent: its layout does not animate in the browser (a known open
+  // defect), and a copy-source registry must not ship a component that is broken where it runs.
 };
 
 /** Never shipped to a consumer: tests, harnesses, internal notes. */
