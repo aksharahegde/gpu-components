@@ -27,6 +27,17 @@ export interface ViewportState {
    */
   readonly rowStart?: number;
   readonly rowEnd?: number;
+  /**
+   * Treat the y axis as a **continuous coordinate** rather than a row index.
+   *
+   * The default mapping places row `i` at the *centre* of its band — the extra `-1/span` in the
+   * offset below — which is what a timeline's tracks and a heatmap's or grid's rows all want: row 0
+   * should sit half a row down from the top edge, not on it. A scatter plot's y is not an index; it
+   * is a value, and `y = yMin` must land exactly on the bottom edge. Without this flag a scatter's
+   * points are shifted half a band and its top row falls off the surface entirely — which is how
+   * this option came to exist.
+   */
+  readonly yContinuous?: boolean;
   /** CSS pixels of the canvas this viewport maps onto. */
   readonly width: number;
   readonly height: number;
@@ -72,7 +83,8 @@ function trackToClipScaleOffset(v: ViewportState): readonly [number, number] {
   const [start, end] = rowRange(v);
   const span = end - start || 1;
   const scale = -2 / span;
-  const offset = 1 + (2 * start - 1) / span;
+  // The `- 1` is the half-band centring for index-shaped axes; a continuous axis omits it.
+  const offset = 1 + (2 * start - (v.yContinuous ? 0 : 1)) / span;
   return [scale, offset];
 }
 
@@ -94,7 +106,8 @@ export function timeToPixelX(v: ViewportState, t: number): number {
 /** CSS-pixel y within the canvas, top edge, of a track's row center. */
 export function trackToPixelY(v: ViewportState, track: number): number {
   const [start, end] = rowRange(v);
-  return ((track + 0.5 - start) / (end - start)) * v.height;
+  const centre = v.yContinuous ? 0 : 0.5;
+  return ((track + centre - start) / (end - start)) * v.height;
 }
 
 /** CSS-pixel height of one track row. */
@@ -114,5 +127,6 @@ export function pixelXToTime(v: ViewportState, pixelX: number): number {
  * comparing against row boundaries may want floor/ceil instead. */
 export function pixelYToTrack(v: ViewportState, pixelY: number): number {
   const [start, end] = rowRange(v);
-  return start + (pixelY / (v.height || 1)) * (end - start) - 0.5;
+  const centre = v.yContinuous ? 0 : 0.5;
+  return start + (pixelY / (v.height || 1)) * (end - start) - centre;
 }
