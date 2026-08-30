@@ -2,6 +2,7 @@ import type { RunOptions } from "../src/harness/runner.ts";
 import type { SharedContextResult } from "../src/harness/sharedContextScenario.ts";
 import type { GpuTimingResult } from "../src/harness/gpuTimingScenario.ts";
 import type { TextBudgetResult } from "../src/harness/textBudgetScenario.ts";
+import type { LogTextResult } from "../src/harness/logTextScenario.ts";
 import type { RendererId, RunResult, Shape } from "../src/types.ts";
 
 declare global {
@@ -11,6 +12,7 @@ declare global {
       runSharedContext(): Promise<SharedContextResult>;
       runGpuTiming(): Promise<GpuTimingResult>;
       runTextBudget(): Promise<TextBudgetResult>;
+      runLogText(): Promise<LogTextResult>;
     };
   }
 }
