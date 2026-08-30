@@ -22,7 +22,8 @@ let nextId = 0;
  * span every frame via `draw(gpu, { vertices: 6 })`'s no-geometry path (no LOD binning, no indirect
  * draw — phase 4), plus CPU hit-testing (§9.5's primary mechanism for Timeline, not a GPU-picking
  * fallback) and a small second `InstancedQuadLayer` for the hover/selection highlight. Keyboard
- * navigation, touch gestures, and brush/lasso selection remain phase-3-proper concerns, deferred.
+ * navigation and the accessibility overlay are wired in `GPUTimeline.tsx` (see its own doc comment);
+ * touch gestures and brush/lasso selection remain deferred.
  */
 export class TimelineComponent implements GpuComponent<TimelineProps> {
   readonly id: string;
