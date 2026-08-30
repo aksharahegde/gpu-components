@@ -1,6 +1,6 @@
+import type { Metadata } from 'next'
 import * as stylex from '@stylexjs/stylex'
-import { bp } from '../breakpoints.stylex'
-import { color } from '../tokens.stylex'
+import { color } from '../src/tokens.stylex'
 import {
   B,
   Body,
@@ -32,11 +32,18 @@ import {
   str,
   tone,
   util,
-} from '../ui'
-import { A } from '../components/Chrome'
-import { LinkBtn } from '../components/LinkBtn'
-import { Layers } from '../components/Layers'
-import { SpanBenchmark } from '../components/SpanBenchmark'
+} from '../src/ui'
+import { A } from '../src/components/Chrome'
+import { LinkBtn } from '../src/components/LinkBtn'
+import { Layers } from '../src/components/Layers'
+import { SpanBenchmark } from '../src/components/SpanBenchmark'
+
+export const metadata: Metadata = {
+  title: 'gpu-components — GPU components that share one device',
+}
+
+/** Inlined rather than shared — see `src/ui.tsx`'s equivalent comment. */
+const HERO = '@media (max-width: 940px)'
 
 const s = stylex.create({
   hero: {
@@ -62,9 +69,9 @@ const s = stylex.create({
     display: 'grid',
     gridTemplateColumns: {
       default: 'minmax(0, 1.05fr) minmax(0, 0.95fr)',
-      [bp.hero]: 'minmax(0, 1fr)',
+      [HERO]: 'minmax(0, 1fr)',
     },
-    gap: { default: 48, [bp.hero]: 36 },
+    gap: { default: 48, [HERO]: 36 },
     alignItems: 'center',
   },
   cta: { alignItems: 'flex-start' },
@@ -111,7 +118,7 @@ const HOUSE_RULES: Array<[string, string]> = [
   ],
 ]
 
-export function Home() {
+function Home() {
   return (
     <>
       {/* ── hero ───────────────────────────────────────────────────────── */}
@@ -476,3 +483,5 @@ export function Home() {
     </>
   )
 }
+
+export default Home

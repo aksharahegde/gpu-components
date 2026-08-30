@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import * as stylex from '@stylexjs/stylex'
 import {
   B,
@@ -19,8 +20,12 @@ import {
   Th,
   tone,
   util,
-} from '../ui'
-import { LinkBtn } from '../components/LinkBtn'
+} from '../../src/ui'
+import { LinkBtn } from '../../src/components/LinkBtn'
+
+export const metadata: Metadata = {
+  title: 'Components — gpu-components',
+}
 
 type Tag = 'mvp' | 'variant' | 'p5' | 'p7' | 'later' | 'no'
 
@@ -67,7 +72,7 @@ const FORCES: Array<[string, string]> = [
   ['Fallback renderer', 'Canvas2D quads + labels, a small honest surface'],
 ]
 
-export function Components() {
+function Components() {
   return (
     <>
       <PageHead
@@ -267,3 +272,5 @@ export function Components() {
     </>
   )
 }
+
+export default Components

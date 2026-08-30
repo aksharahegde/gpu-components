@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import {
   B,
   Body,
@@ -15,8 +16,12 @@ import {
   fn,
   k,
   str,
-} from '../ui'
-import { LinkBtn } from '../components/LinkBtn'
+} from '../../src/ui'
+import { LinkBtn } from '../../src/components/LinkBtn'
+
+export const metadata: Metadata = {
+  title: 'Get started — gpu-components',
+}
 
 const REQUIREMENTS: Array<[string, string]> = [
   [
@@ -33,7 +38,7 @@ const REQUIREMENTS: Array<[string, string]> = [
   ],
 ]
 
-export function Start() {
+function Start() {
   return (
     <>
       <PageHead
@@ -202,3 +207,5 @@ export function Start() {
     </>
   )
 }
+
+export default Start

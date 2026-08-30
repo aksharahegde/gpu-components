@@ -1,5 +1,7 @@
 node_modules
-dist
-.smoke
+.next
+out
+next-env.d.ts
+*.tsbuildinfo
 *.local
 .DS_Store

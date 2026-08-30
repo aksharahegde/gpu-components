@@ -6,78 +6,99 @@ before any of it is built.
 
 This is *not* `apps/docs`. Per §25 of the plan, `apps/docs` is the future component-documentation
 app (Next.js, MDX, the vgpu WGSL loader, the 15-section component page template). It has nothing to
-document yet. This site exists now.
+document yet. This site exists now — and, as of this migration, is itself built on Next.js too.
 
 ## Run it
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
+npm run dev        # http://localhost:3000
 ```
 
 ## Scripts
 
 | Script | What it does |
 | --- | --- |
-| `npm run dev` | Vite dev server |
-| `npm run build` | Typecheck, then production build to `dist/` |
-| `npm run preview` | Serve the production build |
+| `npm run dev` | Next dev server |
+| `npm run build` | Static export to `out/` (`next build`) |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run smoke` | Mounts the real app at every route in jsdom and asserts it rendered |
-| `npm run check` | typecheck → smoke → build. Run this before pushing |
+| `npm run smoke` | Asserts every exported route in `out/` rendered real content |
+| `npm run check` | typecheck → build → smoke. Run this before pushing |
 
 ## Stack
 
-React 18 + Vite + TypeScript + **StyleX**. No UI framework, no CSS framework, no router, no syntax
-highlighter — the site is six pages, and each of those dependencies would have been more code than
-the thing it replaced.
+React 18 + **Next.js App Router** + TypeScript + **StyleX**, statically exported (`output: 'export'`
+in `next.config.ts`) — the site has no data fetching and no server-only needs, so there's no reason
+to run a Node server for it.
 
-- **Routing** — `src/router.tsx`, ~60 lines over the History API.
-- **Styling** — StyleX (`@stylexjs/stylex` + `@stylexjs/unplugin`). Compile-time atomic CSS.
+- **Routing** — Next's file-based App Router (`app/*/page.tsx`). `src/link.tsx` is a thin wrapper
+  around `next/link` that keeps the `Link`/`useIsCurrent` API the components already used.
+- **Styling** — StyleX (`@stylexjs/stylex` + `@stylexjs/unplugin`'s webpack build, wired in
+  `next.config.ts`). Compile-time atomic CSS.
 - **Code samples** — tiny span-wrapping helpers (`c`, `k`, `str`, `fn`, `num` in `src/ui.tsx`)
   rather than a highlighter, because there are six snippets on the whole site.
+- **Client/server split** — page bodies are Server Components by default. Only `theme.tsx`,
+  `theme-scope.tsx`, `link.tsx`, `components/Chrome.tsx`, and `components/SpanBenchmark.tsx` carry
+  `'use client'` — everything else (all six pages, `ui.tsx`, `Layers.tsx`) renders server-side.
+
+### Why Webpack, not Turbopack
+
+StyleX has no Turbopack plugin yet, so `package.json`'s `dev`/`build` scripts pass `--webpack`
+explicitly (Next 16 defaults to Turbopack and no longer falls back on its own when it sees a custom
+`webpack()` config).
 
 ### StyleX layout
 
 ```text
-src/tokens.stylex.ts        defineVars — colours, fonts, radii, sizes (themeable)
-src/breakpoints.stylex.ts   defineConsts — media queries (compile-time, never themed)
-src/global.css              the CSS entrypoint + the minimal element reset
-src/ui.tsx                  the primitive library: Stack/Grid/Card/Section/List/Table/Code/…
+src/tokens.stylex.ts   defineVars — colours, fonts, radii, sizes (themeable)
+app/globals.css        the CSS entrypoint + the minimal element reset, imported once in app/layout.tsx
+src/ui.tsx             the primitive library: Stack/Grid/Card/Section/List/Table/Code/…
 ```
 
-Four constraints shaped the code, and they are worth knowing before editing it:
+Constraints that shaped the code, worth knowing before editing it:
 
-1. **`.stylex.ts` files may export nothing but `defineVars`/`defineConsts`.** No helpers, no
-   components. That is why tokens and breakpoints are two files rather than living in `ui.tsx`.
-2. **No descendant selectors.** StyleX is atomic per-element, so patterns like `.ul li::before` and
+1. **`.stylex.ts` files may export nothing but `defineVars`.** No helpers, no components. That is
+   why tokens live in their own file rather than in `ui.tsx`.
+2. **Breakpoints are inlined per file as local `const` strings, not shared via
+   `stylex.defineConsts`.** There used to be a `src/breakpoints.stylex.ts` exporting a shared `bp`
+   object via `defineConsts`. It was removed: `@stylexjs/babel-plugin` 0.19.0's cross-file
+   constant-hoisting for `defineConsts` does not resolve back to real `@media` text when StyleX's
+   rules are collected in a single app-wide batch — which this project's webpack/Next pipeline
+   does (Vite processed rules differently and never hit this). The result was invalid CSS
+   (`var(--hash){...}` with no matching declaration anywhere) that crashed `lightningcss` at build
+   time — verified with a minimal repro directly against the babel plugin, independent of webpack
+   or Next. Every file that needs a breakpoint now declares its own literal
+   `const NAV = '@media (max-width: 720px)'`-style constant next to its `stylex.create()` call —
+   StyleX evaluates a same-file `const` with no cross-file indirection to resolve, so the bug
+   doesn't apply. If a future StyleX release fixes the cross-file case, reintroducing a shared
+   `defineConsts` file is a reasonable cleanup — confirm on a **cold** `next build` (`rm -rf .next
+   out` first) before trusting it, since a warm build cache can mask this class of bug.
+3. **No descendant selectors.** StyleX is atomic per-element, so patterns like `.ul li::before` and
    `table th` cannot exist. Lists render a real `<span>` marker (`LI` in `ui.tsx`) and tables use
    `Th`/`Td` components that style themselves. StyleX explicitly prefers real elements over
    `::before`, and here it also made the check/cross lists announce properly instead of leaking
    punctuation into the accessible name.
-3. **No attribute or `:last-child` selectors.** State that CSS would normally match on comes from
-   JS instead: the nav's current-page underline uses the router (`useIsCurrent`), and
-   `Td`/`Stat`/segmented buttons take a `last` prop.
-4. **Never combine `className` with a `stylex.props()` spread.** Components take an `sx` prop
+4. **No attribute or `:last-child` selectors.** State that CSS would normally match on comes from
+   JS instead: the nav's current-page underline uses `useIsCurrent` (`src/link.tsx`, backed by
+   `usePathname()`), and `Td`/`Stat`/segmented buttons take a `last` prop.
+5. **Never combine `className` with a `stylex.props()` spread.** Components take an `sx` prop
    instead. The one place a raw class name is used is `SpanBenchmark`, which creates pooled `<div>`s
    imperatively — it pulls the compiled name out of `stylex.props(s.span).className` and keeps
    per-node values on `.style`, because those differ for every element.
 
 ### Why `useCSSLayers: false`
 
-`src/global.css` carries an unlayered element reset (`body`, `h1`–`h4`, `p`). Layered rules lose to
+`app/globals.css` carries an unlayered element reset (`body`, `h1`–`h4`, `p`). Layered rules lose to
 *any* unlayered rule regardless of specificity, so with layers on, a reset rule would beat every
 StyleX class on that element. Unlayered, the atomic class `(0,1,0)` correctly outranks the element
 selector `(0,0,1)`. This matches StyleX's own guidance for adding it to an app with existing CSS.
-
-The `@stylex;` directive that the PostCSS setup requires is **not** needed by the unplugin — the
-emitted CSS is byte-identical without it, which was verified rather than assumed.
 
 ## The benchmark widget
 
 `src/components/SpanBenchmark.tsx` is the one piece of real engineering here, and it is load-bearing
 for the site's credibility: **it measures the visitor's own browser rather than printing numbers we
-assert.**
+assert.** It's a Client Component, but all its `window`/`document`/canvas access happens inside
+effects and event handlers — never during render — so it still server-renders cleanly.
 
 It renders the zoomed-out case from the plan — every span in the dataset on screen, so every span is
 drawn every frame — in either DOM or Canvas2D, and reports measured FPS, p50 and p95 frame time.
@@ -94,26 +115,28 @@ Constraints it deliberately honours:
 - It **pauses when scrolled out of view** via `IntersectionObserver`, and the first ~400ms of frames
   are discarded to exclude layout and allocation.
 
+## Theming, without a server/client flash
+
+The dark/light toggle predates any server rendering here, so it needed care during the migration.
+The flash-prevention inline script (in `app/layout.tsx`'s `<head>`) still sets `data-theme` on
+`<html>` before first paint, exactly as it did in the old `index.html`. `ThemeProvider`
+(`src/theme.tsx`) can't read that attribute during SSR (there's no `document` on the server), so it
+renders `'dark'` as a deterministic default for both the server pass and the initial client
+hydration pass, then re-syncs from the real DOM attribute in a `useLayoutEffect` — which still runs
+before the browser paints, so there's no visible flash, just no hydration-mismatch warning either.
+
 ## Testing
 
-`npm run smoke` mounts the real app at all seven routes in jsdom and asserts each rendered real
-content, that no nav link is dead, and — since StyleX failing silently would produce an unstyled
-page that still "renders" — that elements actually carry compiled atomic class names.
-
-It is built with `vite build --ssr` rather than raw esbuild specifically so the StyleX plugin runs.
-StyleX has no runtime fallback: without the compiler, `stylex.create` throws.
+`npm run smoke` runs after `npm run build` and asserts, against the real static files in `out/`,
+that each of the seven routes rendered real content, that no nav link is dead, and — since StyleX
+failing silently would produce an unstyled page that still "renders" — that elements actually carry
+compiled atomic class names.
 
 ## Deployment
 
-Routes are real History-API paths, so a static host needs an SPA rewrite — every unknown path serves
-`index.html`. Vite's dev server and `vite preview` do this by default.
-
-- **Netlify** — `_redirects` containing `/*  /index.html  200`
-- **Vercel** — `{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }`
-- **Nginx** — `try_files $uri /index.html;`
-
-If you would rather not configure that, switch `src/router.tsx` to hash routing; it is a two-line
-change in `normalise()` and the `popstate` listener.
+Because the site is statically exported with `trailingSlash: true`, every route gets a real
+`route/index.html` file in `out/` — no SPA rewrite is needed on any static host (Netlify, Vercel,
+GitHub Pages, an S3 bucket, `nginx` serving `out/` directly, etc.). Just serve the `out/` directory.
 
 ## Content ownership
 

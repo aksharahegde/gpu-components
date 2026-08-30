@@ -1,6 +1,6 @@
+import type { Metadata } from 'next'
 import * as stylex from '@stylexjs/stylex'
-import { bp } from '../breakpoints.stylex'
-import { color, font } from '../tokens.stylex'
+import { color, font } from '../../src/tokens.stylex'
 import {
   B,
   Body,
@@ -19,13 +19,20 @@ import {
   Status,
   tone,
   util,
-} from '../ui'
+} from '../../src/ui'
+
+export const metadata: Metadata = {
+  title: 'Roadmap — gpu-components',
+}
+
+/** Inlined rather than shared — see `src/ui.tsx`'s equivalent comment. */
+const PHASE_BP = '@media (max-width: 700px)'
 
 const s = stylex.create({
   phase: {
     display: 'grid',
-    gridTemplateColumns: { default: '132px minmax(0, 1fr)', [bp.phase]: 'minmax(0, 1fr)' },
-    gap: { default: 24, [bp.phase]: 12 },
+    gridTemplateColumns: { default: '132px minmax(0, 1fr)', [PHASE_BP]: 'minmax(0, 1fr)' },
+    gap: { default: 24, [PHASE_BP]: 12 },
     paddingBlock: 22,
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
@@ -181,7 +188,7 @@ const RISKS: Array<[string, string, string]> = [
   ],
 ]
 
-export function Roadmap() {
+function Roadmap() {
   return (
     <>
       <PageHead
@@ -269,3 +276,5 @@ export function Roadmap() {
     </>
   )
 }
+
+export default Roadmap

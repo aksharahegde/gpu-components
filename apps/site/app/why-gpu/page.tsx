@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import * as stylex from '@stylexjs/stylex'
 import {
   B,
@@ -14,8 +15,12 @@ import {
   Stack,
   tone,
   util,
-} from '../ui'
-import { SpanBenchmark } from '../components/SpanBenchmark'
+} from '../../src/ui'
+import { SpanBenchmark } from '../../src/components/SpanBenchmark'
+
+export const metadata: Metadata = {
+  title: 'Why GPU — gpu-components',
+}
 
 const s = stylex.create({
   index: { fontSize: 13 },
@@ -119,7 +124,7 @@ function WorkColumn({
   )
 }
 
-export function WhyGpu() {
+function WhyGpu() {
   return (
     <>
       <PageHead
@@ -208,3 +213,5 @@ export function WhyGpu() {
     </>
   )
 }
+
+export default WhyGpu

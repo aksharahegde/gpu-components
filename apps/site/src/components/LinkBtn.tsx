@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link } from '../router'
+import { Link } from '../link'
 import { button } from '../ui'
 
 /**

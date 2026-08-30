@@ -1,15 +1,16 @@
 /*
- * The StyleX CSS entrypoint. `main.tsx` imports this file so Vite emits a CSS
- * asset; the StyleX plugin appends all compiled atomic CSS to it at build time.
- * (The `@stylex;` directive the PostCSS setup needs is not required by the
- * unplugin — verified: output is byte-identical without it.)
+ * The StyleX CSS entrypoint. `app/layout.tsx` imports this file so the
+ * webpack build emits a CSS asset; the StyleX plugin appends all compiled
+ * atomic CSS to it at build time. (The `@stylex;` directive the PostCSS setup
+ * needs is not required by the unplugin — verified: output is byte-identical
+ * without it.)
  *
  * Everything else in this file is the minimum that StyleX structurally cannot
  * express: rules targeting elements outside the React root, and the global
  * reduced-motion override. Component styling belongs in `stylex.create`.
  *
  * These rules are unlayered, which is why the plugin runs with
- * `useCSSLayers: false` — see vite.config.ts.
+ * `useCSSLayers: false` — see next.config.ts.
  */
 *,
 *::before,

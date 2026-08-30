@@ -1,11 +1,24 @@
 import * as stylex from '@stylexjs/stylex'
 import type { ReactNode } from 'react'
 import type { StyleXStyles } from '@stylexjs/stylex'
-import { bp } from './breakpoints.stylex'
 import { color, font, radius, size } from './tokens.stylex'
 
 /** Anything `stylex.props()` accepts. */
 export type SX = StyleXStyles | false | null | undefined | readonly SX[]
+
+/**
+ * Breakpoints, inlined per file rather than shared via `stylex.defineConsts`.
+ * `@stylexjs/babel-plugin` 0.19.0's `defineConsts` cross-file constant
+ * hoisting does not resolve back to real `@media` text when StyleX's rules
+ * are collected in a single app-wide batch — as this project's webpack/Next
+ * pipeline does — producing invalid CSS (`var(--hash){...}` with no matching
+ * declaration) that crashes lightningcss at build time. Verified with a
+ * minimal repro against the babel plugin directly. A same-file `const`
+ * sidesteps that code path entirely: StyleX evaluates it locally, with no
+ * cross-file indirection to resolve.
+ */
+const SM = '@media (max-width: 620px)'
+const MD = '@media (max-width: 900px)'
 
 /* ── layout ─────────────────────────────────────────────────────────────── */
 
@@ -22,21 +35,21 @@ const layout = stylex.create({
   cols2: {
     gridTemplateColumns: {
       default: 'repeat(2, minmax(0, 1fr))',
-      [bp.sm]: 'minmax(0, 1fr)',
+      [SM]: 'minmax(0, 1fr)',
     },
   },
   cols3: {
     gridTemplateColumns: {
       default: 'repeat(3, minmax(0, 1fr))',
-      [bp.md]: 'repeat(2, minmax(0, 1fr))',
-      [bp.sm]: 'minmax(0, 1fr)',
+      [MD]: 'repeat(2, minmax(0, 1fr))',
+      [SM]: 'minmax(0, 1fr)',
     },
   },
   cols4: {
     gridTemplateColumns: {
       default: 'repeat(4, minmax(0, 1fr))',
-      [bp.md]: 'repeat(2, minmax(0, 1fr))',
-      [bp.sm]: 'minmax(0, 1fr)',
+      [MD]: 'repeat(2, minmax(0, 1fr))',
+      [SM]: 'minmax(0, 1fr)',
     },
   },
 })

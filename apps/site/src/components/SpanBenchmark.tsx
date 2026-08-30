@@ -1,10 +1,14 @@
+'use client'
+
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import * as stylex from '@stylexjs/stylex'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import { GPUTimeline, ingestSpans, type RawSpan } from '../../../../registry/timeline'
-import { bp } from '../breakpoints.stylex'
 import { color, font, radius } from '../tokens.stylex'
 import type { SX } from '../ui'
+
+/** Inlined rather than shared — see `ui.tsx`'s equivalent comment. */
+const SM = '@media (max-width: 620px)'
 
 /**
  * A live, honest demonstration of the ceiling this project exists to break.
@@ -170,7 +174,7 @@ const s = stylex.create({
     display: 'grid',
     gridTemplateColumns: {
       default: 'repeat(4, minmax(0, 1fr))',
-      [bp.sm]: 'repeat(2, minmax(0, 1fr))',
+      [SM]: 'repeat(2, minmax(0, 1fr))',
     },
     borderTopWidth: 1,
     borderTopStyle: 'solid',

@@ -1,13 +1,32 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+'use client'
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
 
 export type Theme = 'dark' | 'light'
 
 const STORAGE_KEY = 'theme'
 
-/** Mirrors the inline script in `index.html`, which sets this before paint. */
+/**
+ * SSR-safe default. The real value lives on `<html data-theme>`, set before
+ * paint by the inline script in `app/layout.tsx` — there is no `document` on
+ * the server to read it from here, so the client re-syncs from the DOM in a
+ * layout effect below (which still runs before the browser paints, so this
+ * never produces a visible flash).
+ */
 function initialTheme(): Theme {
-  const attr = document.documentElement.dataset.theme
-  return attr === 'light' ? 'light' : 'dark'
+  return 'dark'
+}
+
+function readDomTheme(): Theme {
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
 }
 
 function applyTheme(theme: Theme) {
@@ -23,6 +42,11 @@ const ThemeCtx = createContext<{ theme: Theme; toggle: () => void }>({
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(initialTheme)
+
+  useLayoutEffect(() => {
+    const domTheme = readDomTheme()
+    setTheme((t) => (t === domTheme ? t : domTheme))
+  }, [])
 
   const toggle = useCallback(() => {
     setTheme((t) => {

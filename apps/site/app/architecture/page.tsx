@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import {
   B,
   Body,
@@ -20,8 +21,12 @@ import {
   fn,
   k,
   str,
-} from '../ui'
-import { Layers } from '../components/Layers'
+} from '../../src/ui'
+import { Layers } from '../../src/components/Layers'
+
+export const metadata: Metadata = {
+  title: 'Architecture — gpu-components',
+}
 
 const LIFECYCLE: Array<[string, string]> = [
   [
@@ -66,7 +71,7 @@ const PRIMITIVES: Array<[string, string]> = [
   ],
 ]
 
-export function Architecture() {
+function Architecture() {
   return (
     <>
       <PageHead
@@ -366,3 +371,5 @@ export function Architecture() {
     </>
   )
 }
+
+export default Architecture
