@@ -17,6 +17,13 @@ export type {
 } from "./component.ts";
 export { EMPTY_PLAN } from "./component.ts";
 
+export {
+  assertBufferBudget,
+  dispatchWorkgroups,
+  GpuBudgetExceededError,
+  maxElementsFor,
+} from "./budget.ts";
+export type { DispatchOptions } from "./budget.ts";
 export { ResourceRegistry } from "./registry.ts";
 export { FrameScheduler } from "./scheduler.ts";
 export { createProfiler, DISABLED_PROFILER } from "./profiler.ts";

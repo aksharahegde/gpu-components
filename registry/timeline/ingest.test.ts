@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { computeDomainMax, computeOrigin, INSTANCE_STRIDE, ingestSpans, packInstances } from "./ingest.ts";
+import { INSTANCE_STRIDE, computeDomainMax, computeOrigin, ingestSpans, ingestSpansChecked, packInstances } from "./ingest.ts";
 
 describe("ingestSpans", () => {
   it("sorts by (track, start)", () => {
@@ -88,5 +88,69 @@ describe("packInstances", () => {
     const bytes = packInstances(spans, origin);
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     assert.equal(view.getFloat32(0, true), 0.25);
+  });
+});
+
+describe("ingestSpansChecked — untrusted data validation (PLAN.md §24.2)", () => {
+  it("drops non-finite starts and durations, and counts them", () => {
+    const { spans, dropped } = ingestSpansChecked([
+      { start: 0, duration: 1, track: 0 },
+      { start: Number.NaN, duration: 1, track: 0 },
+      { start: 5, duration: Number.POSITIVE_INFINITY, track: 0 },
+    ]);
+    assert.equal(spans.count, 1);
+    assert.equal(dropped.nonFinite, 2);
+  });
+
+  it("prevents the blank-canvas failure a single NaN used to cause", () => {
+    // Unchecked, a NaN start made computeOrigin return Infinity (its `s < origin` test is false for
+    // NaN), so every start - origin became NaN, the NaN reached the viewport uniform, and the whole
+    // canvas went blank — the exact outcome §24.2 warns about.
+    const hostile = [
+      { start: Number.NaN, duration: 1, track: 0 },
+      { start: 10, duration: 2, track: 0 },
+    ];
+    assert.ok(Number.isFinite(computeOrigin(ingestSpansChecked(hostile).spans)));
+    // And the unchecked path no longer propagates Infinity either.
+    assert.ok(Number.isFinite(computeOrigin(ingestSpans(hostile))));
+  });
+
+  it("drops negative durations rather than drawing an inverted quad", () => {
+    const { spans, dropped } = ingestSpansChecked([
+      { start: 0, duration: -5, track: 0 },
+      { start: 0, duration: 5, track: 0 },
+    ]);
+    assert.equal(spans.count, 1);
+    assert.equal(dropped.negativeDuration, 1);
+  });
+
+  it("drops a track index that would silently wrap through Uint16Array", () => {
+    const { spans, dropped } = ingestSpansChecked([
+      { start: 0, duration: 1, track: 70000 },
+      { start: 0, duration: 1, track: -1 },
+      { start: 0, duration: 1, track: 1.5 },
+      { start: 0, duration: 1, track: 3 },
+    ]);
+    assert.equal(spans.count, 1);
+    assert.equal(dropped.badTrack, 3);
+    assert.equal(spans.track[0], 3);
+  });
+
+  it("enforces track < trackCount when a count is supplied", () => {
+    const { spans, dropped } = ingestSpansChecked(
+      [
+        { start: 0, duration: 1, track: 2 },
+        { start: 0, duration: 1, track: 9 },
+      ],
+      4,
+    );
+    assert.equal(spans.count, 1);
+    assert.equal(dropped.badTrack, 1);
+  });
+
+  it("reports nothing dropped for clean data", () => {
+    const { spans, dropped } = ingestSpansChecked([{ start: 0, duration: 1, track: 0 }], 1);
+    assert.equal(spans.count, 1);
+    assert.deepEqual(dropped, { nonFinite: 0, negativeDuration: 0, badTrack: 0 });
   });
 });

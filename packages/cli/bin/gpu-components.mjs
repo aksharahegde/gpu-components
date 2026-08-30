@@ -5,7 +5,7 @@
  * Thin on purpose: argument parsing here, behaviour in `../src/cli.ts`, so every command is
  * testable without spawning a process or touching a real project.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, readSync, writeSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { add, diff, doctor, list } from "../src/cli.ts";
@@ -22,9 +22,31 @@ const flags = new Set(argv.filter((a) => a.startsWith("-")));
 const pathFlagIndex = argv.indexOf("--path");
 const targetPath = pathFlagIndex >= 0 ? argv[pathFlagIndex + 1] : undefined;
 
+/**
+ * Synchronous y/N prompt on the TTY.
+ *
+ * Sync so `add` stays a straight-line function that is trivial to test — the tests inject their own
+ * `confirm`. A non-TTY stdin (a pipe, a CI runner without `CI=true`) answers "no" rather than
+ * hanging or silently proceeding: refusing to write is the safe default.
+ */
+function promptYesNo(question) {
+  if (!process.stdin.isTTY) return false;
+  writeSync(1, `${question} [y/N] `);
+  const buffer = Buffer.alloc(16);
+  let bytes = 0;
+  try {
+    bytes = readSync(process.stdin.fd, buffer, 0, buffer.length, null);
+  } catch {
+    return false;
+  }
+  const answer = buffer.toString("utf8", 0, bytes).trim().toLowerCase();
+  return answer === "y" || answer === "yes";
+}
+
 const io = {
   log: (message) => console.log(message),
   error: (message) => console.error(message),
+  confirm: promptYesNo,
   cwd: process.cwd(),
   // Confirmation is required outside CI (§24.3); `--yes` and a CI environment both waive it.
   assumeYes: flags.has("--yes") || flags.has("-y") || process.env.CI === "true",
