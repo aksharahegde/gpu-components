@@ -65,6 +65,9 @@ const MAX_ITERATIONS = 600;
 /** Above this the O(n²) repulsion loop stops being the right approach — see `layout.wgsl.ts`. */
 const RECOMMENDED_MAX_NODES = 5000;
 
+/** Iterations between `onProgress` notifications. */
+const PROGRESS_INTERVAL = 15;
+
 let nextId = 0;
 
 /**
@@ -119,6 +122,16 @@ export class GraphComponent implements GpuComponent<GraphProps> {
   private currentViewport: ViewportState | null = null;
   private iterations = 0;
   private paused = false;
+
+  /**
+   * Progress notification, assigned by the wrapper at construction.
+   *
+   * Pushed rather than polled: a wrapper polling a ref has to guess which instance is live, and
+   * StrictMode's mount/unmount/mount makes that guess wrong. Throttled to every
+   * `PROGRESS_INTERVAL` iterations (and once on settle) so this stays compatible with §15.2's rule
+   * that animation must not re-render React every frame — 600 iterations produce ~40 calls.
+   */
+  onProgress: ((iterations: number, settled: boolean) => void) | null = null;
 
   constructor() {
     this.id = `graph-${nextId++}`;
@@ -318,6 +331,9 @@ export class GraphComponent implements GpuComponent<GraphProps> {
 
     this.iterations++;
     if (this.iterations >= MAX_ITERATIONS) this.animating = false;
+    if (this.iterations % PROGRESS_INTERVAL === 0 || !this.animating) {
+      this.onProgress?.(this.iterations, this.settled);
+    }
     // Still moving: ask for another frame. The scheduler only re-runs a component that says so.
     this.dirty = true;
   }
