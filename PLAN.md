@@ -1855,6 +1855,36 @@ next concrete slice of work, in order (updated 2026-08-30):
 **Goals:** prove runtime reuse. **This is the phase that validates or falsifies the whole architecture.**
 **Deliverables:** `GPUHeatmap` (raster + colormap + GPU binning) and `GPUDataGrid` (glyph atlas, TanStack Table integration as a renderer, GPU-side sort/filter/aggregate, conditional formatting, in-cell sparklines).
 **Acceptance criterion, stated as a falsifiable claim:** **`GPUHeatmap` requires zero changes to `core`.** If it does not, the runtime abstraction was wrong and we fix it before the DataGrid, not after.
+
+> **Interim result (2026-08-30): stages 1–3 shipped, and `core` was not modified.** Full evidence in
+> `registry/heatmap/CORE-WISHLIST.md`, written *during* the build rather than reconstructed after.
+> `registry/heatmap/**` implements the data model, the raster render path, and compute in the data
+> path (a two-pass min/max tree reduction for auto-ranging, verified against the CPU oracle by
+> reading the storage buffer back through Dawn — §23.3's stated method, on the first try).
+>
+> Reused unchanged: `RasterLayer` (the storage-buffer-not-`GPUTexture` decision made for the
+> Timeline's density field paid off directly — a value matrix is already a buffer), the
+> `GpuComponent` contract, scheduler compute-before-render ordering, device-loss replay, and
+> `PassEncoder`. **`viewportUniforms()` generalised even though nobody designed it to**: the
+> scale/offset math is genuinely axis-agnostic. And `ResourceRegistry` finally has a production
+> consumer — the colormap LUT is the first `acquire()` call anywhere in the repo; it shipped in
+> Phase 1 and the Timeline never used it.
+>
+> **The one blocking finding, deferred to stage 5 rather than papered over:** `ViewportState` is
+> timeline-shaped. Its vocabulary is wrong for a matrix (`timeStart`/`trackCount` carrying a column
+> domain and a row count), its **y axis has no zoom or pan at all** — `trackToClip` is derived from
+> a row *count* — and `ViewportController`/`ViewportBounds` are x-only, so the heatmap uses neither.
+> Stages 1–3 survive this only because they never zoom vertically. The wishlist proposes the
+> symmetric domain-named replacement and notes the Timeline's behaviour is a *special case* of it,
+> not a different model. Deliberately not done yet: generalising before a second consumer existed
+> would have been guessing; doing it with two real consumers in hand is design.
+>
+> **Also flagged:** there is still no `LabelLayer` or shared a11y overlay in `core` (the Timeline's
+> lives in its own `GPUTimeline.tsx`), so stage 5 would be the *second* hand-rolled copy and the
+> DataGrid the third — the rot §21 exists to prevent. And the min/max reduction is the first real
+> candidate for §10.5's "ship reusable *kernels*, not a `ComputeManager`".
+>
+> So the claim holds for the rendering and compute half, and has a named, evidenced expiry date.
 **Benchmark criteria:** DataGrid vs glide-data-grid vs AG Grid on scroll, sort-1M, filter-1M, and conditional formatting — published honestly, including where we lose.
 
 ### Phase 6 — CLI & distribution *(1.5 weeks)*
