@@ -1,4 +1,5 @@
 import { draw, storage, type BlendPreset, type Draw, type FramePass, type Gpu, type StorageBuffer } from "vgpu";
+import type { WarningsLog } from "../warnings.ts";
 
 export interface InstancedQuadLayerOptions {
   readonly gpu: Gpu;
@@ -11,6 +12,10 @@ export interface InstancedQuadLayerOptions {
   readonly capacity: number;
   readonly blend?: BlendPreset;
   readonly label?: string;
+  /** PLAN.md §28.2's "buffers growing repeatedly" anti-pattern — reported from the *second* growth
+   * onward (see `upload()`'s comment for why the first growth doesn't count). Optional: omit to skip
+   * detection entirely, e.g. in a context with no `WarningsLog` to report into. */
+  readonly warnings?: WarningsLog;
 }
 
 /**
@@ -29,6 +34,8 @@ export class InstancedQuadLayer {
   private capacity: number;
   private readonly drawable: Draw;
   private count = 0;
+  private readonly warnings: WarningsLog | undefined;
+  private growthCount = 0;
 
   constructor(opts: InstancedQuadLayerOptions) {
     this.gpu = opts.gpu;
@@ -36,6 +43,7 @@ export class InstancedQuadLayer {
     this.stride = opts.instanceStride;
     this.blend = opts.blend ?? "alpha";
     this.label = opts.label;
+    this.warnings = opts.warnings;
     this.capacity = Math.max(1, opts.capacity);
     this.buffer = storage(this.gpu, this.capacity * this.stride, "read");
     this.drawable = draw(this.gpu, {
@@ -75,9 +83,22 @@ export class InstancedQuadLayer {
       // superseded buffer is reclaimed when the runtime's `Gpu` disposes, same as every other
       // resource `core` doesn't explicitly track through `ResourceRegistry`. Growth is rare in
       // practice — capacity is sized from the first `upload()`'s span count.
+      const previousCapacity = this.capacity;
       this.capacity = count;
       this.buffer = storage(this.gpu, this.capacity * this.stride, "read");
       this.drawable.set({ instances: this.buffer });
+
+      // The *first* growth is just "the initial capacity guess was a little off" — not a bug.
+      // Repeated growth (the component's data keeps outgrowing what it presized) is the real
+      // thrashing pattern PLAN.md §28.2 describes, so only the second growth onward is reported.
+      this.growthCount++;
+      if (this.growthCount >= 2) {
+        this.warnings?.report({
+          code: "buffer-growth",
+          source: this.label ?? "InstancedQuadLayer",
+          message: `capacity grew ${previousCapacity} -> ${this.capacity} — presize with \`capacity\``,
+        });
+      }
     }
     this.buffer.write(bytes);
     this.count = count;

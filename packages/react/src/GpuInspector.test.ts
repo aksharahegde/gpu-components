@@ -31,8 +31,10 @@ const { GPUProvider } = await import("./GPUProvider.ts");
 const { useGpuComponent } = await import("./useGpuComponent.ts");
 const { useCanvasRef } = await import("./useCanvasRef.ts");
 const { GpuInspector } = await import("./GpuInspector.ts");
+const { useGpu } = await import("./useGpu.ts");
 type GpuComponent = import("@gpu-components/core").GpuComponent;
 type RenderPlan = import("@gpu-components/core").RenderPlan;
+type GpuRuntime = import("@gpu-components/core").GpuRuntime;
 type Gpu = import("vgpu").Gpu;
 
 let currentGpu: Gpu | null = null;
@@ -171,5 +173,52 @@ describe("GpuInspector", () => {
       useGpuComponent(() => new ProbeComponent(), canvas, {});
       return createElement("canvas", { ref, width: 2, height: 2 });
     }
+  });
+
+  it("Warnings section defaults to 'none detected'", async () => {
+    const { root, el } = await mountInspector(testConnectOptions());
+    try {
+      assert.match(el.textContent ?? "", /none detected/);
+    } finally {
+      await act(async () => root.unmount());
+    }
+  });
+
+  it("shows a warning reported into runtime.warnings, including a repeat count", async () => {
+    let runtimeRef: GpuRuntime | null = null;
+    function Capture() {
+      runtimeRef = useGpu().runtime;
+      return null;
+    }
+
+    host.innerHTML = "";
+    const root = createRoot(host);
+    await act(async () => {
+      root.render(
+        createElement(
+          GPUProvider,
+          { options: testConnectOptions() },
+          createElement(Capture, null),
+          createElement("div", { id: "inspector-host" }, createElement(GpuInspector, { pollIntervalMs: 20 })),
+        ) as never,
+      );
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+
+    assert.ok(runtimeRef, "runtime should be available once ready");
+    await act(async () => {
+      runtimeRef!.warnings.report({ code: "buffer-growth", source: "probe-layer", message: "grew 4 -> 8" });
+      runtimeRef!.warnings.report({ code: "buffer-growth", source: "probe-layer", message: "grew 8 -> 16" });
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+
+    const el = host.querySelector("#inspector-host") as HTMLElement;
+    assert.match(el.textContent ?? "", /probe-layer: grew 8 -> 16 \(×2\)/);
+
+    await act(async () => root.unmount());
   });
 });

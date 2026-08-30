@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { frame, target, uniforms, type Gpu } from "vgpu";
 import { createMockGpu } from "@gpu-components/testing";
-import { NO_WEBGPU_CAPABILITIES, ResourceRegistry } from "@gpu-components/core";
+import { createWarningsLog, NO_WEBGPU_CAPABILITIES, ResourceRegistry } from "@gpu-components/core";
 import type { ComponentContext } from "@gpu-components/core";
 import { TimelineComponent } from "./TimelineComponent.ts";
 import { ingestSpans } from "./ingest.ts";
@@ -12,7 +12,7 @@ function makeCtx(gpu: Gpu, surfaceTarget: ReturnType<typeof target>): ComponentC
   const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
   let dirty = true;
   return {
-    runtime: { caps: NO_WEBGPU_CAPABILITIES, invalidate: () => {} },
+    runtime: { caps: NO_WEBGPU_CAPABILITIES, invalidate: () => {}, warnings: createWarningsLog() },
     gpu,
     surface: {
       surface: surfaceTarget,
@@ -143,6 +143,45 @@ describe("TimelineComponent", () => {
       // no dispatch of its own).
       component.update({ spans, viewport, brushRect: null });
       assert.equal(component.plan().computePasses.length, 1);
+
+      component.dispose();
+      gpu.dispose();
+    })();
+
+    return setup;
+  });
+
+  it("reports repeated span-buffer growth into ctx.runtime.warnings (PLAN.md §28.2)", () => {
+    const setup = (async () => {
+      const { gpu, caps } = await createMockGpu();
+      const surfaceTarget = target(gpu, { size: [4, 4] });
+      const ctx = { ...makeCtx(gpu, surfaceTarget), caps };
+
+      // A tiny initial capacity so a couple of real datasets force real growth.
+      const component = new TimelineComponent(1);
+      component.create(ctx);
+
+      const viewport = { timeStart: 0, timeEnd: 10, trackCount: 1, width: 4, height: 4 };
+      component.update({ spans: ingestSpans([{ start: 0, duration: 1, track: 0 }]), viewport });
+      component.update({
+        spans: ingestSpans([
+          { start: 0, duration: 1, track: 0 },
+          { start: 1, duration: 1, track: 0 },
+        ]),
+        viewport,
+      }); // growth 1 — not reported
+      component.update({
+        spans: ingestSpans([
+          { start: 0, duration: 1, track: 0 },
+          { start: 1, duration: 1, track: 0 },
+          { start: 2, duration: 1, track: 0 },
+        ]),
+        viewport,
+      }); // growth 2 — reported
+
+      const warning = ctx.runtime.warnings.recent.find((w) => w.code === "buffer-growth");
+      assert.ok(warning, "expected a buffer-growth warning after the second span-buffer growth");
+      assert.equal(warning!.source, component.id);
 
       component.dispose();
       gpu.dispose();

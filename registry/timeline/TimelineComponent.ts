@@ -1,4 +1,11 @@
-import { InstancedQuadLayer, RasterLayer, pixelXToTime, pixelYToTrack, viewportUniforms } from "@gpu-components/core";
+import {
+  InstancedQuadLayer,
+  RasterLayer,
+  pixelXToTime,
+  pixelYToTrack,
+  trackedUniforms,
+  viewportUniforms,
+} from "@gpu-components/core";
 import type {
   BrushRect,
   ComponentContext,
@@ -155,6 +162,7 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       instanceStride: INSTANCE_STRIDE,
       capacity: this.initialCapacity,
       label: this.id,
+      warnings: ctx.runtime.warnings,
     });
     this.highlightLayer = new InstancedQuadLayer({
       gpu: ctx.gpu,
@@ -162,12 +170,16 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       instanceStride: INSTANCE_STRIDE,
       capacity: 2,
       label: `${this.id}-highlight`,
+      warnings: ctx.runtime.warnings,
     });
-    this.viewportUniform = uniforms(ctx.gpu, {
-      timeToClip: [1, 0],
-      trackToClip: [1, 0],
-      pxSize: [1, 1],
-    });
+    // trackedUniforms (PLAN.md §28.2's "uniform writes with no change" anti-pattern), not plain
+    // uniforms() — this is the component's most-frequently-`.set()` uniform (every update()).
+    this.viewportUniform = trackedUniforms(
+      ctx.gpu,
+      { timeToClip: [1, 0], trackToClip: [1, 0], pxSize: [1, 1] },
+      ctx.runtime.warnings,
+      this.id,
+    );
     this.layer.bindViewport(this.viewportUniform);
     this.highlightLayer.bindViewport(this.viewportUniform);
 
