@@ -2513,22 +2513,63 @@
       }
     ]
   },
-  "sharedContext": {
-    "sharedRuntime": {
-      "p50": 16.699999999999818,
-      "p95": 16.799999999999727,
-      "p99": 16.800000000000182,
-      "worst": 33.29999999999973,
-      "droppedFrames": 1,
-      "sampleCount": 300
+  "sharedContext": [
+    {
+      "componentCount": 2,
+      "sharedRuntime": {
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.800000000000182,
+        "worst": 16.800000000000182,
+        "droppedFrames": 0,
+        "sampleCount": 300
+      },
+      "independentRuntimes": {
+        "p50": 16.69999999999891,
+        "p95": 16.700000000000728,
+        "p99": 16.80000000000109,
+        "worst": 16.80000000000109,
+        "droppedFrames": 0,
+        "sampleCount": 300
+      }
     },
-    "independentRuntimes": {
-      "p50": 16.69999999999891,
-      "p95": 16.700000000000728,
-      "p99": 16.800000000000182,
-      "worst": 16.80000000000109,
-      "droppedFrames": 0,
-      "sampleCount": 300
+    {
+      "componentCount": 4,
+      "sharedRuntime": {
+        "p50": 16.69999999999891,
+        "p95": 16.700000000000728,
+        "p99": 16.80000000000109,
+        "worst": 16.80000000000109,
+        "droppedFrames": 0,
+        "sampleCount": 300
+      },
+      "independentRuntimes": {
+        "p50": 16.69999999999709,
+        "p95": 16.799999999999272,
+        "p99": 16.799999999999272,
+        "worst": 16.80000000000291,
+        "droppedFrames": 0,
+        "sampleCount": 300
+      }
+    },
+    {
+      "componentCount": 8,
+      "sharedRuntime": {
+        "p50": 16.700000000000728,
+        "p95": 16.700000000000728,
+        "p99": 16.80000000000291,
+        "worst": 16.80000000000291,
+        "droppedFrames": 0,
+        "sampleCount": 300
+      },
+      "independentRuntimes": {
+        "p50": 16.69999999999709,
+        "p95": 16.700000000004366,
+        "p99": 16.80000000000291,
+        "worst": 16.80000000000291,
+        "droppedFrames": 0,
+        "sampleCount": 300
+      }
     }
-  }
+  ]
 }

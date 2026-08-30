@@ -89,28 +89,49 @@ export function renderMarkdown(
     lines.push("");
   }
 
-  if (sharedContext) {
+  if (sharedContext && sharedContext.length > 0) {
     lines.push(
       "## Phase 0 goal (a): shared context vs. independent devices",
       "",
-      "See `decision-record.md` for the full canvas-per-component-vs-mega-canvas writeup. Two " +
-        "`TimelineComponent`s mounted under one shared `GpuRuntime` vs. two fully independent " +
-        "`GpuRuntime`s (each its own device) — same two canvases, same per-frame `invalidate()` " +
-        "call pattern, components mounted empty (this measures scheduling/submit overhead, not " +
-        "rendering throughput).",
+      "See `decision-record.md` for the full canvas-per-component-vs-mega-canvas writeup, including " +
+        "the 2026-08-30 root-cause fix (the original scenario measured bare `requestAnimationFrame` " +
+        "cadence, not scheduling/submit overhead — a harness bug, not an architecture finding) and " +
+        "why this now runs at several component counts instead of a fixed two: at trivial per-frame " +
+        "work, both configurations tie at the vsync floor regardless of which is actually cheaper, " +
+        "so a real difference only has room to appear once total work approaches the frame budget. " +
+        "`N` × `TimelineComponent`s mounted empty (no span data — this isolates scheduling/submit " +
+        "overhead, not rendering throughput) under one shared `GpuRuntime` vs. `N` fully independent " +
+        "`GpuRuntime`s (each its own device).",
       "",
-      "| Configuration | p50 (ms) | p95 (ms) | worst (ms) | dropped |",
-      "| --- | ---: | ---: | ---: | ---: |",
-      `| Shared \`GpuRuntime\` (1 device, 1 submit) | ${sharedContext.sharedRuntime.p50.toFixed(3)} | ${sharedContext.sharedRuntime.p95.toFixed(3)} | ${sharedContext.sharedRuntime.worst.toFixed(3)} | ${sharedContext.sharedRuntime.droppedFrames} |`,
-      `| Independent \`GpuRuntime\`s (2 devices) | ${sharedContext.independentRuntimes.p50.toFixed(3)} | ${sharedContext.independentRuntimes.p95.toFixed(3)} | ${sharedContext.independentRuntimes.worst.toFixed(3)} | ${sharedContext.independentRuntimes.droppedFrames} |`,
-      "",
-      sharedContext.sharedRuntime.p50 <= sharedContext.independentRuntimes.p50
-        ? "**Confirms the architectural bet:** the shared runtime is at or below the independent-device p50."
-        : "**Does not confirm the architectural bet as measured** — the shared runtime's p50 is higher. " +
-          "Worth a closer look before trusting this as validated; see the `runs` array in " +
-          "`baselines.json` for per-run variance before concluding anything from one measurement.",
-      "",
+      "| Components (N) | Configuration | p50 (ms) | p95 (ms) | worst (ms) | dropped |",
+      "| ---: | --- | ---: | ---: | ---: | ---: |",
     );
+    for (const run of sharedContext) {
+      lines.push(
+        `| ${run.componentCount} | Shared \`GpuRuntime\` (1 device, 1 submit) | ${run.sharedRuntime.p50.toFixed(3)} | ${run.sharedRuntime.p95.toFixed(3)} | ${run.sharedRuntime.worst.toFixed(3)} | ${run.sharedRuntime.droppedFrames} |`,
+        `| ${run.componentCount} | Independent \`GpuRuntime\`s (${run.componentCount} devices) | ${run.independentRuntimes.p50.toFixed(3)} | ${run.independentRuntimes.p95.toFixed(3)} | ${run.independentRuntimes.worst.toFixed(3)} | ${run.independentRuntimes.droppedFrames} |`,
+      );
+    }
+    lines.push("");
+    for (const run of sharedContext) {
+      // Round to the same 3 decimals the table shows — sub-millisecond float noise (both configs
+      // are frequently equal to the ~1e-13ms rounding error of `performance.now()` deltas) should
+      // read as a tie, not a false "does not confirm" from comparing raw unrounded floats.
+      const sharedP50 = Number(run.sharedRuntime.p50.toFixed(3));
+      const independentP50 = Number(run.independentRuntimes.p50.toFixed(3));
+      lines.push(
+        sharedP50 === independentP50
+          ? `**N=${run.componentCount}: tied** — both configurations land on the same rounded p50, ` +
+              "consistent with both still being bound by the display's vsync interval rather than by " +
+              "actual scheduling/submit cost at this component count. Not a confirmation or a " +
+              "contradiction of the architectural bet; it means this measurement has no signal here."
+          : sharedP50 < independentP50
+            ? `**N=${run.componentCount}: confirms the architectural bet** — the shared runtime's p50 is measurably below the independent-device p50.`
+            : `**N=${run.componentCount}: does not confirm the architectural bet as measured** — the shared runtime's p50 is measurably higher. ` +
+                "See the `runs` array in `baselines.json` for per-run variance before concluding anything from one measurement.",
+      );
+    }
+    lines.push("");
   }
 
   for (const shape of shapes) {

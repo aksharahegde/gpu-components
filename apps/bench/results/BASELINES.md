@@ -29,14 +29,20 @@ Generated 2026-08-30T09:05:21.294Z on `Mozilla/5.0 (Windows NT 10.0; Win64; x64)
 
 ## Phase 0 goal (a): shared context vs. independent devices
 
-See `decision-record.md` for the full canvas-per-component-vs-mega-canvas writeup. Two `TimelineComponent`s mounted under one shared `GpuRuntime` vs. two fully independent `GpuRuntime`s (each its own device) — same two canvases, same per-frame `invalidate()` call pattern, components mounted empty (this measures scheduling/submit overhead, not rendering throughput).
+See `decision-record.md` for the full canvas-per-component-vs-mega-canvas writeup, including the 2026-08-30 root-cause fix (the original scenario measured bare `requestAnimationFrame` cadence, not scheduling/submit overhead — a harness bug, not an architecture finding) and why this now runs at several component counts instead of a fixed two: at trivial per-frame work, both configurations tie at the vsync floor regardless of which is actually cheaper, so a real difference only has room to appear once total work approaches the frame budget. `N` × `TimelineComponent`s mounted empty (no span data — this isolates scheduling/submit overhead, not rendering throughput) under one shared `GpuRuntime` vs. `N` fully independent `GpuRuntime`s (each its own device).
 
-| Configuration | p50 (ms) | p95 (ms) | worst (ms) | dropped |
-| --- | ---: | ---: | ---: | ---: |
-| Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.800 | 33.300 | 1 |
-| Independent `GpuRuntime`s (2 devices) | 16.700 | 16.700 | 16.800 | 0 |
+| Components (N) | Configuration | p50 (ms) | p95 (ms) | worst (ms) | dropped |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 2 | Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.700 | 16.800 | 0 |
+| 2 | Independent `GpuRuntime`s (2 devices) | 16.700 | 16.700 | 16.800 | 0 |
+| 4 | Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.700 | 16.800 | 0 |
+| 4 | Independent `GpuRuntime`s (4 devices) | 16.700 | 16.800 | 16.800 | 0 |
+| 8 | Shared `GpuRuntime` (1 device, 1 submit) | 16.700 | 16.700 | 16.800 | 0 |
+| 8 | Independent `GpuRuntime`s (8 devices) | 16.700 | 16.700 | 16.800 | 0 |
 
-**Does not confirm the architectural bet as measured** — the shared runtime's p50 is higher. Worth a closer look before trusting this as validated; see the `runs` array in `baselines.json` for per-run variance before concluding anything from one measurement.
+**N=2: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
+**N=4: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
+**N=8: tied** — both configurations land on the same rounded p50, consistent with both still being bound by the display's vsync interval rather than by actual scheduling/submit cost at this component count. Not a confirmation or a contradiction of the architectural bet; it means this measurement has no signal here.
 
 ## shallow-wide
 
