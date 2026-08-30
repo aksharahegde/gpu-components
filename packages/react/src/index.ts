@@ -5,6 +5,8 @@ export { useCanvasRef } from "./useCanvasRef.ts";
 export { useGpuCanvas } from "./useGpuCanvas.ts";
 export { useGpuComponent } from "./useGpuComponent.ts";
 export { GpuInspector } from "./GpuInspector.ts";
+export { LabelOverlay, MAX_DOM_LABELS, SR_ONLY, useGpuA11y } from "./a11y.ts";
+export type { GpuA11y, GpuA11yOptions, LabelOverlayProps, PositionedLabel } from "./a11y.ts";
 export type { GpuInspectorProps } from "./GpuInspector.ts";
 
 export type { GpuRuntimeOptions, MountHandle } from "@gpu-components/core";

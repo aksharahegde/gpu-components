@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
-import { useCanvasRef, useGpuComponent } from "@gpu-components/react";
+import { LabelOverlay, SR_ONLY, useCanvasRef, useGpuA11y, useGpuComponent } from "@gpu-components/react";
+import type { PositionedLabel } from "@gpu-components/react";
 import {
   brushRectFromPixels,
   createPointerController,
@@ -68,17 +69,6 @@ function pixelDistance(a: { x: number; y: number }, b: { x: number; y: number })
 /** Visually-hidden-but-screen-reader-visible — the `tl-summary` region and the `aria-live`
  * announcer (PLAN.md §21.1) are real content, not decorative, so `display: none` (which removes
  * elements from the accessibility tree) is wrong here. */
-const SR_ONLY: CSSProperties = {
-  position: "absolute",
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: "hidden",
-  clip: "rect(0, 0, 0, 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};
 
 function computeBounds(spans: SpanBuffers): ViewportBounds {
   if (spans.count === 0) return { timeMin: 0, timeMax: 1 };
@@ -169,16 +159,10 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
   const [canvas, ref] = useCanvasRef();
   const appRef = useRef<HTMLDivElement | null>(null);
   const componentRef = useRef<TimelineComponent | null>(null);
-  const liveRegionRef = useRef<HTMLDivElement | null>(null);
-  const announceState = useRef<{ lastAt: number; timer: ReturnType<typeof setTimeout> | null }>({
-    lastAt: 0,
-    timer: null,
-  });
 
   const [internalViewport, setInternalViewport] = useState(props.viewport);
   const viewport = onViewportChange ? props.viewport : internalViewport;
   const bounds = useMemo(() => props.bounds ?? computeBounds(spans), [props.bounds, spans]);
-  const summaryId = useId();
 
   // Inertial pan (PLAN.md Phase 3). `viewportRef`/`boundsRef` give the inertia rAF loop — which
   // runs across many frames, independent of React's render cycle — the *current* values without
@@ -262,17 +246,19 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
   // otherwise).
   useEffect(() => cancelInertia, [cancelInertia]);
 
-  const announce = useCallback((text: string) => {
-    const fire = () => {
-      announceState.current.lastAt = performance.now();
-      announceState.current.timer = null;
-      if (liveRegionRef.current) liveRegionRef.current.textContent = text;
-    };
-    if (announceState.current.timer) clearTimeout(announceState.current.timer);
-    const elapsed = performance.now() - announceState.current.lastAt;
-    if (elapsed >= ANNOUNCE_DEBOUNCE_MS) fire();
-    else announceState.current.timer = setTimeout(fire, ANNOUNCE_DEBOUNCE_MS - elapsed);
-  }, []);
+  // Computed before the a11y hook because `activeDescendantId` depends on it.
+  const labels = visibleLabels(spans, viewport);
+  const focusedVisible = focusedId != null && labels.some((l) => l.id === focusedId);
+
+  // The shared §21.1 overlay — named root, described summary, and the 500ms-debounced live region
+  // §21.2 asks for. That debounce used to live only here; it now covers every component.
+  const semantics = describeTimeline(spans, viewport);
+  const a11y = useGpuA11y({
+    label: "Timeline",
+    summary: `${semantics.label}. Showing ${viewport.timeStart.toFixed(2)} to ${viewport.timeEnd.toFixed(2)}.`,
+    activeDescendantId: focusedVisible ? `tl-span-${focusedId}` : undefined,
+  });
+  const announce = a11y.announce;
 
   useGpuComponent<TimelineComponentProps>(
     () => {
@@ -447,18 +433,10 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onSelect/cancelInertia are assumed stable per the calling convention used elsewhere in this codebase.
   }, [spans, viewport, bounds, focusedId, announce, setViewport, onSelect, cancelInertia]);
 
-  const labels = visibleLabels(spans, viewport);
-  const focusedVisible = focusedId != null && labels.some((l) => l.id === focusedId);
-  const summary = describeTimeline(spans, viewport);
-
   return (
     <div
       ref={appRef}
-      role="application"
-      aria-label="Timeline"
-      aria-describedby={summaryId}
-      aria-activedescendant={focusedVisible ? `tl-span-${focusedId}` : undefined}
-      tabIndex={0}
+      {...a11y.rootProps}
       className={className}
       style={{ position: "relative", width: viewport.width, height: viewport.height, ...style }}
     >
@@ -469,35 +447,19 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
         height={viewport.height}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", touchAction: "none" }}
       />
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
-        {labels.map((label) => (
-          <span
-            key={label.id}
-            id={`tl-span-${label.id}`}
-            role="listitem"
-            aria-label={describeSpan(spans, label.id)}
-            style={{
-              position: "absolute",
-              left: label.x,
-              top: label.y,
-              width: label.width,
-              height: label.height,
-              lineHeight: `${label.height}px`,
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-              fontSize: 11,
-              color: "#fff",
-              paddingLeft: 4,
-              boxSizing: "border-box",
-              pointerEvents: "none",
-              outline: label.id === focusedId ? "2px solid #8b9dff" : undefined,
-              outlineOffset: label.id === focusedId ? 1 : undefined,
-            }}
-          >
-            {label.text}
-          </span>
-        ))}
-      </div>
+      <LabelOverlay
+        labels={labels.map<PositionedLabel>((label) => ({
+          key: label.id,
+          id: `tl-span-${label.id}`,
+          left: label.x,
+          top: label.y,
+          width: label.width,
+          height: label.height,
+          text: label.text,
+          ariaLabel: describeSpan(spans, label.id),
+          focused: label.id === focusedId,
+        }))}
+      />
       {brushRect && (
         // Lightweight DOM selection-box overlay for the drag in progress — cheap, standard UX,
         // no GPU/canvas work. The live *highlight of matching spans* is a separate, GPU-only
@@ -517,10 +479,7 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
           }}
         />
       )}
-      <div id={summaryId} style={SR_ONLY}>
-        {summary.label}. Showing {viewport.timeStart.toFixed(2)} to {viewport.timeEnd.toFixed(2)}.
-      </div>
-      <div ref={liveRegionRef} aria-live="polite" style={SR_ONLY} />
+      {a11y.regions()}
     </div>
   );
 }
