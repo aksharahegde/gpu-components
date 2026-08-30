@@ -263,6 +263,50 @@
           "hash": "f06d59f4d4cde831940bcd18c67d18b9898589e124129fdd57cbe56aa631bb44"
         }
       ]
+    },
+    {
+      "name": "logviewer",
+      "type": "registry:component",
+      "title": "GPULogViewer",
+      "description": "Streaming log viewer. A GPU-resident ring buffer with incremental appends, virtualised scroll, and match/error density reduced across the whole buffer for the minimap.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPULogViewer.tsx",
+          "type": "registry:component",
+          "hash": "71e1901e3e302efed3c300c180b90b9f20880d3204948747dd34404eaf8ff290"
+        },
+        {
+          "path": "LogViewerComponent.ts",
+          "type": "registry:component",
+          "hash": "6f05e4d4458e54b5fac671805d4c83b1602e9442fcaa00ea3ac664a3c743bf79"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "dc77e5a695c535d10b57d2544550fa82cc14cadd9bd5039774a193866d21ee94"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "65e17cc1f10a06daa325fcf6c97c794a5a1c4d52a6464f9e9a7c32abba8501fd"
+        },
+        {
+          "path": "logviewer.wgsl.ts",
+          "type": "registry:component",
+          "hash": "4d5a8fe53b54a45fd7a084f974a66640d5a0ed933744c16fbfe55fe2825f3509"
+        },
+        {
+          "path": "textLayer.ts",
+          "type": "registry:component",
+          "hash": "271a1bb99d08d26f4a9f5f8d5782ae70829c6f727390b07d2e7f8010ab2fe60c"
+        }
+      ]
     }
   ]
 }

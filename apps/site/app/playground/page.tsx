@@ -46,6 +46,12 @@ const COMPONENTS = [
     blurb: 'Split, onion-skin, difference and heat comparison of two images, with a GPU pixel count.',
     note: 'The only one that uses real textures — and it filled a hole in the plan’s own contract.',
   },
+  {
+    slug: 'logviewer',
+    name: 'GPULogViewer',
+    blurb: 'Half a million lines in a GPU ring, streaming appends, and match density over all of them.',
+    note: 'The first dataset here with a tail — and the component that retired the glyph atlas.',
+  },
 ] as const
 
 export default function PlaygroundIndex() {

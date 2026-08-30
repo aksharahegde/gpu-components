@@ -26,6 +26,8 @@ export {
 export type { DispatchOptions } from "./budget.ts";
 export { createImageTexture } from "./texture.ts";
 export type { ImageTexture, ImageTextureOptions, ImageTextureSource } from "./texture.ts";
+export { RingBuffer } from "./ringBuffer.ts";
+export type { RingBufferOptions, RingState } from "./ringBuffer.ts";
 export { ResourceRegistry } from "./registry.ts";
 export { FrameScheduler } from "./scheduler.ts";
 export { createProfiler, DISABLED_PROFILER } from "./profiler.ts";

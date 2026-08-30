@@ -637,6 +637,28 @@ Everything else in v1 is composed from these. `blend: 'alpha'` (a documented vgp
 > a fourth primitive to dispatch on. Until then, §22.2's "one Canvas2D backend serves every
 > component" argument rests on three real primitives plus a DOM layer that is already
 > renderer-independent (§22.2's own table calls the label row "identical" in both paths).
+>
+> **Resolved (2026-08-30): the fourth primitive is deferred on evidence, not on schedule.** Two
+> components were predicted to force a glyph atlas and neither did, each measured in real Chromium
+> before it was built:
+>
+> | Spike | Workload | Canvas2D | Atlas packing (a *floor* — excludes the GPU draw) | Verdict |
+> |---|---|---|---|---|
+> | `spikes/grid-text-budget.md` | 2,400 grid cells | 2.9ms p50, 0 dropped | 1.0ms p50 | no atlas |
+> | `spikes/log-text-budget.md` | 60-line log window, per-token colour | **0.1ms p50** | 0.1ms p50 | no atlas |
+>
+> The log viewer was the stronger test of the two: it redraws every glyph on every frame of a scroll
+> (no damage region when all lines move) and splits each line into ~4.3 coloured runs, so its call
+> count grows with the window. There is no crossover anywhere in a sweep to 240 lines — four times a
+> real window.
+>
+> **The two triggers that would actually justify `LabelLayer`**, neither of which any shipped or
+> planned component hits: text that zooms continuously (where a fixed-size raster degrades and an SDF
+> atlas does not), and per-glyph styling driven by GPU-computed state, where a CPU round-trip to
+> decide colours would be the bottleneck. `GPULogViewer` computes its highlight state once per query
+> on the CPU, per §5.2, so it never needs that round-trip. Until one of those appears, this section
+> should be read as **three primitives and a measured decision**, not as three primitives and a
+> missing one.
 
 ### 12.2 The Timeline frame, concretely
 
@@ -1994,6 +2016,30 @@ next concrete slice of work, in order (updated 2026-08-30):
 > continuous value axis — without it a scatter's points sit half a band low and its top row falls
 > off the surface. That is the third component-driven change to the viewport, and the strongest
 > argument yet for the domain-named rewrite `registry/heatmap/CORE-WISHLIST.md` proposes.
+
+> **Status (2026-08-30): `GPULogViewer` shipped** — §6.2 candidate #6 (119.5), and the first
+> component here whose dataset has a **tail**. Every one before it uploads an immutable dataset and
+> rewrites the whole buffer when it changes; §5 gate 3 calls that the ideal GPU case, and it is, but
+> it had become an assumption the runtime was never tested against. `registry/logviewer/**` streams:
+> half a million lines resident, appended in batches, with scroll as a uniform write and match/error
+> density reduced across every record for the minimap.
+>
+> **One new core primitive: `RingBuffer`** (`packages/core/src/ringBuffer.ts`) — a fixed-capacity
+> ring addressed by `(head + logical) % capacity` rather than reordered, so appending costs
+> O(new records) and at most two writes. The shader recomputes that modulo independently, and
+> `render.pixels.test.ts` wraps a ring on a real device to prove the two agree; a disagreement would
+> render plausible-looking *wrong* log lines, which no unit test and no glance at the screen would
+> catch.
+>
+> **Two findings.** First, the component was chosen partly because it would force `LabelLayer`, and
+> the measurement said otherwise — see §12.1's resolved note. Second, and worth recording against
+> §30 risk 3: **vgpu can do offset writes but does not declare that it can.** The public
+> `StorageBuffer` interface has `write(data)` and no `destroy()`; the object `storage()` actually
+> returns is `RingStorageBuffer`, whose `write(data, offset?)` and `destroy()` are real but marked
+> `@internal`. `RingBuffer` isolates that assumption behind its own interface in one file, which is
+> exactly the mitigation §30 prescribes. The obvious runtime probe for it — `write.length >= 2` — is
+> wrong and was removed: `Function.length` stops counting at the first optional parameter, so it
+> reports 1 on the very class that supports the feature.
 
 Docs site, playground, contribution guide, component RFC process, community registry with mandatory review, and the additional components (`GPUScatter`, `GPUGraph`, flame-graph variant).
 
