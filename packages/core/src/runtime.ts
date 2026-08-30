@@ -1,6 +1,7 @@
 import { init, initFromDevice, uniforms, type Gpu, type SharedUniforms, type SurfaceOptions } from "vgpu";
 import { NO_WEBGPU_CAPABILITIES, probeCapabilities, supportedFeatures, type Capabilities } from "./capabilities.ts";
 import type { ComponentContext, GpuComponent, RuntimeHandle } from "./component.ts";
+import { createProfiler, DISABLED_PROFILER, type Profiler } from "./profiler.ts";
 import { ResourceRegistry } from "./registry.ts";
 import { FrameScheduler } from "./scheduler.ts";
 import { SurfaceHandle } from "./surface.ts";
@@ -90,14 +91,18 @@ export class GpuRuntime implements RuntimeHandle {
       const gpu = await initFromDevice(options.adopt);
       const caps = await probeCapabilities();
       const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
-      const scheduler = new FrameScheduler(gpu, globals);
+      // `caps.timestampQuery` reflects the *adapter's* probed capability, not necessarily what the
+      // externally-owned adopted device actually had requested when it was created — conservative
+      // false here rather than risking `timer(gpu)`'s `VGPU-TIMER-INVALID` on a device we don't
+      // control. CPU frame stats still work regardless (`createProfiler`'s own doc comment).
+      const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, false));
       return new GpuRuntime(gpu, caps, scheduler, globals, registry, options);
     }
 
     if (options.connect) {
       const { gpu, caps } = await options.connect();
       const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
-      const scheduler = new FrameScheduler(gpu, globals);
+      const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)));
       return new GpuRuntime(gpu, caps, scheduler, globals, registry, options);
     }
 
@@ -108,8 +113,16 @@ export class GpuRuntime implements RuntimeHandle {
 
     const gpu = await GpuRuntime.initGpu(caps, options);
     const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
-    const scheduler = new FrameScheduler(gpu, globals);
+    const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)));
     return new GpuRuntime(gpu, caps, scheduler, globals, registry, options);
+  }
+
+  /** Whether `timer(gpu)` GPU timing should actually be turned on — `options.profiling` opted in
+   * *and* `caps.timestampQuery` confirms the feature was actually granted (`initGpu` only requests
+   * it when `profiling` is set, via `supportedFeatures`, so this stays consistent with what was
+   * actually asked for at `init()` time). */
+  private static gpuTimingFor(caps: Capabilities, options: GpuRuntimeOptions): boolean {
+    return options.profiling === true && caps.timestampQuery;
   }
 
   /**
@@ -121,7 +134,7 @@ export class GpuRuntime implements RuntimeHandle {
    */
   static createWithGpu(gpu: Gpu, caps: Capabilities, options: GpuRuntimeOptions = {}): GpuRuntime {
     const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
-    const scheduler = new FrameScheduler(gpu, globals);
+    const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)));
     return new GpuRuntime(gpu, caps, scheduler, globals, new ResourceRegistry(), options);
   }
 
@@ -185,7 +198,11 @@ export class GpuRuntime implements RuntimeHandle {
         this.gpuRef = gpu;
         this.caps = caps;
         this.globalsRef = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
-        this.scheduler = new FrameScheduler(gpu, this.globalsRef);
+        this.scheduler = new FrameScheduler(
+          gpu,
+          this.globalsRef,
+          createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, this.options)),
+        );
         this.watchDeviceLoss(gpu);
         this.replayMounts();
         this.recovering = false;
@@ -243,6 +260,13 @@ export class GpuRuntime implements RuntimeHandle {
    * `caps.webgpu` is false, or transiently while recovering from device loss. */
   get gpu(): Gpu | null {
     return this.gpuRef;
+  }
+
+  /** PLAN.md §10.1/§10.7 — GPU timing + frame stats. `DISABLED_PROFILER` (not an error) when
+   * `caps.webgpu` is false or transiently while recovering from device loss, matching `gpu`'s own
+   * null-during-recovery contract. */
+  get profiler(): Profiler {
+    return this.scheduler?.profiler ?? DISABLED_PROFILER;
   }
 
   registerSurface(canvas: HTMLCanvasElement, opts?: SurfaceOptions): SurfaceHandle {

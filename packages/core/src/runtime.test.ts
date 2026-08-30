@@ -86,3 +86,43 @@ describe("GpuRuntime", () => {
     runtime.dispose();
   });
 });
+
+class DirtyOnceComponent implements GpuComponent {
+  readonly id = "dirty-once";
+  dirty = true;
+  create(): void {}
+  update(): void {}
+  plan(): RenderPlan {
+    this.dirty = false;
+    return EMPTY_PLAN;
+  }
+  dispose(): void {}
+}
+
+describe("GpuRuntime.profiler", () => {
+  it("is enabled with profiling:true and the timestamp-query feature granted", async () => {
+    const runtime = await createMockRuntime({
+      features: ["timestamp-query"],
+      runtime: { profiling: true },
+    });
+    const canvas = createMockCanvas(runtime.gpu!);
+    runtime.mount(() => new DirtyOnceComponent(), canvas);
+
+    await tick(20);
+
+    assert.equal(runtime.profiler.enabled, true);
+    runtime.dispose();
+  });
+
+  it("defaults to GPU timing off, but CPU frame stats still populate", async () => {
+    const runtime = await createMockRuntime();
+    const canvas = createMockCanvas(runtime.gpu!);
+    runtime.mount(() => new DirtyOnceComponent(), canvas);
+
+    await tick(20);
+
+    assert.equal(runtime.profiler.enabled, false);
+    assert.ok(runtime.profiler.lastFrame, "expected CPU frame stats regardless of GPU timing");
+    runtime.dispose();
+  });
+});

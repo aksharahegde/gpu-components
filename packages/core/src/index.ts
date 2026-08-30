@@ -19,6 +19,8 @@ export { EMPTY_PLAN } from "./component.ts";
 
 export { ResourceRegistry } from "./registry.ts";
 export { FrameScheduler } from "./scheduler.ts";
+export { createProfiler, DISABLED_PROFILER } from "./profiler.ts";
+export type { FrameStats, Profiler } from "./profiler.ts";
 export { SurfaceHandle } from "./surface.ts";
 export type { SurfaceLike } from "./surface.ts";
 export type { Globals } from "./uniforms.ts";

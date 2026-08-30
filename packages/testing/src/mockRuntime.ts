@@ -20,11 +20,15 @@ function capabilitiesFor(features: readonly GPUFeatureName[]): Capabilities {
 }
 
 /** A bare `Gpu` from `vgpu/mock` — no real GPU, deterministic, CI-safe. For tests that only need
- * a `Gpu` (e.g. driving a `FrameScheduler` directly) rather than a full `GpuRuntime`. */
+ * a `Gpu` (e.g. driving a `FrameScheduler` directly) rather than a full `GpuRuntime`. `features`
+ * both configures what the mock *adapter* declares support for and requests them as
+ * `requiredFeatures` on the device itself — matching the real `init()` path (PLAN.md §10.6's
+ * "never request features speculatively"), and required for feature-gated APIs like `timer(gpu)`
+ * to actually work: the adapter merely supporting a feature doesn't grant it to the device. */
 export async function createMockGpu(
   features: readonly GPUFeatureName[] = [],
 ): Promise<{ gpu: Gpu; caps: Capabilities }> {
-  const gpu = await mockInit({ adapter: createMockAdapter({ features }) });
+  const gpu = await mockInit({ adapter: createMockAdapter({ features }), requiredFeatures: features });
   return { gpu, caps: capabilitiesFor(features) };
 }
 

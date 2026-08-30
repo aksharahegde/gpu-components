@@ -1,5 +1,6 @@
 import { clock, frameLoop, type Frame, type FrameLoopHandle, type Gpu, type SharedUniforms } from "vgpu";
 import type { FrameContext, GpuComponent } from "./component.ts";
+import { createProfiler, type Profiler } from "./profiler.ts";
 import type { SurfaceLike } from "./surface.ts";
 import type { Globals } from "./uniforms.ts";
 
@@ -15,16 +16,25 @@ interface Mounted {
  *
  * A component that is neither `dirty` nor `animating` contributes no passes and costs nothing:
  * `vgpu`'s `set()` performs no equality check, so gating writes is the scheduler's job, not vgpu's.
+ *
+ * The profiler attaches a `timer.span(name)` per render pass (PLAN.md §10.7/§28), so "which
+ * component blew the budget" is answerable — transparently, with no component-side opt-in.
  */
 export class FrameScheduler {
   private readonly gpu: Gpu;
   private readonly globals: SharedUniforms<Globals>;
   private readonly mounted = new Map<string, Mounted>();
   private handle: FrameLoopHandle | null = null;
+  private readonly profilerRef: Profiler;
 
-  constructor(gpu: Gpu, globals: SharedUniforms<Globals>) {
+  constructor(gpu: Gpu, globals: SharedUniforms<Globals>, profiler: Profiler = createProfiler(gpu, false)) {
     this.gpu = gpu;
     this.globals = globals;
+    this.profilerRef = profiler;
+  }
+
+  get profiler(): Profiler {
+    return this.profilerRef;
   }
 
   mount(component: GpuComponent, surface: SurfaceLike): () => void {
@@ -70,20 +80,38 @@ export class FrameScheduler {
     );
     if (active.length === 0) return;
 
+    const cpuStart = performance.now();
     const plans = active.map((m) => ({ mounted: m, plan: m.component.plan(frameCtx) }));
 
+    let dispatchCount = 0;
     for (const { plan } of plans) {
-      for (const pass of plan.computePasses) pass.dispatch();
+      for (const pass of plan.computePasses) {
+        pass.dispatch();
+        dispatchCount++;
+      }
     }
 
+    let passCount = 0;
     for (const { mounted, plan } of plans) {
       for (const pass of plan.renderPasses) {
         const target = pass.target === "surface" ? mounted.surface.surface : pass.target;
-        frame.pass({ target, clear: pass.clear, scissor: pass.scissor }, (framePass) =>
+        // Qualified by component id, not just `pass.name` — e.g. every `TimelineComponent` names
+        // its render pass "timeline", and `Timer.onResults` returns one flat `name -> ms` record,
+        // so an unqualified name would silently collide with ≥2 components mounted.
+        const timerSpan = this.profilerRef.span(`${mounted.component.id}:${pass.name}`);
+        frame.pass({ target, clear: pass.clear, scissor: pass.scissor, timer: timerSpan }, (framePass) =>
           pass.encode(framePass),
         );
+        passCount++;
       }
       mounted.surface.clearDirty();
     }
+
+    this.profilerRef.recordFrame({
+      cpuMs: performance.now() - cpuStart,
+      componentCount: active.length,
+      passCount,
+      dispatchCount,
+    });
   }
 }
