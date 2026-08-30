@@ -33,6 +33,8 @@ export type { GpuRuntimeOptions, MountHandle } from "./runtime.ts";
 export {
   pixelXToTime,
   pixelYToTrack,
+  rowRange,
+  visibleRows,
   timeToPixelX,
   trackRowHeight,
   trackToPixelY,

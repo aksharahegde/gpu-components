@@ -5,6 +5,7 @@ import * as stylex from '@stylexjs/stylex'
 import { GPUProvider, GpuInspector, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUTimeline, ingestSpans, type RawSpan, type SpanBuffers } from '../../../../registry/timeline'
+import { GPUHeatmap, ingestMatrix, type HeatmapData } from '../../../../registry/heatmap'
 import { color, font, radius } from '../tokens.stylex'
 
 /**
@@ -104,9 +105,101 @@ export function Playground() {
   return (
     // `profiling` makes the inspector's per-pass GPU timing real (timestamp-query) rather than
     // greyed out — the whole point of having the inspector on this page.
+    //
+    // Both components share this ONE provider, which is the project's founding claim made visible:
+    // a timeline and a heatmap on the same page hold one GPUDevice, one frame loop and one submit
+    // between them (§2a, §11.1). The inspector's "1 device, N surfaces" line is the receipt.
     <GPUProvider options={{ profiling: true }}>
       <Stage />
+      <HeatmapStage />
     </GPUProvider>
+  )
+}
+
+/** A 200x120 matrix with structure worth looking at: two gaussian hot spots over a gradient. */
+function buildMatrix(rows: number, cols: number): HeatmapData {
+  const values = new Float32Array(rows * cols)
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const gradient = (c / cols) * 0.4
+      const d1 = Math.hypot(r / rows - 0.3, c / cols - 0.25)
+      const d2 = Math.hypot(r / rows - 0.7, c / cols - 0.7)
+      values[r * cols + c] = gradient + Math.exp(-d1 * d1 * 40) + 0.7 * Math.exp(-d2 * d2 * 25)
+    }
+  }
+  return ingestMatrix(values, rows, cols)
+}
+
+function HeatmapStage() {
+  const { status } = useGpu()
+  const ROWS = 120
+  const COLS = 200
+  const data = useMemo(() => buildMatrix(ROWS, COLS), [])
+  const stageRef = useRef<HTMLDivElement | null>(null)
+  const [box, setBox] = useState({ width: 900, height: 320 })
+  const [hovered, setHovered] = useState<number | null>(null)
+
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setBox({ width: el.clientWidth, height: el.clientHeight }))
+    ro.observe(el)
+    setBox({ width: el.clientWidth, height: el.clientHeight })
+    return () => ro.disconnect()
+  }, [])
+
+  const [viewport, setViewport] = useState(() => ({
+    timeStart: 0,
+    timeEnd: COLS,
+    trackCount: ROWS,
+    rowStart: 0,
+    rowEnd: ROWS,
+    width: box.width,
+    height: box.height,
+  }))
+
+  useEffect(() => {
+    setViewport((v) => ({ ...v, width: box.width, height: box.height }))
+  }, [box.width, box.height])
+
+  const hoveredText =
+    hovered == null
+      ? null
+      : `row ${Math.floor(hovered / COLS)}, col ${hovered % COLS} = ${data.values[hovered]?.toFixed(3)}`
+
+  return (
+    <div {...stylex.props(s.root)}>
+      <div {...stylex.props(s.heatHead)}>
+        <span {...stylex.props(s.panelTitle)}>GPUHeatmap — the same runtime, a second component</span>
+        <span {...stylex.props(s.readoutValue)}>
+          {hoveredText ?? <span {...stylex.props(s.dim)}>hover a cell</span>}
+        </span>
+      </div>
+      <div ref={stageRef} {...stylex.props(s.heatStage)}>
+        {status === 'ready' && box.width > 1 && (
+          <GPUHeatmap
+            data={data}
+            viewport={viewport}
+            onViewportChange={setViewport}
+            hoveredCell={hovered}
+            onHoverCell={setHovered}
+            aria-label="Example heatmap"
+          />
+        )}
+      </div>
+      <div {...stylex.props(s.hints)}>
+        <Hint keys="drag">pan both axes</Hint>
+        <Hint keys="wheel">scroll rows</Hint>
+        <Hint keys="ctrl + wheel">zoom at the cursor</Hint>
+        <Hint keys="Tab then arrows">walk cells</Hint>
+      </div>
+      <p {...stylex.props(s.footnote)}>
+        This is the component PLAN.md §29 calls the architecture test: it was built to find out
+        whether <code>@gpu-components/core</code> could host a second, differently-shaped component
+        without changes. It needed exactly one — a second axis on the viewport — and that finding is
+        recorded in <code>registry/heatmap/CORE-WISHLIST.md</code> rather than quietly patched.
+      </p>
+    </div>
   )
 }
 
@@ -450,4 +543,14 @@ const s = stylex.create({
   note: { margin: '8px 0 0', fontSize: 11.5, lineHeight: 1.6, color: color.textFaint },
   inspector: { fontSize: 11, fontFamily: font.mono, color: color.textDim, overflowX: 'auto' },
   footnote: { margin: 0, fontSize: 12.5, lineHeight: 1.7, color: color.textFaint },
+  heatHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' },
+  heatStage: {
+    position: 'relative',
+    height: 320,
+    minHeight: 320,
+    overflow: 'hidden',
+    backgroundColor: color.bgRaised,
+    border: `1px solid ${color.border}`,
+    borderRadius: radius.md,
+  },
 })

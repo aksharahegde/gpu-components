@@ -1,4 +1,4 @@
-import { RasterLayer, viewportUniforms } from "@gpu-components/core";
+import { RasterLayer, rowRange, viewportUniforms, visibleRows } from "@gpu-components/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -104,6 +104,12 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
       gpu: ctx.gpu,
       shader: HEATMAP_WGSL,
       label: `${this.id}-raster`,
+      // PLAN.md §22.2's `RasterLayer` row — "`putImageData` of a CPU-binned density field". The
+      // colour decision is the component's (core knows only that there is a buffer), so the CPU
+      // path re-implements the fragment shader's mapping rather than sharing it. Kept deliberately
+      // simple: nearest-cell sampling, no per-pixel aggregation, which is the documented
+      // "degraded but correct" contract rather than parity.
+      fallback: { shade: (rgba, width, height) => this.shadeCanvas2D(rgba, width, height) },
     });
 
     this.viewportUniform = uniforms(ctx.gpu, {
@@ -140,7 +146,16 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
 
     // Fresh GPU state after a device-loss replay: re-upload from the CPU-side source of truth and
     // recompute the range (PLAN.md §10.6/§14.2 — every buffer regenerable, no GPU state trusted).
+    // A one-element placeholder so `values` is *always* bound, even before any data arrives.
+    //
+    // Without this the component is unbindable between `create()` and the first `update()`, and the
+    // scheduler can tick in that window — `useGpuComponent` mounts in one effect and updates in
+    // another, and a rAF can land between them. vgpu then throws
+    // `Unset values @group(0) @binding(2)` at encode time. PLAN.md §14.2's "lazy allocation: a
+    // mounted-but-empty component costs one bind group" is exactly this: allocate something
+    // minimal, not nothing.
     this.valueCapacity = 0;
+    this.allocValues(this.uploadedData?.values.length ?? 1);
     if (this.uploadedData) {
       this.uploadValues(this.uploadedData);
       this.rangeDirty = true;
@@ -163,15 +178,21 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
     this.raster?.bind({ lut: this.lutBuffer });
   }
 
+  /** Allocates the value buffer and binds it everywhere it is read. */
+  private allocValues(count: number): void {
+    if (!this.gpu) return;
+    this.valueCapacity = Math.max(1, count);
+    this.valuesBuffer = storage(this.gpu, this.valueCapacity * VALUE_STRIDE, "read");
+    this.reduceChunk?.set({ values: this.valuesBuffer });
+    this.raster?.bind({ values: this.valuesBuffer });
+  }
+
   /** Grows the value buffer on demand, then writes the matrix. */
   private uploadValues(data: HeatmapData): void {
     if (!this.gpu) return;
     const count = data.values.length;
     if (count > this.valueCapacity) {
-      this.valueCapacity = count;
-      this.valuesBuffer = storage(this.gpu, count * VALUE_STRIDE, "read");
-      this.reduceChunk?.set({ values: this.valuesBuffer });
-      this.raster?.bind({ values: this.valuesBuffer });
+      this.allocValues(count);
     }
     this.valuesBuffer?.write(data.values);
 
@@ -197,7 +218,10 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
     if (!data) return;
     const visibleCols = Math.max(viewport.timeEnd - viewport.timeStart, 1e-9);
     const colsPerPixel = visibleCols / Math.max(viewport.width, 1);
-    const rowsPerPixel = data.rows / Math.max(viewport.height, 1);
+    // visibleRows(), not data.rows: once the y axis scrolls, the number of rows on screen is no
+    // longer the number of rows in the dataset, and using the latter would over-sample by the
+    // zoom factor — drawing a blurred average where the user asked for detail.
+    const rowsPerPixel = visibleRows(viewport) / Math.max(viewport.height, 1);
     this.gridUniform?.set({
       rows: data.rows,
       cols: data.cols,
@@ -233,13 +257,19 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
 
     const visibleCols = viewport.timeEnd - viewport.timeStart;
     const col = Math.floor(viewport.timeStart + (x / Math.max(viewport.width, 1)) * visibleCols);
-    const row = Math.floor((y / Math.max(viewport.height, 1)) * data.rows);
+    const [rowStart, rowEnd] = rowRange(viewport);
+    const row = Math.floor(rowStart + (y / Math.max(viewport.height, 1)) * (rowEnd - rowStart));
     if (col < 0 || row < 0 || col >= data.cols || row >= data.rows) return null;
     return { id: row * data.cols + col };
   }
 
   plan(): RenderPlan {
     this.dirty = false;
+    // Nothing uploaded yet: contribute no passes at all rather than drawing a placeholder buffer
+    // (PLAN.md §10.2 — a component with nothing to say costs nothing). Belt and braces with the
+    // placeholder allocation in `create()`: that keeps the bindings valid, this keeps the frame
+    // empty until there is real data.
+    if (!this.uploadedData || !this.currentViewport) return { computePasses: [], renderPasses: [] };
     const computePasses = this.rangeDirty
       ? [
           { name: "heatmap-reduce-chunk", dispatch: () => this.dispatchReduceChunk() },
@@ -271,6 +301,50 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
   private dispatchReduceFinal(): void {
     if (!this.reduceFinal || !this.uploadedData || this.uploadedData.values.length === 0) return;
     this.reduceFinal.dispatch(1);
+  }
+
+  /**
+   * The Canvas2D fallback's pixel loop (PLAN.md §22). Mirrors `heatmap.wgsl.ts`'s mapping on the
+   * CPU: pixel → clip → cell → normalised value → LUT. Uses `computeRange()` rather than the GPU
+   * `range` buffer, because in fallback mode no dispatch ran to fill it — §22.2's "compute passes →
+   * CPU equivalents" row, at the smallest possible scale.
+   */
+  private shadeCanvas2D(rgba: Uint8ClampedArray, width: number, height: number): void {
+    const data = this.uploadedData;
+    const viewport = this.currentViewport;
+    if (!data || !viewport) {
+      rgba.fill(0);
+      return;
+    }
+    const lut = buildColormapLut(this.currentColormap);
+    const [lo, hi] = computeRange(data);
+    const span = Math.max(hi - lo, 1e-20);
+    const visibleCols = viewport.timeEnd - viewport.timeStart;
+    const [rowStart, rowEnd] = rowRange(viewport);
+    const visibleRowSpan = rowEnd - rowStart;
+
+    for (let py = 0; py < height; py++) {
+      const row = Math.floor(rowStart + ((py + 0.5) / height) * visibleRowSpan);
+      for (let px = 0; px < width; px++) {
+        const col = Math.floor(viewport.timeStart + ((px + 0.5) / width) * visibleCols);
+        const at = (py * width + px) * 4;
+        if (row < 0 || col < 0 || row >= data.rows || col >= data.cols) {
+          rgba[at + 3] = 0;
+          continue;
+        }
+        const value = data.values[row * data.cols + col]!;
+        if (!Number.isFinite(value)) {
+          rgba[at + 3] = 0;
+          continue;
+        }
+        const t = Math.max(0, Math.min(1, (value - lo) / span));
+        const entry = Math.round(t * (LUT_SIZE - 1)) * 4;
+        rgba[at + 0] = lut[entry]! * 255;
+        rgba[at + 1] = lut[entry + 1]! * 255;
+        rgba[at + 2] = lut[entry + 2]! * 255;
+        rgba[at + 3] = 255;
+      }
+    }
   }
 
   /** CPU range, for the Canvas2D fallback and for tests to check the GPU reduction against. */
