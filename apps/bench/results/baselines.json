@@ -2590,5 +2590,51 @@
         "sampleCount": 300
       }
     }
+  ],
+  "gpuTiming": [
+    {
+      "componentCount": 2,
+      "shared": {
+        "avgFrameGpuMs": 0.06539939560439559,
+        "sampleCount": 91
+      },
+      "independent": {
+        "avgFrameGpuMs": 0.10801447777777773,
+        "sampleCount": 90
+      }
+    },
+    {
+      "componentCount": 8,
+      "shared": {
+        "avgFrameGpuMs": 0.30391624444444465,
+        "sampleCount": 90
+      },
+      "independent": {
+        "avgFrameGpuMs": 0.6063987888888893,
+        "sampleCount": 90
+      }
+    },
+    {
+      "componentCount": 16,
+      "shared": {
+        "avgFrameGpuMs": 0.5540406813186817,
+        "sampleCount": 91
+      },
+      "independent": {
+        "avgFrameGpuMs": 1.3892846263736256,
+        "sampleCount": 91
+      }
+    },
+    {
+      "componentCount": 24,
+      "shared": {
+        "avgFrameGpuMs": 0.7504432637362645,
+        "sampleCount": 91
+      },
+      "independent": {
+        "avgFrameGpuMs": 1.199132711111109,
+        "sampleCount": 90
+      }
+    }
   ]
 }

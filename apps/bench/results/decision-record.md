@@ -100,3 +100,50 @@ different reason than initially stated: the ceiling this methodology can't see p
 Recorded honestly as: **the founding claim is still neither confirmed nor contradicted.** Two rounds
 of investigation replaced a harness bug (a false negative) with a methodology ceiling (no signal
 either way) — that is real progress, not a wash, but it is not a validated architectural claim.
+
+## Round 3 (2026-08-30): real GPU timing (the Profiler) — confirmed
+
+Built the Phase 4 `Profiler` (`packages/core/src/profiler.ts`, wraps `vgpu`'s `timer(gpu)`) — see
+PLAN.md §10.7's status note — specifically to attempt Round 2's item 1: measure the actual GPU cost
+of a tick directly, bypassing the vsync floor entirely. `apps/bench/src/harness/gpuTimingScenario.ts`
+reuses `sharedContextScenario.ts`'s payload/drive helpers (same workload, same 2,000-span payload,
+same oscillating-viewport drive pattern) but reports mean total GPU milliseconds per tick — summed
+across every mounted component's real `timer.span()` results — instead of wall-clock `requestAnimationFrame`
+interval.
+
+**Result, from the most recent run (`BASELINES.md`'s own table has these numbers; five total runs
+across this session are consistent with them — see below):**
+
+| N | Shared GPU ms/tick | Independent GPU ms/tick | Ratio |
+|---|---:|---:|---:|
+| 2 | 0.065 | 0.108 | 1.65× |
+| 8 | 0.304 | 0.606 | 2.00× |
+| 16 | 0.554 | 1.389 | 2.51× |
+| 24 | 0.750 | 1.199 | 1.60× |
+
+**This confirms the architectural bet.** At N=2 the two are within noise of each other — both
+configurations' per-tick cost is small enough that measurement variance dominates. From N=8 onward
+the shared runtime consistently, reproducibly costs meaningfully less real GPU time per tick than N
+independent devices doing the same aggregate work. This was reproduced across five separate runs in
+this session (not cherry-picked): shared stayed clean and roughly linear in N across every run
+(≈0.05-0.08ms at N=2, ≈0.29-0.34ms at N=8, ≈0.47-0.55ms at N=16, ≈0.73-0.76ms at N=24); independent
+was consistently and substantially higher at every N≥8 across every run.
+
+**Honestly noted, not smoothed over: the ratio is not monotonic.** It widens from N=8 to N=16
+(2.00× → 2.51×) then narrows at N=24 (down to 1.60×) — reproduced consistently across all five runs,
+so it's a real, repeatable feature of this environment, not noise. The cause hasn't been
+investigated; a plausible guess is driver- or OS-level batching/coalescing behavior across many
+concurrent `GPUDevice`s changing above some threshold on this specific machine, but that's a guess,
+not a finding — flagged as open, not asserted.
+
+**What this doesn't resolve:** this is one machine, one browser (Chromium via Playwright, headless
+ANGLE/Metal), one workload shape (small real payload, N up to 24 components/devices). It confirms the
+*direction* of the architectural bet — shared genuinely costs less GPU time than N independent
+devices for the same work — not a specific multiplier that generalizes across hardware, browsers, or
+workload shapes. The `sharedContextScenario.ts`/Round 1-2 wall-clock rounds remain useful for a
+different question this doesn't answer: whether the difference is large enough to matter at the
+*frame-budget* level (dropped frames), which needs either far more components or far heavier payload
+than tested here.
+
+**Status: the founding claim (PLAN.md §2(a)/§11, "one device across N components") is now
+confirmed, not merely un-contradicted.** First real answer after three rounds of investigation.

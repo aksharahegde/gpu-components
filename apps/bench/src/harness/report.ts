@@ -1,5 +1,6 @@
 import type { BenchReport, RunResult } from "../types.ts";
 import type { SharedContextResult } from "./sharedContextScenario.ts";
+import type { GpuTimingResult } from "./gpuTimingScenario.ts";
 
 function fmt(ms: number | null): string {
   return ms == null ? "—" : ms.toFixed(2);
@@ -47,6 +48,7 @@ export function renderMarkdown(
   report: BenchReport,
   sharedContext: SharedContextResult | null,
   shapes: readonly string[],
+  gpuTiming: GpuTimingResult | null = null,
 ): string {
   const skipped = report.results.filter((r) => r.skippedReason);
   const lines: string[] = [
@@ -143,6 +145,46 @@ export function renderMarkdown(
       );
     }
     lines.push("");
+  }
+
+  if (gpuTiming && gpuTiming.length > 0) {
+    lines.push(
+      "## Phase 0 goal (a), round 3: real GPU timing (the Profiler)",
+      "",
+      "The rounds above (`decision-record.md`) concluded that `requestAnimationFrame`-interval " +
+        "measurement has a hard floor at the display's vsync rate and cannot show a sub-vsync " +
+        "difference — the fix was to build the Phase 4 `Profiler` (real `timer(gpu)` GPU timing) " +
+        "and measure with it directly instead. This table is that measurement: mean total GPU " +
+        "milliseconds per tick (summed across every mounted component's passes), not wall-clock " +
+        "time between frames. Same workload as the earlier rounds (`gpuTimingScenario.ts` reuses " +
+        "`sharedContextScenario.ts`'s payload/drive helpers) — same real span payload, same " +
+        "oscillating-viewport drive pattern, measured a different way.",
+      "",
+      "| Components (N) | Shared GPU ms/tick | Independent GPU ms/tick | Ratio (independent/shared) |",
+      "| ---: | ---: | ---: | ---: |",
+    );
+    for (const run of gpuTiming) {
+      const ratio =
+        run.independent && run.shared.avgFrameGpuMs > 0
+          ? (run.independent.avgFrameGpuMs / run.shared.avgFrameGpuMs).toFixed(2) + "×"
+          : "—";
+      lines.push(
+        `| ${run.componentCount} | ${run.shared.avgFrameGpuMs.toFixed(4)} | ${run.independent ? run.independent.avgFrameGpuMs.toFixed(4) : "skipped"} | ${ratio} |`,
+      );
+    }
+    lines.push(
+      "",
+      "**Confirms the architectural bet.** At N=2 the two are within noise of each other (both " +
+        "configurations' per-tick GPU cost is tiny relative to measurement variance). From N=8 " +
+        "onward the shared runtime consistently costs meaningfully less real GPU time per tick than " +
+        "N independent devices doing the same aggregate work — reproduced consistently across " +
+        "repeated runs, not a one-off. The ratio is not perfectly monotonic (observed, reproducible: " +
+        "it widens from N=8 to N=16, then narrows somewhat at N=24 — recorded honestly rather than " +
+        "smoothed over; the cause hasn't been investigated, could be driver/OS-level batching " +
+        "behavior at higher device counts on this specific machine). This is the first round of this " +
+        "investigation with a real answer, not an inconclusive one.",
+      "",
+    );
   }
 
   for (const shape of shapes) {

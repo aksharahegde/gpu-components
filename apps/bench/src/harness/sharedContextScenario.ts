@@ -89,7 +89,7 @@ function toRawSpans(dataset: ReturnType<typeof generateDataset>): RawSpan[] {
   return spans;
 }
 
-function buildPayload(): { spans: SpanBuffers; trackCount: number } {
+export function buildPayload(): { spans: SpanBuffers; trackCount: number } {
   const dataset = generateDataset("bursty", PAYLOAD_SPANS);
   return { spans: ingestSpans(toRawSpans(dataset)), trackCount: dataset.trackCount };
 }
@@ -97,7 +97,7 @@ function buildPayload(): { spans: SpanBuffers; trackCount: number } {
 const MEASURED_FRAMES = 300;
 const WARMUP_FRAMES = 50;
 
-function makeCanvas(container: HTMLElement): HTMLCanvasElement {
+export function makeCanvas(container: HTMLElement): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.style.width = "50%";
   canvas.style.height = "100%";
@@ -150,7 +150,7 @@ function viewportForPhase(now: number): { timeStart: number; timeEnd: number } {
  * that re-`update()`s each with a fresh (oscillating) viewport — real work every tick, the same
  * pattern `renderers/webgpu.ts` uses, which also keeps `dirty` genuinely true without the
  * `animating` shortcut this file used before real payload existed. */
-function driveComponents(
+export function driveComponents(
   components: readonly TimelineComponent[],
   payload: { spans: SpanBuffers; trackCount: number },
   invalidateAll: () => void,
