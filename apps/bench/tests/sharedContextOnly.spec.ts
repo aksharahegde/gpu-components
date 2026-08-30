@@ -14,6 +14,9 @@ test("shared context scenario runs and produces stats for both configurations", 
   const result: SharedContextResult = await page.evaluate(() => window.__bench.runSharedContext());
   for (const run of result) {
     console.log(`N=${run.componentCount} shared:`, JSON.stringify(run.sharedRuntime));
-    console.log(`N=${run.componentCount} independent:`, JSON.stringify(run.independentRuntimes));
+    console.log(
+      `N=${run.componentCount} independent:`,
+      run.independentRuntimes ? JSON.stringify(run.independentRuntimes) : `skipped (${run.independentSkippedReason})`,
+    );
   }
 });

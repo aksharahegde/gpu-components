@@ -1,5 +1,8 @@
 import { GpuRuntime, type MountHandle } from "@gpu-components/core";
+import { ingestSpans, type RawSpan, type SpanBuffers } from "../../../../registry/timeline/ingest.ts";
 import { TimelineComponent } from "../../../../registry/timeline/TimelineComponent.ts";
+import { generateDataset } from "../generators.ts";
+import { oscillate } from "../renderers/shared.ts";
 import type { FrameStats } from "../types.ts";
 
 /**
@@ -27,25 +30,69 @@ import type { FrameStats } from "../types.ts";
  * compute pass and encodes+submits its render pass through the real `vgpu` `frame()`/`frameLoop()`
  * path, for both configurations, which is what this scenario was always meant to measure.
  *
- * **Component-count scaling (2026-08-30):** the original scenario only ever compared 2 components,
- * and `decision-record.md` said as much — "doesn't touch the actual 'many canvases' ceiling." At 2
- * trivially-cheap components, per-frame work is far below the ~16.6ms vsync floor either way, so a
- * real scheduling/submit-overhead difference (one encoder+submit vs. two) has no room to show up —
- * both configurations tie at the floor regardless of which architecture is actually cheaper. This
- * now runs at several component counts (`COMPONENT_COUNTS`) so a real difference has a chance to
- * emerge once total per-tick work approaches the frame budget.
+ * **Component-count scaling, round 1 (2026-08-30):** the original scenario only ever compared 2
+ * components, and `decision-record.md` said as much — "doesn't touch the actual 'many canvases'
+ * ceiling." At 2 trivially-cheap *empty* components, per-frame work is far below the ~16.6ms vsync
+ * floor either way, so a real scheduling/submit-overhead difference has no room to show up. Scaling
+ * component count to 8 with the `animating`-only fix (still empty payload) didn't help either —
+ * `dispatchCull()` returns early for a component with no uploaded spans, so even that "real" path
+ * was doing near-zero GPU work: an indirect draw with a 0 instance count and a 16-byte buffer reset,
+ * ×N. `decision-record.md`'s own full render matrix shows a *single* `TimelineComponent` stays under
+ * the vsync floor even at 10M real spans — so the fixed per-device/per-submit overhead this scenario
+ * is actually trying to isolate is the thing that needs to dominate, not GPU compute/render cost from
+ * a bigger payload (a bigger payload dilutes that signal, it doesn't sharpen it).
+ *
+ * **Round 2 (2026-08-30): real (but small) payload, oscillating viewport, higher N.** Each component
+ * now gets `PAYLOAD_SPANS` real spans (small — just enough that the compute-cull dispatch and
+ * indirect draw do genuine non-zero work, not enough to make GPU compute cost dominate) and is
+ * driven every measured frame through `component.update()` with an oscillating viewport (`oscillate`,
+ * the same "always real work, never a cached repaint" trick `renderers/webgpu.ts` already uses) —
+ * this both keeps the component genuinely dirty every tick (replacing the `animating` shortcut with
+ * the same call pattern a real consumer uses) and forces a fresh viewport-uniform write + cull
+ * dispatch + indirect draw every frame. `COMPONENT_COUNTS` now reaches higher, since the lever most
+ * likely to expose *submission-count* overhead (the actual thing "one device, one submit" claims to
+ * save) is more devices/submits per tick, not more data per device. Independent-device creation is
+ * wrapped in try/catch per count — a browser's concurrent-`GPUDevice` cap is expected to be hit
+ * eventually, and that should show up as a reported limit, not crash the whole scenario.
  */
 export interface SharedContextRunResult {
   readonly componentCount: number;
   readonly sharedRuntime: FrameStats;
-  readonly independentRuntimes: FrameStats;
+  readonly independentRuntimes: FrameStats | null;
+  /** Set when `independentRuntimes` is `null` — e.g. a browser's concurrent-`GPUDevice` cap. */
+  readonly independentSkippedReason?: string;
 }
 export type SharedContextResult = readonly SharedContextRunResult[];
 
-/** Component counts to compare shared-vs-independent at. Kept modest — each independent-runtime
- * measurement opens `componentCount` separate `GPUDevice`s, and browsers cap concurrent devices
- * (PLAN.md §2(a)). */
-const COMPONENT_COUNTS = [2, 4, 8] as const;
+/** Component counts to compare shared-vs-independent at. The independent-device configuration opens
+ * `componentCount` separate `GPUDevice`s — expected to eventually hit a browser's concurrent-device
+ * cap (PLAN.md §2(a)), which is reported (`independentSkippedReason`), not treated as a crash. */
+const COMPONENT_COUNTS = [2, 8, 16, 24] as const;
+
+/** Real spans per component — small enough that GPU compute/render cost doesn't dominate and drown
+ * out per-device/per-submit overhead (see this file's "Round 2" doc comment above), but non-zero so
+ * `TimelineComponent`'s cull-dispatch/indirect-draw path does genuine work instead of the degenerate
+ * `spans.count === 0` early-out. */
+const PAYLOAD_SPANS = 2_000;
+const VIEWPORT_SIZE = { width: 300, height: 150 };
+
+function toRawSpans(dataset: ReturnType<typeof generateDataset>): RawSpan[] {
+  const spans: RawSpan[] = new Array(dataset.size);
+  for (let i = 0; i < dataset.size; i++) {
+    spans[i] = {
+      start: dataset.start[i]!,
+      duration: dataset.duration[i]!,
+      track: dataset.track[i]!,
+      colorIndex: dataset.colorIndex[i]!,
+    };
+  }
+  return spans;
+}
+
+function buildPayload(): { spans: SpanBuffers; trackCount: number } {
+  const dataset = generateDataset("bursty", PAYLOAD_SPANS);
+  return { spans: ingestSpans(toRawSpans(dataset)), trackCount: dataset.trackCount };
+}
 
 const MEASURED_FRAMES = 300;
 const WARMUP_FRAMES = 50;
@@ -94,22 +141,48 @@ function measureFrames(advance: () => void, frames = MEASURED_FRAMES): Promise<F
   });
 }
 
-/** Marks a just-mounted component perpetually active so the scheduler's `dirty || animating` filter
- * (`packages/core/src/scheduler.ts`) keeps it in the active set every tick — see this file's own doc
- * comment for why `invalidate()` alone doesn't do that. */
-function keepAnimating(component: TimelineComponent): TimelineComponent {
-  component.animating = true;
-  return component;
+function viewportForPhase(now: number): { timeStart: number; timeEnd: number } {
+  const { zoom, pan } = oscillate(now);
+  return { timeStart: -pan / zoom, timeEnd: (1 - pan) / zoom };
 }
 
-async function measureSharedRuntime(container: HTMLElement, componentCount: number): Promise<FrameStats> {
+/** Uploads `payload.spans` into every mounted component and returns a per-frame `advance` closure
+ * that re-`update()`s each with a fresh (oscillating) viewport — real work every tick, the same
+ * pattern `renderers/webgpu.ts` uses, which also keeps `dirty` genuinely true without the
+ * `animating` shortcut this file used before real payload existed. */
+function driveComponents(
+  components: readonly TimelineComponent[],
+  payload: { spans: SpanBuffers; trackCount: number },
+  invalidateAll: () => void,
+): () => void {
+  const initial = { ...VIEWPORT_SIZE, trackCount: payload.trackCount, timeStart: 0, timeEnd: 1 };
+  for (const c of components) c.update({ spans: payload.spans, viewport: initial });
+  return () => {
+    const { timeStart, timeEnd } = viewportForPhase(performance.now());
+    const viewport = { ...VIEWPORT_SIZE, trackCount: payload.trackCount, timeStart, timeEnd };
+    for (const c of components) c.update({ spans: payload.spans, viewport });
+    invalidateAll();
+  };
+}
+
+async function measureSharedRuntime(
+  container: HTMLElement,
+  componentCount: number,
+  payload: { spans: SpanBuffers; trackCount: number },
+): Promise<FrameStats> {
   const runtime = await GpuRuntime.create();
   const canvases = Array.from({ length: componentCount }, () => makeCanvas(container));
+  const components: TimelineComponent[] = [];
   const handles: MountHandle[] = canvases.map((canvas) =>
-    runtime.mount(() => keepAnimating(new TimelineComponent(1)), canvas),
+    runtime.mount(() => {
+      const c = new TimelineComponent(payload.spans.count);
+      components.push(c);
+      return c;
+    }, canvas),
   );
   try {
-    return await measureFrames(() => runtime.invalidate());
+    const advance = driveComponents(components, payload, () => runtime.invalidate());
+    return await measureFrames(advance);
   } finally {
     for (const h of handles) h.unmount();
     runtime.dispose();
@@ -117,16 +190,35 @@ async function measureSharedRuntime(container: HTMLElement, componentCount: numb
   }
 }
 
-async function measureIndependentRuntimes(container: HTMLElement, componentCount: number): Promise<FrameStats> {
-  const runtimes = await Promise.all(Array.from({ length: componentCount }, () => GpuRuntime.create()));
+/** Returns `null` (with a reason) instead of throwing when `componentCount` independent
+ * `GPUDevice`s can't all be created — a browser's concurrent-device cap is an expected outcome at
+ * high `N`, not a scenario failure (see this file's "Round 2" doc comment). */
+async function measureIndependentRuntimes(
+  container: HTMLElement,
+  componentCount: number,
+  payload: { spans: SpanBuffers; trackCount: number },
+): Promise<{ stats: FrameStats; skippedReason?: undefined } | { stats: null; skippedReason: string }> {
+  let runtimes: GpuRuntime[];
+  try {
+    runtimes = await Promise.all(Array.from({ length: componentCount }, () => GpuRuntime.create()));
+  } catch (err) {
+    return { stats: null, skippedReason: err instanceof Error ? err.message : String(err) };
+  }
+
   const canvases = Array.from({ length: componentCount }, () => makeCanvas(container));
+  const components: TimelineComponent[] = [];
   const handles = runtimes.map((runtime, i) =>
-    runtime.mount(() => keepAnimating(new TimelineComponent(1)), canvases[i]!),
+    runtime.mount(() => {
+      const c = new TimelineComponent(payload.spans.count);
+      components.push(c);
+      return c;
+    }, canvases[i]!),
   );
   try {
-    return await measureFrames(() => {
+    const advance = driveComponents(components, payload, () => {
       for (const runtime of runtimes) runtime.invalidate();
     });
+    return { stats: await measureFrames(advance) };
   } finally {
     for (const h of handles) h.unmount();
     for (const runtime of runtimes) runtime.dispose();
@@ -135,11 +227,20 @@ async function measureIndependentRuntimes(container: HTMLElement, componentCount
 }
 
 export async function runSharedContextScenario(container: HTMLElement): Promise<SharedContextResult> {
+  const payload = buildPayload();
   const results: SharedContextRunResult[] = [];
   for (const componentCount of COMPONENT_COUNTS) {
-    const sharedRuntime = await measureSharedRuntime(container, componentCount);
-    const independentRuntimes = await measureIndependentRuntimes(container, componentCount);
-    results.push({ componentCount, sharedRuntime, independentRuntimes });
+    const sharedRuntime = await measureSharedRuntime(container, componentCount, payload);
+    const independent = await measureIndependentRuntimes(container, componentCount, payload);
+    results.push({
+      componentCount,
+      sharedRuntime,
+      independentRuntimes: independent.stats,
+      independentSkippedReason: independent.skippedReason,
+    });
+    // A concurrent-device cap at this count will only get worse at the next (higher) count too —
+    // stop scaling rather than spend the rest of the matrix re-discovering the same limit.
+    if (!independent.stats) break;
   }
   return results;
 }

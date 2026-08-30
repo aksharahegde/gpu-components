@@ -55,21 +55,48 @@ finding.
 every tick, so every measured frame genuinely dispatches the compute pass and encodes+submits the
 render pass through the real `vgpu` path, for both configurations.
 
-**Re-running with the fix, and scaling component count (2, 4, 8) to give a real difference room to
-appear:** every configuration at every count ties at the vsync floor (p50 16.700ms, 0 dropped
-frames) — see `BASELINES.md`'s Phase 0 goal (a) table. This is expected, not a new finding: an
-indirect draw with a 0-instance count and a 16-byte buffer write are both far too cheap, even ×8
-independent `GPUDevice`s, to approach the 16.6ms frame budget. **The test as designed cannot
-currently distinguish the two architectures** — both are bound by the display's vsync interval
-regardless of which is actually cheaper underneath it, so this specific measurement has no signal
-either way. It is neither a confirmation nor a contradiction of the architectural bet.
+**Re-running with the fix, scaling component count (2, 4, 8):** every configuration at every count
+ties at the vsync floor (p50 16.700ms, 0 dropped frames). This turned out to be expected, not a new
+finding: an indirect draw with a 0-instance count and a 16-byte buffer write are both far too cheap,
+even ×8 independent `GPUDevice`s, to approach the 16.6ms frame budget — `dispatchCull()` returns
+early for a component with no uploaded spans, so this round wasn't exercising real GPU work at all,
+just the cheapest possible framework overhead ×N.
 
-**What would actually produce a signal:** either non-trivial per-component payload (real span data,
-not empty mounts) so scheduling/submit cost is large enough to approach the frame budget, or a
-component count high enough that per-device fixed overhead (driver/memory state) dominates — which
-risks hitting a browser's concurrent-`GPUDevice` cap before it produces a difference. Neither is done
-here; flagged as follow-up work, not resolved by this investigation.
+## Round 2 (2026-08-30): real payload, oscillating viewport, N up to 48 — still no signal
 
-**Also still not touched:** the actual "many canvases" ceiling (how many concurrent surfaces before
-scheduler overhead dominates) at *non-trivial* payload — a further `sharedContextScenario.ts`
-extension if it becomes a real question.
+Gave each component `PAYLOAD_SPANS = 2,000` real spans and drove every measured frame through
+`component.update()` with an oscillating viewport (`renderers/webgpu.ts`'s own "always real work,
+never a cached repaint" pattern) instead of the `animating` shortcut — this forces a genuine
+viewport-uniform write, cull-compute dispatch, and non-zero indirect draw every tick, replacing the
+degenerate zero-instance case Round 1 accidentally measured. Also pushed `COMPONENT_COUNTS` to
+`[2, 8, 16, 24]` (committed) and spot-checked as high as **48** independent `GPUDevice`s (not
+committed — this environment never actually hit a device cap worth reporting, so there's nothing
+more informative to keep at that count than at 24).
+
+**Result: still tied at the vsync floor, at every N tested, up to 48 real-payload independent
+devices.** See `BASELINES.md`'s Phase 0 goal (a) table for the full 2/8/16/24 numbers. Both
+dimensions available to this wall-clock methodology — payload size and component/device count — have
+now been pushed meaningfully (2,000 real spans × up to 48 devices, each genuinely dispatching compute
++ an indirect draw every frame) without finding daylight between the two architectures. That's not
+because they're proven equivalent; it's because **`requestAnimationFrame`-interval measurement has a
+hard floor at the display's vsync rate, and nothing tested so far pushes total per-tick work anywhere
+close to that ~16.6ms budget** — so there is no ms-of-headroom for a shared-vs-independent difference
+to consume. `decision-record.md`'s original "what this does not claim" caveat was right for a
+different reason than initially stated: the ceiling this methodology can't see past isn't about
+"how many canvases" so much as "how much total work is inside the frame budget."
+
+**What would actually produce a signal (not attempted here):**
+1. **Direct timing of the encode/submit step itself**, bypassing vsync entirely — e.g. bracket the
+   synchronous portion of the frame-loop callback with `performance.now()`, or use `vgpu`'s
+   `timer(gpu)` GPU timestamp-query spans (PLAN.md §10.7's `Profiler`, explicitly a Phase 4 item, not
+   done yet). This is the methodologically correct fix, not a bigger version of what Round 2 already
+   tried — wall-clock rAF-interval measurement cannot see sub-vsync differences by construction, no
+   matter how much payload or how many devices, until the *sum* of that work exceeds one frame.
+2. Alternatively, payload and/or component count large enough that total work genuinely exceeds one
+   frame's budget (unlike Round 2, which stayed comfortably under it) — real dropped frames would let
+   the existing wall-clock methodology show a difference, at the cost of measuring something closer
+   to "which config degrades more gracefully under overload" than "which has lower fixed overhead."
+
+Recorded honestly as: **the founding claim is still neither confirmed nor contradicted.** Two rounds
+of investigation replaced a harness bug (a false negative) with a methodology ceiling (no signal
+either way) — that is real progress, not a wash, but it is not a validated architectural claim.
