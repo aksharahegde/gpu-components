@@ -2,7 +2,10 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSPrope
 import { useCanvasRef, useGpuComponent } from "@gpu-components/react";
 import {
   createPointerController,
+  createVelocityTracker,
   createViewportController,
+  decayVelocity,
+  INERTIA_STOP_VELOCITY,
   normalizeWheel,
 } from "@gpu-components/core";
 import type { ViewportBounds, ViewportState } from "@gpu-components/core";
@@ -38,6 +41,11 @@ export interface GPUTimelineProps {
 const ZOOM_SPEED = 0.0015;
 /** Screen reader announcements are debounced to at most one per this many ms (PLAN.md §21.2). */
 const ANNOUNCE_DEBOUNCE_MS = 500;
+/** How long after the last wheel event, with no new one arriving, before treating the gesture as
+ * "over" and starting inertial pan decay (PLAN.md Phase 3) — roughly the gap a trackpad's own
+ * discrete wheel-event stream leaves between events *during* a swipe, so real ongoing swipes don't
+ * get cut off mid-gesture. */
+const WHEEL_IDLE_MS = 80;
 
 /** Visually-hidden-but-screen-reader-visible — the `tl-summary` region and the `aria-live`
  * announcer (PLAN.md §21.1) are real content, not decorative, so `display: none` (which removes
@@ -118,10 +126,15 @@ function revealSpan(
  * currently-labeled/visible spans `visibleLabels` renders — the viewport pans to reveal a span that
  * scrolls out of view, same as a real trace-viewer's roving focus.
  *
+ * Wheel gestures also drive inertial pan (PLAN.md Phase 3): a `VelocityTracker` (`@gpu-components/core`)
+ * is fed from each wheel event's pan delta, and `WHEEL_IDLE_MS` after the last one, decays that
+ * velocity across `requestAnimationFrame`s via `decayVelocity` until it settles. Honors
+ * `prefers-reduced-motion` (no decay animation at all, per §21/§32) and is cancelled by any new
+ * wheel gesture, keyboard pan/zoom, or unmount, so it never fights an explicit interaction.
+ *
  * Not implemented yet (see the migration plan / repo README): Shift+Arrow range selection (needs a
  * broader single-id → set selection model), a shader-pass focus ring (DOM outline only for now),
- * `toAccessibleTable()`, `prefers-reduced-motion` handling (moot — there's no inertial animation to
- * disable yet), touch gestures, and GPU-picking/brush-lasso selection.
+ * `toAccessibleTable()`, touch gestures, and GPU-picking/brush-lasso selection.
  */
 export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
   const { spans, onViewportChange, hoveredId, selectedId, onHover, onSelect, style, className } = props;
@@ -139,6 +152,21 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
   const bounds = useMemo(() => props.bounds ?? computeBounds(spans), [props.bounds, spans]);
   const summaryId = useId();
 
+  // Inertial pan (PLAN.md Phase 3). `viewportRef`/`boundsRef` give the inertia rAF loop — which
+  // runs across many frames, independent of React's render cycle — the *current* values without
+  // stale closures; kept in sync every render (a plain mutation, not state: nothing here affects
+  // this render's own output, only a later async callback's). `inertiaFrame`/`velocityTracker`/
+  // `lastWheelAt`/`wheelIdleTimer` are refs so they persist across re-renders without themselves
+  // triggering one.
+  const viewportRef = useRef(viewport);
+  viewportRef.current = viewport;
+  const boundsRef = useRef(bounds);
+  boundsRef.current = bounds;
+  const velocityTracker = useRef(createVelocityTracker());
+  const lastWheelAt = useRef<number | null>(null);
+  const wheelIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inertiaFrame = useRef<number | null>(null);
+
   const [focusedId, setFocusedId] = useState<number | null>(null);
 
   const setViewport = useCallback(
@@ -148,6 +176,58 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
     },
     [onViewportChange],
   );
+
+  /** Stops any in-flight inertia decay — called when a new wheel gesture starts (it takes over) or
+   * another interaction (keyboard pan/zoom, unmount) explicitly drives the viewport instead. */
+  const cancelInertia = useCallback(() => {
+    if (wheelIdleTimer.current != null) {
+      clearTimeout(wheelIdleTimer.current);
+      wheelIdleTimer.current = null;
+    }
+    if (inertiaFrame.current != null) {
+      cancelAnimationFrame(inertiaFrame.current);
+      inertiaFrame.current = null;
+    }
+  }, []);
+
+  /** Starts the post-wheel-gesture pan decay (PLAN.md Phase 3, "inertial pan/zoom
+   * (reduced-motion aware)") — called once `WHEEL_IDLE_MS` after the last wheel event. Honors
+   * `prefers-reduced-motion` by not animating at all, per PLAN.md §21/§32's acceptance criterion.
+   * Reads/writes `viewportRef.current` each frame rather than the `viewport` prop/closure, since
+   * this loop runs across many animation frames independent of when React actually re-renders. */
+  const startInertia = useCallback(() => {
+    const reducedMotion =
+      typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+      velocityTracker.current.reset();
+      return;
+    }
+    let v = velocityTracker.current.velocity();
+    if (Math.abs(v) < INERTIA_STOP_VELOCITY) return;
+
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = now - last;
+      last = now;
+      v = decayVelocity(v, dt);
+      const controller = createViewportController(viewportRef.current, boundsRef.current);
+      controller.panByPixels(v * dt);
+      const next = controller.getState();
+      viewportRef.current = next;
+      setViewport(next);
+      if (Math.abs(v) < INERTIA_STOP_VELOCITY) {
+        inertiaFrame.current = null;
+        return;
+      }
+      inertiaFrame.current = requestAnimationFrame(step);
+    };
+    inertiaFrame.current = requestAnimationFrame(step);
+  }, [setViewport]);
+
+  // Stop inertia on unmount — otherwise its rAF chain keeps calling `setViewport` on an unmounted
+  // component's state (harmless with `onViewportChange`, a `setState`-after-unmount warning
+  // otherwise).
+  useEffect(() => cancelInertia, [cancelInertia]);
 
   const announce = useCallback((text: string) => {
     const fire = () => {
@@ -197,12 +277,27 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
+      cancelInertia(); // this gesture (or its continuation) takes over from any decaying inertia
       const { deltaX, deltaY } = normalizeWheel(e);
       const controller = createViewportController(viewport, bounds);
       const rect = canvas.getBoundingClientRect();
       controller.zoomAt(e.clientX - rect.left, Math.exp(deltaY * ZOOM_SPEED));
       controller.panByPixels(deltaX);
       setViewport(controller.getState());
+
+      // Feed the inertia velocity tracker from this gesture's pan component, then arm the
+      // "gesture ended" timer — reset on every wheel event, so it only actually fires
+      // `WHEEL_IDLE_MS` after the *last* one (PLAN.md Phase 3's inertial pan).
+      const now = performance.now();
+      const dt = lastWheelAt.current != null ? now - lastWheelAt.current : 16;
+      velocityTracker.current.record(deltaX, dt);
+      lastWheelAt.current = now;
+      if (wheelIdleTimer.current != null) clearTimeout(wheelIdleTimer.current);
+      wheelIdleTimer.current = setTimeout(() => {
+        wheelIdleTimer.current = null;
+        lastWheelAt.current = null;
+        startInertia();
+      }, WHEEL_IDLE_MS);
     };
     canvas.addEventListener("wheel", handleWheel, { passive: false });
 
@@ -213,8 +308,8 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
       unsubUp();
       canvas.removeEventListener("wheel", handleWheel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- viewport/bounds are read fresh via closures rebuilt each render through this effect's own deps; onHover/onSelect are assumed stable per the calling convention used elsewhere in this codebase.
-  }, [canvas, viewport, bounds, onHover, onSelect, setViewport]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- viewport/bounds are read fresh via closures rebuilt each render through this effect's own deps; onHover/onSelect/cancelInertia/startInertia are assumed stable per the calling convention used elsewhere in this codebase.
+  }, [canvas, viewport, bounds, onHover, onSelect, setViewport, cancelInertia, startInertia]);
 
   // Keyboard navigation (PLAN.md §21.2), attached to the component root, not the canvas — the
   // canvas is `aria-hidden` and never a focus/tab target itself.
@@ -231,6 +326,7 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      cancelInertia(); // keyboard pan/zoom takes precedence over any decaying wheel inertia
       const track = focusedId != null ? spans.track[focusedId]! : 0;
       const atTime = focusedId != null ? spans.start[focusedId]! : viewport.timeStart;
       const controller = createViewportController(viewport, bounds);
@@ -291,8 +387,8 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
 
     el.addEventListener("keydown", handleKeyDown);
     return () => el.removeEventListener("keydown", handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- onSelect is assumed stable per the calling convention used elsewhere in this codebase.
-  }, [spans, viewport, bounds, focusedId, announce, setViewport, onSelect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onSelect/cancelInertia are assumed stable per the calling convention used elsewhere in this codebase.
+  }, [spans, viewport, bounds, focusedId, announce, setViewport, onSelect, cancelInertia]);
 
   const labels = visibleLabels(spans, viewport);
   const focusedVisible = focusedId != null && labels.some((l) => l.id === focusedId);
