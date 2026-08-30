@@ -601,6 +601,30 @@ Deliberately four. Not a general 2D vector renderer — a general 2D renderer is
 
 Everything else in v1 is composed from these. `blend: 'alpha'` (a documented vgpu preset), `depth: false` for 2D overlays, `cull: 'none'`.
 
+> **Drift note (2026-08-30, audited against the code): three of the four primitives now exist.**
+> `InstancedQuadLayer` (`packages/core/src/layers/instancedQuad.ts`) and `RasterLayer`
+> (`layers/rasterLayer.ts`) were already real core objects; the audit found `LineLayer` and
+> `LabelLayer` missing, and **`LineLayer` shipped in response (2026-08-30)** —
+> `packages/core/src/layers/lineLayer.ts` plus its built-in `lineLayer.wgsl.ts`.
+>
+> It **composes** `InstancedQuadLayer` rather than duplicating it, which is the honest reading of
+> this section's own wording ("instanced quads expanded to screen-space thick lines in the vertex
+> stage"): the only things it adds are the line-expansion math, a fixed 32-byte `LineInstance`
+> layout, and packing helpers. One design difference from `InstancedQuadLayer` worth recording,
+> because it is a small departure from the "components own their shaders" default: **the shader
+> ships with the layer**, since a thick line means the same thing in every component, whereas what a
+> *quad* means is component policy. `LINE_WGSL` is exported and overridable, so the escape hatch
+> survives. Endpoints are domain-space by default with per-instance `CLIP_X`/`CLIP_Y` flags, which
+> is what lets one instance span the full width or height without knowing the current domain.
+>
+> **`LabelLayer` is still not a core object**: the DOM label overlay lives inside
+> `registry/timeline/GPUTimeline.tsx`. Note that §13.4 makes the DOM overlay the v1 label path
+> *deliberately*, so this one is less clearly a gap than `LineLayer` was — a `LabelLayer` primitive
+> only becomes load-bearing when the phase-4 glyph atlas lands or when the Canvas2D fallback needs
+> a fourth primitive to dispatch on. Until then, §22.2's "one Canvas2D backend serves every
+> component" argument rests on three real primitives plus a DOM layer that is already
+> renderer-independent (§22.2's own table calls the label row "identical" in both paths).
+
 ### 12.2 The Timeline frame, concretely
 
 ```text
@@ -621,6 +645,86 @@ per tick, inside ONE frame(gpu, …):
   [render]  pass B → surface  clear:false — overlay: hover outline, selection,
                               brush rect, axis rules, cursor
 ```
+
+> **✅ Resolved (2026-08-30) — root cause found, fixed, and now guarded by a real pixel test.**
+> The cause was **`trackedUniforms()`**, added during the §28.2 warnings work: it returned a bare
+> `{ set }` object. That satisfies the `SharedUniforms<T>` type — structurally the public type is
+> just `set` — but `uniforms()` returns a GPU-backed resource whose *other* members are what
+> `draw.set({ viewport: … })` actually binds. Handed the stand-in, the binding resolved to nothing,
+> the shader read an all-zero viewport block, `trackToClip` became `[0, 0]`, and **every span quad
+> collapsed to zero height**. The component drew a flawless empty frame. It also explains the
+> raster path's half-filled surface: its inverse row mapping divides by `trackToClip.x`, i.e. by
+> zero.
+>
+> The fix wraps `set` *on the real uniform object* instead of replacing it, preserving identity,
+> prototype and internals so vgpu's identity-keyed bind-group cache sees the object it created
+> (`packages/core/src/trackedUniforms.ts`). Verified by reading pixels back through Dawn: 0 → 9,170
+> non-black pixels on a 200×100 target, and visually in the playground, where all 8 track rows now
+> render across the full height in both LOD modes.
+>
+> **The guard:** `registry/timeline/render.pixels.test.ts` — PLAN.md §23.3's `vgpu/node` render
+> correctness, five tests that render through real Dawn and assert on actual pixels: that pixels
+> exist at all, that each span lands where the viewport transform says (to the exact column — span
+> a's left edge is precisely x=20), that its colour is the categorical palette's first entry, that
+> genuinely empty gaps stay empty, that the axis rules draw, and that raster LOD mode draws too. It
+> skips cleanly where Dawn is unavailable rather than failing.
+>
+> **Two things worth keeping from how this was found.** First, the diagnosis order that worked:
+> read back the *compute* output before suspecting it — `indirectArgs` was `[6, 3, 0, 0]` and
+> `visibleIndices` `[0, 1, 2]`, correct, which eliminated the entire cull/indirect path in one step
+> and pointed at the draw. Second, a plain instanced draw was equally blank, which eliminated
+> `drawIndirect` too and left only the shader's inputs.
+>
+> **Known issue, not fixed:** the minimum-width clamp (§12.3) is *visual only* — a sub-pixel span is
+> drawn 1.5px wide but hit-tested at its true width, so at low zoom you can see ticks you cannot
+> hover. Hover is correct once zoomed in (verified). Hit-testing should probably apply the same
+> pixel-width floor the vertex shader does.
+
+> **⚠ Was (2026-08-30): the instanced + indirect path renders nothing on real hardware.**
+> Found the first time anyone actually *looked* at the component, via the new playground
+> (`apps/site/app/playground`). At 1,000 spans on a 60s domain — comfortably instanced mode, LOD
+> estimate 0.93 against a threshold of 4 — the canvas is uniformly black at every zoom level tested,
+> up to 56×, where roughly 18 spans should each be ~40px wide. The raster LOD path *does* draw at the
+> same moment on the same data (10k spans), so the device, surface, scheduler, submit and viewport
+> uniform are all working; it is specifically the cull-compute → `drawIndirect` path that produces no
+> pixels. No `VGPU-*` error, no console output, no validation failure — it silently draws nothing.
+> A second, probably related symptom: the raster path fills only the *lower* portion of the surface,
+> as though the track-row mapping covers half its range.
+>
+> **Why this survived until now, which is the more important point.** Phase 2's own status note says
+> the cull pass was "verified against `vgpu/mock` (wiring/binding correctness — atomics, bind-by-name,
+> no `VGPU-*` errors — **not pixel-level culling correctness, which needs `vgpu/node`/browser
+> testing, not yet done**)". That caveat was accurate and is now falsified: the wiring is fine and
+> the output is empty. The benchmark harness drives this same code path on real WebGPU thousands of
+> times per run and never caught it either, because it measures *frame timing* and never asserts a
+> pixel. And the one visual surface on the site, the home-page benchmark, has its WebGPU row
+> **disabled on purpose** — so nothing in this repo has ever displayed the GPU render path to a
+> human. Three layers of verification, none of which look at the picture.
+>
+> **Consequence for the plan, not just for the bug:** §23.3/§23.4's `vgpu/node` render-correctness
+> and `pixelDiff` snapshot work moves from "deferred nice-to-have" to the highest-value untaken item
+> in the testing section. A single committed baseline of "1k spans, known viewport, known pixels"
+> would have caught this on the commit that introduced it.
+
+> **Status note (2026-08-30): axis rules shipped.** The frame sketched above lists "axis rules" in
+> overlay pass B, and until now the Timeline drew none at all — no time gridlines, no track
+> separators. `registry/timeline/axisRules.ts` computes both families as pure CPU functions (tick
+> positions are small-N and branchy — §5.2's "stays on CPU"), and `TimelineComponent` uploads them
+> to a `LineLayer` bound to the *same* viewport uniform the spans use, so a rule cannot drift out of
+> alignment with the data it rules across. Time gridlines land on nice 1/2/5×10ⁿ steps and are
+> origin-relative like every other time value (`spikes/gpu-time-precision.md`); track separators are
+> dropped entirely below a 6px row height rather than drawn as a grey smear, and the whole set is
+> capped at 128 rules so a hostile `trackCount` cannot produce an unbounded upload (§24.2).
+>
+> **Deviation from the sketch, deliberate:** the rules are encoded in the *existing* surface pass
+> before the spans, not in a second overlay pass. With alpha blending, draw order alone puts
+> gridlines behind the data, which is where they belong visually, and it avoids the cost of a second
+> pass for two draws. The layer is presized to the rule ceiling so zooming through different tick
+> counts never grows the buffer (which would otherwise trip §28.2's growth warning for entirely
+> expected behaviour), and rules are only repacked when the viewport actually changed — a hover or
+> a selection leaves them alone. Verified against `vgpu/mock` (wiring) and, since the bench harness
+> drives the real `TimelineComponent`, compiled and run for real on both headless-Chromium WebGPU
+> and `vgpu/node`'s Dawn backend.
 
 Two passes, both to the surface, one indirect draw, two dispatches. `bundle()` is *not* used in v1: the Timeline's draws change every frame (indirect counts, viewport, selection), and vgpu is explicit that bundles pay off for *static* repeated draws. Bundles become relevant when we add static chrome layers — noted in phase 4, not speculated on now.
 
@@ -681,6 +785,33 @@ lod.wgsl         fn lodBucket(); fn pixelColumn()
 
 We also depend on `@vgpu/wgsl-std` for `color`, `hash`, and `fullscreen` rather than writing our own.
 
+> **Drift note (2026-08-30): none of §13.1–§13.2's toolchain is built, and this section reads as
+> shipped when it is not.** The shipped shaders are **TypeScript template strings** —
+> `registry/timeline/{timeline,cull,densityBin,reduceDensity,raster,brushSelect,highlight}.wgsl.ts`
+> — not `.wgsl` files. There is no `.wgsl` file anywhere in the repo. Everything §13 describes as
+> present tense therefore does not exist: the vgpu WGSL loader is not configured in any app;
+> `resolveShader()`'s import graph / DCE / minify / source maps are not in the path; **the
+> build-time `reflectSource()` → TypeScript typegen step (§13.1's "we add exactly one thing") was
+> never written**, so `set()` is still untyped against the WGSL struct; §13.5's hot-reload story is
+> hypothetical; and `npx vgpu check --require-validation` runs nowhere (see §23.2's own drift note).
+> **`packages/wgsl` is an empty stub** — `src/index.ts` is the single line `export {}`. The six
+> modules listed above do not exist, and each component shader re-implements the viewport, quad and
+> bitset math inline.
+>
+> Two consequences worth stating plainly rather than leaving implied. First, §32's acceptance box
+> "uniform structs generated from WGSL reflection" is currently unreachable, not merely unticked.
+> Second, §25 justifies `packages/wgsl`'s existence at length ("must be a package because vgpu
+> resolves WGSL package imports through `node_modules`") for a package that ships nothing — an
+> empty package with a paragraph of rationale is worse than no package.
+>
+> **Decision required, not yet made:** either (a) migrate to real `.wgsl` files and land the loader
+> + `vgpu check` + typegen + the shared module package as one piece of work, or (b) declare the
+> TS-template-string form the v1 shape, cut `packages/wgsl` from v1, and rewrite §13.1, §13.2,
+> §13.5, §18.1 and §23.2 to match. *Provisional default: (a), before Phase 6* — the CLI copies
+> shader source into a user's repo (§18.1), and copying `.wgsl.ts` strings forfeits the loader,
+> validation and editability that make "you own the shaders" a real promise rather than a slogan.
+> Nothing currently blocks on this, which is exactly why it has drifted this far.
+
 ### 13.3 `<GPUShader src="./x.wgsl" uniforms={{…}} />` — rejected
 
 The brief asks whether this JSX form beats generated TypeScript wrappers. **It loses, decisively:**
@@ -739,6 +870,25 @@ interface InstanceBuffer<T> {
 }
 ```
 Growth is geometric and logged in dev — a buffer that grows every frame is a bug and the profiler should say so.
+
+> **Drift note (2026-08-30): (b) and (c) were never built; `InstancedQuadLayer` is doing (c)'s job
+> and differs from it in one load-bearing way.** `TargetPool` does not exist — nothing pools
+> offscreen targets, and the anti-pattern it exists to prevent (creating a `target()` inside the
+> render loop) is currently prevented only by nobody having written that code yet. `InstanceBuffer`
+> does not exist as a named abstraction either; `packages/core/src/layers/instancedQuad.ts` owns the
+> growable storage buffer instead, and it diverges on two points:
+> - **No CPU `mirror`.** The interface above makes the mirror mandatory and §14.2's last bullet
+>   makes it the mechanism device-loss replay depends on. In the shipped code the source of truth
+>   is the caller's own columnar arrays (`TimelineComponent` re-uploads from `ingest.ts` output on
+>   `onContextRestored()`), which *does* satisfy §14.2's rule — "mirrors CPU memory **or** is
+>   regenerable by a pure function" — but by the second clause, per-component, rather than
+>   structurally in the buffer. That works today and stops working silently the first time a
+>   component derives GPU data it does not also retain on the CPU. Worth either enforcing in the
+>   layer or restating §14.1(c) to match what is actually guaranteed.
+> - **Growth is exact, not geometric.** `upload()` sets `capacity = count`, so a dataset that grows
+>   monotonically reallocates the storage buffer on *every* upload. The ×1.5 geometric growth
+>   specified above is not implemented. The warnings-pane detector (§28.2) fires on this — correctly
+>   — which means the shipped code reports the symptom of a policy it never adopted.
 
 ### 14.2 Policies
 
@@ -889,6 +1039,18 @@ components/gpu/timeline/
 └── types.ts
 ```
 
+> **Drift note (2026-08-30): the shipped `registry/timeline/` does not match this tree, and this
+> tree is a contract, not a sketch** — it is the file list the CLI copies and the layout every
+> "you own this code" doc page will describe. Actual contents: `GPUTimeline.tsx`,
+> **`TimelineComponent.ts`** (not `TimelineRenderer.ts`), `viewModel.ts`, `ingest.ts`,
+> `hitTest.ts`, `index.ts`, and seven flat **`*.wgsl.ts`** files (no `shaders/` directory, no
+> `.wgsl` files — see §13.2's drift note). There is no `interaction.ts` (the pan/zoom/brush/keyboard
+> wiring lives in `GPUTimeline.tsx`), no `a11y.ts` (the overlay and semantic model are split between
+> `GPUTimeline.tsx` and `viewModel.ts`), no `fallback.ts` (nothing to put in it yet — §22), and no
+> `types.ts`. The functionality is present and tested; it is the *file boundaries* that drifted, and
+> they should be reconciled **before** Phase 6 starts rather than during it, since `add`, `diff` and
+> the issue template all encode this list.
+
 **Why the split at exactly this line:** the runtime is infrastructure nobody wants to fork and everybody wants patched (device management, scheduling, leak fixes, device-loss handling). The component is *policy* — colours, LOD thresholds, label rules, interaction feel, shaders — which is exactly what teams need to change and what a props API can never anticipate. shadcn's insight applied precisely.
 
 ### 18.2 Analysis of the model
@@ -964,6 +1126,15 @@ This is the section to get right; the failure mode of GPU libraries is moving th
 **Stays on CPU deliberately:** all string work (formatting, search, collation, label text); the one-time sort; track layout; tooltip content; the a11y tree; and every decision that must be answered *this frame*.
 
 **Never moved to GPU:** per-frame sorting (do it once); anything requiring a blocking readback; small datasets below the crossover.
+
+> **Drift note (2026-08-30): there is no worker.** `registry/timeline/ingest.ts` parses, builds the
+> columnar arrays, sorts by `(track, start)` and builds the per-track index **on the main thread**,
+> and says so in its own doc comment. The middle box of the diagram above is aspirational. The
+> Phase 2 deliverable list names "worker ingest → columnar arrays" first, and §32's "initial upload
+> of 1M spans ≤ 150ms, **entirely off the main thread**" cannot be met without it — that box is
+> currently blocked on unwritten code, not on measurement. The ingest logic itself is
+> worker-shaped already (pure, typed-array in / typed-array out), so this is a transport change
+> plus the `Transferable` handoff of open question #7, not a rewrite.
 
 ### 19.2 The optimisation ladder (applied in this order, and only after measurement)
 
@@ -1093,6 +1264,37 @@ fallback prop = "none"                          → tier: 'none' → render the 
 
 **Policy: the fallback renders the same four primitives (§12.1) on Canvas2D, at a capped budget, and each component declares its cap.** We do not maintain two full implementations per component — that is the maintenance trap `chartcn` walked into by swapping in an entirely different engine (PixiJS) for the fallback path.
 
+> **Correction (2026-08-30): this claim was not true as built, and stages 1–2 of the fix have now
+> shipped.** The sentence below argues that one Canvas2D backend serves every component *because*
+> the `RenderPlan` primitives are declarative. They were not: `RenderPass.encode(pass: FramePass)`
+> took `vgpu`'s frame pass directly, so the plan was declarative about **passes** while the draws
+> inside them were an opaque callback into vgpu that no other backend could interpret. Any fallback
+> written against the old interface would have been a second renderer per component — precisely the
+> trap §4.1 criticises `chartcn` for.
+>
+> **Shipped:** `encode()` now takes a `PassEncoder` (`packages/core/src/passEncoder.ts`), a tagged
+> union of the vgpu pass and a Canvas2D pass, and the three primitives each carry both backends.
+> The design point worth recording is that **no component code changed at all** — components draw
+> through `layer.draw(pass)` and the *primitive* knows the backends. The entire ripple of the
+> interface change was one line in one test helper, which is the strongest available evidence that
+> the primitives really are the narrow waist §22.2 assumes.
+>
+> **The limit found while building it, which §22.2 did not anticipate:** a quad layer *cannot*
+> decode its own instances. On the GPU path the component supplies WGSL that interprets the bytes,
+> so `core` knows the stride and never the meaning. So `InstancedQuadLayer` and `RasterLayer` take
+> an optional fallback *policy* — `decode(view, i, viewport)` and `shade(rgba, w, h)` respectively —
+> supplied by the component, which is consistent with §16.1 already assigning "its Canvas2D fallback
+> *policy*" to the component. `LineLayer` needs no policy, because its instance layout is `core`'s
+> own. A layer without a policy draws nothing **and reports it**, rather than failing silently.
+>
+> **Not yet done (stages 3–5):** the fallback runtime path — `tier: 'fallback'` still mounts
+> nothing, since `FrameScheduler` is GPU-only and `ComponentContext.gpu` is typed non-null `Gpu`,
+> which is a lie in fallback mode and is the real interface cost still to be paid; `TimelineComponent`'s
+> own fallback policies and the CPU equivalents of its four compute passes; the `fallback` prop on
+> `<GPUTimeline>` (§22.3) — which today has no status branch at all, so an unsupported browser
+> renders a blank canvas with no notice; and `onPerformance({ degraded: true, reason })`, which
+> `pass.report()` now feeds but nothing yet surfaces to an application.
+
 Because the `RenderPlan` primitives are small and declarative, one Canvas2D backend serves every component:
 
 | Primitive | Canvas2D fallback | Cap |
@@ -1114,6 +1316,22 @@ Above the cap the fallback **downsamples the data and says so** via `onPerforman
 ```
 
 Given Baseline WebGPU (Jan 2026), the realistic fallback population is ~5–10%: Linux Firefox, older iOS devices, and locked-down enterprise browsers. That is small enough that a *degraded* fallback is the right investment level and a *parity* fallback is not.
+
+> *(Superseded in part by the correction in §22.2 — stages 1–2 of the fallback shipped 2026-08-30.
+> The runtime path, the Timeline's own policies and the public `fallback` prop are still unbuilt, so
+> the substance of this note stands: a runtime that reaches `tier: 'fallback'` today still renders
+> nothing.)*
+>
+> **Drift note (2026-08-30): none of §22 is implemented.** `Capabilities.tier` carries the
+> `'fallback'` value (`packages/core/src/capabilities.ts`) and `GpuRuntime` correctly treats
+> unsupported-WebGPU as a state rather than an exception — that half is real. But **there is no
+> Canvas2D renderer anywhere in the repo**: no `packages/core/src/fallback-canvas2d/`, no
+> `registry/timeline/fallback.ts`, and the `fallback` prop of §17.2/§22.3 is not implemented on
+> `<GPUTimeline>`. A runtime that reaches `tier: 'fallback'` today renders nothing. All three of
+> §32's Fallback acceptance boxes are therefore blocked on unwritten code. Note the ordering
+> dependency with §12.1's drift note: the "one backend serves every component" design assumes the
+> four primitives are the only thing a component draws through, so the two missing primitives
+> should land first or the backend's scope has to be redrawn.
 
 ---
 
@@ -1137,6 +1355,26 @@ vgpu gives us an unusually good testing story and we should exploit all of it.
 - `npx vgpu check ./**/*.wgsl --require-validation` (or `VGPU_VALIDATE=require`) fails the build on invalid WGSL and on module-declares-binding violations (`VGPU-RESOLVE-MODULE-BINDING`).
 - **Reflection snapshots:** `check` prints reflection JSON; we commit it and diff. An accidental binding or struct-layout change becomes a reviewable diff instead of a runtime bug.
 - Unit-test WGSL helper functions by extracting them into pure modules and comparing against TypeScript reference implementations, using the pattern in vgpu's shader-debugging guide (encode internals as pixels, read back, compare).
+
+> **Drift note (2026-08-30): §23.2 runs nowhere, and neither does most of §23.** `npx vgpu check`
+> is not invoked by any script or workflow, no reflection snapshots are committed, and — because
+> the shaders are `.wgsl.ts` template strings (see §13.2's drift note) — `check` has no `.wgsl`
+> files to validate even if it were wired up. The `VGPU-RESOLVE-MODULE-BINDING` guard that §33's
+> issue 8 states as its acceptance criterion cannot currently fail a build.
+>
+> **The larger gap is CI coverage.** `.github/workflows/bench.yml` is the repo's **only** workflow,
+> and it runs only the `apps/bench` workspace (typecheck, tests, Playwright bench matrix, the
+> `vgpu/node` trend script). The `core`, `react` and `registry` suites — 109 of the repo's 120
+> tests, all passing locally — **never run in CI**. That includes the 100-cycle mount/unmount leak
+> test in `packages/core/src/runtime.test.ts`, which §34 singles out as the one thing that must
+> land "with the resource layer, not with the test suite later… wired into CI on day one," and the
+> device-loss replay test next to it. The workflow file's own header also records that it has never
+> been verified by a real Actions run. This is the cheapest correction in this audit and the one
+> with the widest blast radius if left: a green local run currently proves more than a green CI run
+> does, which inverts the point of having CI. Also absent: §23.6's Playwright browser matrix beyond
+> Chromium (declared but commented out), §23.4's visual-regression corpus and `tests/snapshots/`,
+> §23.3's `vgpu/node` correctness suite, and §23.7's nightly perf regression gate (the nightly cron
+> exists in `bench.yml`; the ±10% gate does not).
 
 ### 23.3 GPU correctness — `vgpu/node` (Dawn), plus the software renderer for determinism
 
@@ -1197,6 +1435,9 @@ WebGPU's sandbox prevents cross-process memory access, but it does **not** preve
 
 ## 25. Repository Structure
 
+**Target structure** (the plan). The **actual** tree as of 2026-08-30 is recorded in the drift note
+immediately after it — read both together; they differ in ways that matter.
+
 ```text
 gpu-components/
 ├── apps/
@@ -1227,6 +1468,42 @@ gpu-components/
 └── tooling/                   eslint config (incl. the no-react-in-core rule),
                                tsconfig bases, wgsl typegen, release scripts
 ```
+
+> **Drift note (2026-08-30): the actual tree, and what it says about the plan.**
+>
+> ```text
+> apps/
+>   bench/        ✅ as specified (harness, generators, 4 renderers, results, playwright config)
+>   site/         ⚠️  NOT IN THE PLAN — a real Next.js app (28 tracked files, 6 pages, StyleX,
+>                     depends on core + react + vgpu, own smoke script and AGENTS.md/CLAUDE.md).
+>                     This is `apps/docs` under a different name; the plan never mentions it.
+>   docs/         ❌ does not exist under this name
+>   playground/   ❌ does not exist at all — §27's renderer toggle, the document's own "money shot",
+>                     is unbuilt. `apps/site/src/components/SpanBenchmark.tsx` is the nearest thing.
+> packages/
+>   core/         ✅ substantial and tested — but see the §12.1, §14.1 and §22 drift notes for the
+>                     pieces of its specified surface that are missing (LineLayer, LabelLayer,
+>                     TargetPool, InstanceBuffer, fallback-canvas2d, picker/)
+>   react/        ✅ provider + 3 hooks + GpuInspector
+>   testing/      ✅ mock runtime / mock canvas over vgpu/mock
+>   wgsl/         ⚠️  EMPTY STUB — `export {}`. See §13.2's drift note; its existence is currently
+>                     justified by a paragraph in the table below that describes nothing.
+>   cli/          ❌ not started (correctly Phase-6-scoped)
+> registry/
+>   timeline/     ⚠️  present and tested, but the file layout differs from §18.1 — see that note
+>   registry.json ❌ not started (Phase 6)
+> tests/          ❌ neither `e2e/` nor `snapshots/` exists (§23.4, §23.6)
+> tooling/        ❌ does not exist — no shared eslint config, so the `no-react-in-core` rule that
+>                     §16.1 calls "enforced in CI" is enforced by nothing; no wgsl typegen; no
+>                     release scripts
+> .github/workflows/bench.yml   ⚠️  the only workflow, and it runs only apps/bench — see §23.2
+> ```
+>
+> Two of these are decisions, not just omissions, and should be made explicitly rather than by
+> continued silence: **(1)** adopt `apps/site` as the docs app and rename the row above, or rename
+> the app — but stop having a plan that describes a directory that does not exist and omits one
+> that does; **(2)** `tooling/`'s absence quietly downgrades §16.1's framework-independence rule
+> from "enforced" to "observed", which is the exact failure mode §16.1 was written to prevent.
 
 **Why each package exists — and what was cut from the brief's sketch:**
 
@@ -1388,7 +1665,7 @@ The **warnings pane is the highest-value part** and it is cheap: it encodes vgpu
 **Files:** `registry/timeline/**`, `packages/core/src/{viewport,picker}/**`, `packages/cli/**`.
 **Dependencies:** phase 1.
 **Risks:** label overlay reconciliation cost at 400 nodes/frame; LOD threshold tuning.
-**Acceptance:** 1M spans render correctly; pan/zoom smooth; labels correct at every zoom; keyboard navigation complete; `axe-core` clean; `npx gpu-components add timeline` works in a fresh Vite and a fresh Next.js app.
+**Acceptance:** 1M spans render correctly; pan/zoom smooth; labels correct at every zoom; keyboard navigation complete; `axe-core` clean. *(The `npx gpu-components add timeline` criterion was moved to Phase 6 on 2026-08-30 — it gated Phase 2 on a CLI that Phase 6 is scoped to build, which made Phase 2 permanently unclosable. The registry entry it copies is still Phase 2 work and still listed under Deliverables; only the CLI-works-in-a-fresh-app check moved.)*
 **Benchmark criteria:** 1M spans p95 ≤ 8ms; upload ≤ 150ms; measured Canvas2D crossover published.
 
 > **Status note (2026-08-30, audited against real code, not commit messages):** partially shipped.
@@ -1485,6 +1762,41 @@ next concrete slice of work, in order (updated 2026-08-30):
    default (§31 open question #4, currently `4`, not yet measured against real frame-time data — the
    `Profiler` also unblocks this); investigating the Round 3 N=24 non-monotonicity, if it matters.
 
+> **Plan-vs-code audit, 2026-08-30.** The repo was audited section by section against the source
+> rather than against commit messages. Health is good — `npm run typecheck` clean, `npm test`
+> 120/120 green (bench 11, core 46, react 9, registry 54) — and every status note above was found
+> accurate as far as it goes. What the notes did **not** record is drift in sections nobody has
+> touched recently; those now carry their own drift notes (§12.1, §13.2, §14.1, §18.1, §19.1, §22,
+> §23.2, §25, §32). Ordered by cost against benefit, the work those notes imply:
+>
+> 1. **Run the core/react/registry suites in CI.** One workflow file. 109 of 120 tests, including
+>    the leak test §34 calls non-negotiable, are currently unguarded. Nothing else on this list is
+>    this cheap or this load-bearing. *(Deliberately not done in this pass — plan edits only.)*
+> 2. **Decide the shader-toolchain question** (§13.2): real `.wgsl` files + loader + `vgpu check` +
+>    typegen, or declare the `.wgsl.ts` form v1 and rewrite §13/§18.1/§23.2 to match. This one
+>    blocks Phase 6 and silently blocks two §32 boxes, and it gets more expensive with every
+>    shader added. Resolve `packages/wgsl`'s empty-stub status as part of the same decision.
+> 3. **Reconcile `registry/timeline/`'s file layout with §18.1** — before Phase 6, since `add`,
+>    `diff` and the issue template all encode that list.
+> 4. **Adopt or rename `apps/site`** in §25, and add `tooling/`'s eslint config so §16.1's
+>    framework-independence rule is enforced rather than merely observed.
+> 5. **Then the genuinely-unbuilt features**, in the order their dependencies imply: ~~the two
+>    missing §12.1 primitives~~ → the Canvas2D fallback backend (§22) → worker ingest (§19.1) →
+>    `TargetPool`/`InstanceBuffer` (§14.1). None of these are blocked on anything but time.
+>    **Started 2026-08-30:** `LineLayer` shipped, and with it the Timeline's missing axis rules
+>    (§12.1 and §12.2's status notes). `LabelLayer` was reconsidered rather than built — §13.4 makes
+>    the DOM overlay the deliberate v1 label path, so it is only worth promoting to a core primitive
+>    when the glyph atlas or the fallback backend actually needs it. Next in this list: the
+>    Canvas2D fallback backend, which now has three real primitives to dispatch on.
+>    **Stages 1–2 of that backend shipped 2026-08-30** (see §22.2's correction): the `PassEncoder`
+>    abstraction that makes a second backend possible at all, and Canvas2D implementations of all
+>    three primitives with §22.2's caps and honest degradation reporting. Next: stage 3, the
+>    fallback runtime path, which is where `ComponentContext.gpu`'s non-null type has to give.
+>
+> Note what is **not** on this list: nothing in the audit contradicted an architectural decision.
+> The drift is uniformly "specified, not built" or "built differently than written down" — not
+> "built wrong". The founding claim (§2a/§11) remains confirmed by Round 3.
+
 ### Phase 3 — Interaction *(1.5 weeks)*
 
 **Goals:** the interaction primitives, in `core`, reusable.
@@ -1549,7 +1861,7 @@ next concrete slice of work, in order (updated 2026-08-30):
 
 **Goals:** installation is boring and reliable.
 **Deliverables:** `add`/`diff`/`doctor`/`list`; shadcn-compatible `registry.json`; bundler auto-config for Vite / webpack / Turbopack; integrity verification; templates for Vite, Next.js App Router, and Remix.
-**Acceptance:** a fresh app goes from `npm i` to a rendering component in under five minutes, verified by a scripted e2e test on all three bundlers.
+**Acceptance:** a fresh app goes from `npm i` to a rendering component in under five minutes, verified by a scripted e2e test on all three bundlers; **`npx gpu-components add timeline` works in a fresh Vite app and a fresh Next.js app** *(moved here from Phase 2, 2026-08-30)*. Note the §18.1 and §13.2 drift notes both land on this phase: `add` copies a file list that no longer matches the registry, and copies `.wgsl.ts` template strings rather than the `.wgsl` files the bundler-config half of `doctor` exists to configure a loader for. Reconcile both **before** starting this phase.
 
 ### Phase 7 — Ecosystem *(ongoing)*
 
@@ -1611,14 +1923,18 @@ To be resolved in phase 0/1, each with a proposed default so nothing blocks:
 ## 32. MVP Acceptance Criteria
 
 ### Architecture
-- [ ] Exactly **one** `GPUDevice` per `<GPUProvider>`, asserted by test with 6 components mounted.
-- [ ] Exactly **one** command-buffer submit per rAF tick regardless of component count.
-- [ ] No unnecessary WebGPU contexts: one `Surface` per canvas, disposed on unmount.
-- [ ] Deterministic resource lifecycle: `create` → `update`* → `dispose`, with `dispose()` idempotent.
-- [ ] **Zero GPU resource leaks** across 100 mount/unmount cycles including StrictMode double-invocation, verified in `vgpu/mock`.
-- [ ] `@gpu-components/core` builds and passes its full suite with `react` not installed.
-- [ ] Simulated device loss recovers to a rendering state without application involvement.
-- [ ] `RenderPlan` declares `reads`/`writes` (unused in v1) so the frame-graph upgrade path is open.
+
+*Ticked 2026-08-30 against real, passing tests — `[x]` means a test asserts it today, `[~]` means
+partially evidenced with the gap named. Nothing is ticked on the strength of a commit message.*
+
+- [~] Exactly **one** `GPUDevice` per `<GPUProvider>`, asserted by test with 6 components mounted. — *asserted with **two** components (`packages/react/src/GPUProvider.test.ts`, "mounts two sibling components…"; `scheduler.test.ts`). The bench harness drives 24 components on one runtime, but that is a benchmark, not an assertion. Raise the unit test to 6 to close this.*
+- [~] Exactly **one** command-buffer submit per rAF tick regardless of component count. — *`scheduler.test.ts` drives two components from a single `frameLoop` tick; "regardless of count" is not parameterised.*
+- [x] No unnecessary WebGPU contexts: one `Surface` per canvas, disposed on unmount. — *`GpuRuntime` keys surfaces by canvas and disposes them per mount record; covered by the leak test's registry assertions.*
+- [x] Deterministic resource lifecycle: `create` → `update`* → `dispose`, with `dispose()` idempotent. — *`GPUProvider.test.ts` covers create-once/update-on-prop-change and double-dispose under StrictMode.*
+- [x] **Zero GPU resource leaks** across 100 mount/unmount cycles including StrictMode double-invocation, verified in `vgpu/mock`. — *`runtime.test.ts` runs the 100-cycle loop; `GPUProvider.test.ts` covers the StrictMode double-invoke path.* **Caveat: this test does not run in CI** — see §23.2's drift note. The criterion is met locally and unguarded against regression.
+- [ ] `@gpu-components/core` builds and passes its full suite with `react` not installed. — *no check exists: `tooling/`'s eslint config, and with it the `no-restricted-imports` rule §16.1 calls "enforced in CI", was never written (§25 drift note). True today by observation only.*
+- [x] Simulated device loss recovers to a rendering state without application involvement. — *`runtime.test.ts`, "replays create() and calls onContextRestored() on every mounted component after simulated device loss".*
+- [x] `RenderPlan` declares `reads`/`writes` (unused in v1) so the frame-graph upgrade path is open. — *`packages/core/src/component.ts`, on both `ComputePass` and `RenderPass`.*
 
 ### Performance *(thresholds finalised at the end of phase 0 and published with methodology)*
 - [ ] 1M spans: p95 frame ≤ 8ms, mid discrete GPU, scripted pan/zoom.
@@ -1631,7 +1947,7 @@ To be resolved in phase 0/1, each with a proposed default so nothing blocks:
 
 ### Developer experience
 - [ ] `npm i @gpu-components/core @gpu-components/react && npx gpu-components add timeline` → a rendering `<GPUTimeline />` in **under five minutes**, verified by scripted e2e on Vite, Next.js (App Router), and Remix.
-- [ ] Full TypeScript types; no `any` in the public API; uniform structs generated from WGSL reflection.
+- [ ] Full TypeScript types; no `any` in the public API; uniform structs generated from WGSL reflection. — *first half holds (`npm run typecheck` is clean across all workspaces); the reflection-typegen half is **unreachable as built**, not merely undone — see §13.2's drift note.*
 - [ ] `npx gpu-components doctor` diagnoses a missing WGSL loader and prints the exact config to add.
 - [ ] Every vgpu error reaching the app is a structured `VGPU-*` code with `fix`/`where` preserved, not a swallowed exception.
 
@@ -1644,6 +1960,9 @@ To be resolved in phase 0/1, each with a proposed default so nothing blocks:
 - [ ] `prefers-reduced-motion` honoured.
 
 ### Fallback
+
+*All three boxes are blocked on unwritten code, not on measurement: there is no Canvas2D renderer in the repo. See §22's drift note.*
+
 - [ ] WebGPU unavailable → Canvas2D renders correct output at reduced capacity, with `onPerformance({ degraded: true, reason })` fired.
 - [ ] Fallback is exercised in CI with WebGPU disabled.
 - [ ] Above the fallback cap, data is downsampled and reported — **never silently truncated**.

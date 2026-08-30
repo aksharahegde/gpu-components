@@ -8,6 +8,7 @@ import { color, font, radius, size } from '../tokens.stylex'
 import { Btn, Small, Stack, Wrap, typo, util } from '../ui'
 
 const ROUTES = [
+  { to: '/playground', label: 'Playground' },
   { to: '/why-gpu', label: 'Why GPU' },
   { to: '/architecture', label: 'Architecture' },
   { to: '/components', label: 'Components' },
