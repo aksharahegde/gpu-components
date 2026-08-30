@@ -47,6 +47,11 @@ const ITEMS = {
     description:
       "Streaming log viewer. A GPU-resident ring buffer with incremental appends, virtualised scroll, and match/error density reduced across the whole buffer for the minimap.",
   },
+  candlestick: {
+    title: "GPUCandlestick",
+    description:
+      "OHLC price chart over a streaming ring buffer. In-place revision of the open bar, ordinal bar layout, and a whole-history min/max/volume envelope reduced on the GPU.",
+  },
   // GPUGraph is deliberately absent: its layout does not animate in the browser (a known open
   // defect), and a copy-source registry must not ship a component that is broken where it runs.
 };

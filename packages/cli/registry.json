@@ -307,6 +307,45 @@
           "hash": "271a1bb99d08d26f4a9f5f8d5782ae70829c6f727390b07d2e7f8010ab2fe60c"
         }
       ]
+    },
+    {
+      "name": "candlestick",
+      "type": "registry:component",
+      "title": "GPUCandlestick",
+      "description": "OHLC price chart over a streaming ring buffer. In-place revision of the open bar, ordinal bar layout, and a whole-history min/max/volume envelope reduced on the GPU.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "CandlestickComponent.ts",
+          "type": "registry:component",
+          "hash": "b6216f77dfc27c786e065127f37c22170d5899bc33f1ee3d521b75ee57c7cf94"
+        },
+        {
+          "path": "GPUCandlestick.tsx",
+          "type": "registry:component",
+          "hash": "d31331aae885ee48a39126726d1f5a1c1ac48b058fe94261636a4032ce935e6d"
+        },
+        {
+          "path": "candlestick.wgsl.ts",
+          "type": "registry:component",
+          "hash": "a9170992211ebbe892cc68b98983302cd23cd4b92bf3e89ee7b4d2c467999b70"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "c8f0be779e42f7ecad4bddd21e59ff6c3d17200b3d9cf8a832fb1b1c6c234ba2"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "719d97f409da70fe3f485137d67415f95ad5b4f781a148242993304ee44240ff"
+        }
+      ]
     }
   ]
 }

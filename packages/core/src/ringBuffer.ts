@@ -190,6 +190,34 @@ export class RingBuffer {
     return incoming;
   }
 
+  /**
+   * Overwrites one record that is already live.
+   *
+   * **Added by the ring's second consumer, which is the point of having one.** `GPULogViewer` only
+   * ever appends — a log line, once written, is history — so `append()` was the whole API and looked
+   * complete. `GPUCandlestick` broke that assumption immediately: the newest bar is *open*, and every
+   * incoming tick revises its high, low, close and volume. Expressing that with append-only would
+   * mean either a redundant record per tick or a full re-upload, and the ring exists to avoid exactly
+   * those two things.
+   *
+   * `logicalIndex` is counted from the oldest live record, matching `slotOf` and the shaders.
+   */
+  overwrite(logicalIndex: number, record: ArrayBufferView<ArrayBuffer>): void {
+    if (!Number.isInteger(logicalIndex) || logicalIndex < 0 || logicalIndex >= this.liveCount) {
+      throw new RangeError(
+        `gpu-components: ring overwrite index ${logicalIndex} is outside the ${this.liveCount} live records`,
+      );
+    }
+    if (record.byteLength !== this.stride) {
+      throw new RangeError(
+        `gpu-components: ring overwrite needs exactly one ${this.stride}-byte record, got ${record.byteLength} bytes`,
+      );
+    }
+    const bytes: Uint8Array<ArrayBuffer> = new Uint8Array(record.buffer, record.byteOffset, record.byteLength);
+    // One record never straddles the end — slots are whole records — so this is always one write.
+    this.writable.write(bytes, this.slotOf(logicalIndex) * this.stride);
+  }
+
   /** Drops every record without reallocating. The GPU memory keeps whatever it held; nothing reads
    * past `count`, which is the same contract the ring already relies on before it first fills. */
   clear(): void {

@@ -52,6 +52,12 @@ const COMPONENTS = [
     blurb: 'Half a million lines in a GPU ring, streaming appends, and match density over all of them.',
     note: 'The first dataset here with a tail — and the component that retired the glyph atlas.',
   },
+  {
+    slug: 'candlestick',
+    name: 'GPUCandlestick',
+    blurb: '200,000 OHLC bars, revised tick by tick, with a whole-history envelope along the bottom.',
+    note: 'Built to test RingBuffer rather than to add a chart. It found the gap it went looking for.',
+  },
 ] as const
 
 export default function PlaygroundIndex() {
