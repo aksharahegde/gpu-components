@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { frame, target, uniforms, type Gpu } from "vgpu";
 import { createMockGpu } from "@gpu-components/testing";
-import { createWarningsLog, NO_WEBGPU_CAPABILITIES, ResourceRegistry } from "@gpu-components/core";
+import { createWarningsLog, gpuPass, NO_WEBGPU_CAPABILITIES, ResourceRegistry } from "@gpu-components/core";
 import type { ComponentContext } from "@gpu-components/core";
 import { TimelineComponent } from "./TimelineComponent.ts";
 import { ingestSpans } from "./ingest.ts";
@@ -42,7 +42,7 @@ function runPlan(gpu: Gpu, surfaceTarget: ReturnType<typeof target>, plan: Retur
   for (const pass of plan.computePasses) pass.dispatch();
   frame(gpu, (f) => {
     f.pass({ target: surfaceTarget, clear: true }, (framePass) => {
-      for (const pass of plan.renderPasses) pass.encode(framePass);
+      for (const pass of plan.renderPasses) pass.encode(gpuPass(framePass));
     });
   });
 }
@@ -184,6 +184,50 @@ describe("TimelineComponent", () => {
       assert.equal(warning!.source, component.id);
 
       component.dispose();
+      gpu.dispose();
+    })();
+
+    return setup;
+  });
+
+  it("draws axis rules through LineLayer in both LOD modes, and never grows the rules buffer", () => {
+    const setup = (async () => {
+      const { gpu, caps } = await createMockGpu();
+      const surfaceTarget = target(gpu, { size: [64, 64] });
+      const ctx = { ...makeCtx(gpu, surfaceTarget), caps };
+
+      for (const lodThreshold of [Number.POSITIVE_INFINITY, 0]) {
+        const component = new TimelineComponent(8, lodThreshold);
+        component.create(ctx);
+        component.update({
+          spans: ingestSpans([
+            { start: 0, duration: 1, track: 0, label: "a" },
+            { start: 2, duration: 3, track: 1, label: "b" },
+          ]),
+          // 8 tracks over 400px leaves rows well above the separator threshold, so both rule
+          // families are present regardless of which LOD branch encodes.
+          viewport: { timeStart: 0, timeEnd: 100, trackCount: 8, width: 800, height: 400 },
+        });
+
+        assert.doesNotThrow(() => runPlan(gpu, surfaceTarget, component.plan()));
+        component.dispose();
+      }
+
+      // The rules layer is presized to MAX_AXIS_RULES, so zooming through many different tick
+      // counts must never grow it — a growth warning here would mean the presize is wrong.
+      const zooming = new TimelineComponent(8);
+      zooming.create(ctx);
+      const spans = ingestSpans([{ start: 0, duration: 1, track: 0 }]);
+      for (const timeEnd of [1, 10, 100, 1000, 10_000, 100_000]) {
+        zooming.update({
+          spans,
+          viewport: { timeStart: 0, timeEnd, trackCount: 8, width: 800, height: 400 },
+        });
+      }
+      const growth = ctx.runtime.warnings.recent.filter((w) => w.source === `${zooming.id}-rules`);
+      assert.deepEqual(growth, [], "the presized rules buffer must never grow");
+
+      zooming.dispose();
       gpu.dispose();
     })();
 

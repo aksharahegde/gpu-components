@@ -1,5 +1,6 @@
 import { clock, frameLoop, type Frame, type FrameLoopHandle, type Gpu, type SharedUniforms } from "vgpu";
 import type { FrameContext, GpuComponent } from "./component.ts";
+import { gpuPass } from "./passEncoder.ts";
 import { createProfiler, type Profiler } from "./profiler.ts";
 import type { SurfaceLike } from "./surface.ts";
 import type { Globals } from "./uniforms.ts";
@@ -100,7 +101,7 @@ export class FrameScheduler {
         // so an unqualified name would silently collide with ≥2 components mounted.
         const timerSpan = this.profilerRef.span(`${mounted.component.id}:${pass.name}`);
         frame.pass({ target, clear: pass.clear, scissor: pass.scissor, timer: timerSpan }, (framePass) =>
-          pass.encode(framePass),
+          pass.encode(gpuPass(framePass)),
         );
         passCount++;
       }

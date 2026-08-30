@@ -1,4 +1,5 @@
-import type { FramePass, Gpu, SharedUniforms, Target } from "vgpu";
+import type { Gpu, SharedUniforms, Target } from "vgpu";
+import type { PassEncoder } from "./passEncoder.ts";
 import type { Capabilities } from "./capabilities.ts";
 import type { ResourceRegistry } from "./registry.ts";
 import type { Globals } from "./uniforms.ts";
@@ -29,7 +30,11 @@ export interface RenderPass {
   readonly clear?: boolean;
   readonly scissor?: readonly [number, number, number, number];
   /** Encodes this pass's draws against the `vgpu` frame pass the scheduler opened for it. */
-  encode(pass: FramePass): void;
+  /** Encodes this pass's draws against whatever backend the scheduler opened — the `vgpu` frame
+   * pass, or the Canvas2D fallback (PLAN.md §22.2). Components draw through the core primitives
+   * (`layer.draw(pass)`) and stay backend-agnostic; only a component reaching for
+   * `pass.kind === 'gpu'`'s raw `frame` gives up its fallback. */
+  encode(pass: PassEncoder): void;
 }
 
 export interface RenderPlan {

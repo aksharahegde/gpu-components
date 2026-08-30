@@ -1,10 +1,13 @@
 import {
   InstancedQuadLayer,
+  LINE_INSTANCE_STRIDE,
+  LineLayer,
   RasterLayer,
   pixelXToTime,
   pixelYToTrack,
   trackedUniforms,
   viewportUniforms,
+  writeLine,
 } from "@gpu-components/core";
 import type {
   BrushRect,
@@ -20,6 +23,7 @@ import type { Compute, Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { computeDomainMax, computeOrigin, INSTANCE_STRIDE, packHighlights, packInstances } from "./ingest.ts";
 import type { SpanBuffers } from "./ingest.ts";
 import { hitTestSpans } from "./hitTest.ts";
+import { computeAxisRules, MAX_AXIS_RULES } from "./axisRules.ts";
 import { TIMELINE_WGSL } from "./timeline.wgsl.ts";
 import { HIGHLIGHT_WGSL } from "./highlight.wgsl.ts";
 import { CULL_WGSL } from "./cull.wgsl.ts";
@@ -71,6 +75,18 @@ const PIXEL_COLUMNS = 512;
  * `TimelineComponent` switches from drawing every visible span to the density-field raster. */
 const DEFAULT_LOD_THRESHOLD = 4;
 
+/** Field-wise comparison of the two `ViewportState`s — `update()` receives a fresh object every
+ * render, so reference equality would report a change on every hover. */
+function viewportChanged(a: ViewportState, b: ViewportState): boolean {
+  return (
+    a.timeStart !== b.timeStart ||
+    a.timeEnd !== b.timeEnd ||
+    a.trackCount !== b.trackCount ||
+    a.width !== b.width ||
+    a.height !== b.height
+  );
+}
+
 let nextId = 0;
 
 /**
@@ -100,6 +116,12 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
   private gpu: Gpu | null = null;
   private layer: InstancedQuadLayer | null = null;
   private highlightLayer: InstancedQuadLayer | null = null;
+  /** PLAN.md §12.2's axis rules, through `core`'s `LineLayer` (§12.1's second primitive). */
+  private rulesLayer: LineLayer | null = null;
+  /** Reused scratch for the rule instances, presized to `MAX_AXIS_RULES` so rebuilding the rules on
+   * every viewport change (i.e. every pan/zoom frame) allocates nothing — PLAN.md §19.2's rule
+   * about not churning in the loop applies to CPU allocation, not only GPU resources. */
+  private readonly ruleScratch = new DataView(new ArrayBuffer(MAX_AXIS_RULES * LINE_INSTANCE_STRIDE));
   private viewportUniform: SharedUniforms<ViewportUniforms> | null = null;
   private cullPipeline: Compute | null = null;
   private cullParams: SharedUniforms<CullUniforms> | null = null;
@@ -183,6 +205,17 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
     this.layer.bindViewport(this.viewportUniform);
     this.highlightLayer.bindViewport(this.viewportUniform);
 
+    // Presized to the rule ceiling, so this layer never grows after create() — the rule count
+    // changes on every zoom, and a layer that grew with it would report a buffer-growth warning
+    // (§28.2) for behaviour that is entirely expected here.
+    this.rulesLayer = new LineLayer({
+      gpu: ctx.gpu,
+      capacity: MAX_AXIS_RULES,
+      label: `${this.id}-rules`,
+      warnings: ctx.runtime.warnings,
+    });
+    this.rulesLayer.bindViewport(this.viewportUniform);
+
     this.cullPipeline = compute(ctx.gpu, CULL_WGSL);
     this.cullParams = uniforms(ctx.gpu, { timeStart: 0, timeEnd: 0, count: 0 });
     this.indirectArgs = storage(ctx.gpu, RESET_INDIRECT_ARGS.byteLength, { indirect: true });
@@ -224,6 +257,9 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       this.brushPipeline.set({ instances: this.layer.instances });
       this.uploadHighlights(this.uploadedSpans);
     }
+    // Same reasoning as the span re-upload above: `rulesLayer` is fresh GPU state after a
+    // device-loss replay, and the rules are a pure function of the viewport we already hold.
+    if (this.currentViewport) this.uploadAxisRules(this.currentViewport);
   }
 
   /** Grows `visibleIndices` (and re-binds it to both the compute pipeline and the render layer) if
@@ -280,7 +316,13 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       }
       this.uploadedSpans = props.spans;
     }
+    const previousViewport = this.currentViewport;
     this.currentViewport = props.viewport;
+    // The rules depend only on the viewport, so a props change that left it untouched (a hover, a
+    // selection) must not repack and re-upload them.
+    if (!previousViewport || viewportChanged(previousViewport, props.viewport)) {
+      this.uploadAxisRules(props.viewport);
+    }
     this.ensureDensityCapacity(props.viewport.trackCount);
     this.lodMode = this.estimateLodMode(props.spans, props.viewport);
 
@@ -308,6 +350,17 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       this.uploadHighlights(props.spans);
     }
     this.dirty = true;
+  }
+
+  /** Rebuilds the axis rules for `viewport` into the reused scratch buffer and uploads them. */
+  private uploadAxisRules(viewport: ViewportState): void {
+    if (!this.rulesLayer) return;
+    const rules = computeAxisRules(viewport, this.originTime);
+    for (let i = 0; i < rules.length; i++) writeLine(this.ruleScratch, i, rules[i]!);
+    this.rulesLayer.upload(
+      new Uint8Array(this.ruleScratch.buffer, 0, rules.length * LINE_INSTANCE_STRIDE),
+      rules.length,
+    );
   }
 
   private uploadHighlights(spans: SpanBuffers): void {
@@ -366,6 +419,11 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
           target: "surface",
           clear: true,
           encode: (pass) => {
+            // Rules first, so spans occlude them rather than the reverse — gridlines belong behind
+            // the data they measure. (PLAN.md §12.2 puts axis rules in a second overlay pass; with
+            // one surface pass and alpha blending, draw order alone gets the same result for a
+            // fraction of the encoding cost.)
+            this.rulesLayer?.draw(pass);
             if (raster) {
               this.raster?.draw(pass);
             } else if (this.layer && this.indirectArgs) {
@@ -459,6 +517,7 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
   dispose(): void {
     this.layer?.dispose();
     this.highlightLayer?.dispose();
+    this.rulesLayer?.dispose();
     this.raster?.dispose();
   }
 }
