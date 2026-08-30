@@ -1,4 +1,4 @@
-import { InstancedQuadLayer, pixelXToTime, viewportUniforms } from "@gpu-components/core";
+import { assertBufferBudget, InstancedQuadLayer, pixelXToTime, viewportUniforms } from "@gpu-components/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -61,6 +61,7 @@ export class ScatterComponent implements GpuComponent<ScatterProps> {
   animating = false;
 
   private gpu: Gpu | null = null;
+  private caps: ComponentContext["caps"] | null = null;
   private layer: InstancedQuadLayer | null = null;
   private viewportUniform: SharedUniforms<ViewportUniforms> | null = null;
   private paramsUniform: SharedUniforms<ScatterUniforms> | null = null;
@@ -81,6 +82,7 @@ export class ScatterComponent implements GpuComponent<ScatterProps> {
 
   create(ctx: ComponentContext): void {
     this.gpu = ctx.gpu;
+    this.caps = ctx.caps;
     this.layer = new InstancedQuadLayer({
       gpu: ctx.gpu,
       shader: SCATTER_WGSL,
@@ -123,6 +125,7 @@ export class ScatterComponent implements GpuComponent<ScatterProps> {
   }
 
   private uploadPoints(data: ScatterData): void {
+    if (this.caps) assertBufferBudget(this.caps, data.count * POINT_STRIDE, "GPUScatter points", POINT_STRIDE);
     this.ensureSelectionMask(data.count);
     this.layer?.upload(packPoints(data), data.count);
   }

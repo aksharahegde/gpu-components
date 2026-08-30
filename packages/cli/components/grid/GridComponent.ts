@@ -1,4 +1,4 @@
-import { LineLayer, RasterLayer, packRgba8, rowRange, viewportUniforms, visibleRows } from "@gpu-components/core";
+import { assertBufferBudget, LineLayer, RasterLayer, packRgba8, rowRange, viewportUniforms, visibleRows } from "@gpu-components/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -64,6 +64,7 @@ export class GridComponent implements GpuComponent<GridProps> {
   animating = false;
 
   private gpu: Gpu | null = null;
+  private caps: ComponentContext["caps"] | null = null;
   private raster: RasterLayer | null = null;
   private rules: LineLayer | null = null;
   private viewportUniform: SharedUniforms<ViewportUniforms> | null = null;
@@ -87,6 +88,7 @@ export class GridComponent implements GpuComponent<GridProps> {
 
   create(ctx: ComponentContext): void {
     this.gpu = ctx.gpu;
+    this.caps = ctx.caps;
 
     this.raster = new RasterLayer({ gpu: ctx.gpu, shader: GRID_WGSL, label: `${this.id}-cells` });
     this.rules = new LineLayer({
@@ -130,6 +132,7 @@ export class GridComponent implements GpuComponent<GridProps> {
     const columns = Math.max(1, data ? data.columns.length : 1);
 
     this.valueCapacity = values;
+    if (this.caps) assertBufferBudget(this.caps, values * 4, "GPUDataGrid values", 4);
     this.valuesBuffer = storage(this.gpu, values * 4, "read");
     this.rangesBuffer = storage(this.gpu, numericColumns * 2 * 4, "read");
     // One extra entry: the prefix sum's final total, so the shader's binary search has an upper
