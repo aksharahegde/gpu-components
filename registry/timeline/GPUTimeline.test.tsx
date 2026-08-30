@@ -21,6 +21,7 @@ g.Node = dom.window.Node;
 g.Element = dom.window.Element;
 g.KeyboardEvent = dom.window.KeyboardEvent;
 g.WheelEvent = dom.window.WheelEvent;
+g.PointerEvent = dom.window.PointerEvent;
 g.getComputedStyle = dom.window.getComputedStyle;
 // The spec's rAF callback timestamp is a `DOMHighResTimeStamp` — `performance.now()`'s clock, not
 // `Date.now()`'s epoch millis. The inertial-pan test below computes a frame delta from this
@@ -148,6 +149,12 @@ function summaryTimeStart(app: Element): number {
   return Number(match![1]);
 }
 
+function pointer(el: Element, type: string, x: number, y: number, buttons: number) {
+  el.dispatchEvent(
+    new dom.window.PointerEvent(type, { clientX: x, clientY: y, buttons, bubbles: true, cancelable: true }),
+  );
+}
+
 describe("GPUTimeline inertial pan (PLAN.md Phase 3)", () => {
   it("keeps panning after the wheel gesture ends, then settles", async () => {
     // A wide bounds — the point is observing inertia's own decay, not bounds clamping.
@@ -215,6 +222,60 @@ describe("GPUTimeline inertial pan (PLAN.md Phase 3)", () => {
       dom.window.matchMedia = originalMatchMedia;
       delete g.matchMedia;
     }
+  });
+});
+
+describe("GPUTimeline brush selection (PLAN.md Phase 3)", () => {
+  it("a drag past the threshold fires onBrushSelectionChange with the overlapping spans, not onSelect", async () => {
+    let brushResult: { rect: unknown; ids: readonly number[] } | undefined;
+    let selected: number | null | undefined;
+    await withTimeline(
+      {
+        spans: testSpans(),
+        viewport: VIEWPORT,
+        onBrushSelectionChange: (rect, ids) => (brushResult = { rect, ids }),
+        onSelect: (id) => (selected = id),
+      },
+      async () => {
+        const canvas = host.querySelector("canvas")!;
+        // width 400 over time [0,10] -> 40px/time-unit; height 240 over 2 tracks -> 120px/track.
+        // (0,10)->(240,50): time [0,6], track [0,0] (both y within row 0) -> a@[0,1) and b@[5,6),
+        // not c (track 1).
+        await act(async () => pointer(canvas, "pointerdown", 0, 10, 1));
+        await act(async () => pointer(canvas, "pointermove", 240, 50, 1));
+        await act(async () => pointer(canvas, "pointerup", 240, 50, 0));
+
+        assert.ok(brushResult, "expected onBrushSelectionChange to fire");
+        assert.deepEqual(
+          brushResult!.ids.map((i) => testSpans().labels[i]).sort(),
+          ["a", "b"],
+        );
+        assert.equal(selected, undefined, "a real drag should not also fire onSelect");
+      },
+    );
+  });
+
+  it("a plain click (no meaningful movement) still calls onSelect, not the brush callback", async () => {
+    let brushFired = false;
+    let selected: number | null | undefined;
+    await withTimeline(
+      {
+        spans: testSpans(),
+        viewport: VIEWPORT,
+        onBrushSelectionChange: () => (brushFired = true),
+        onSelect: (id) => (selected = id),
+      },
+      async () => {
+        const canvas = host.querySelector("canvas")!;
+        // a@track0 starts at t=0 -> pixel x=0; y=10 lands in track 0's row, same as the hit-test's
+        // own hover/click path already exercises elsewhere in this file.
+        await act(async () => pointer(canvas, "pointerdown", 0, 10, 1));
+        await act(async () => pointer(canvas, "pointerup", 1, 11, 0)); // 1px of jitter, under the threshold
+
+        assert.equal(brushFired, false, "a plain click should not fire the brush callback");
+        assert.equal(selected, 0, "expected the click's hit-test to select span 0 (\"a\")");
+      },
+    );
   });
 });
 

@@ -1433,7 +1433,7 @@ next concrete slice of work, in order (updated 2026-08-30):
 **Acceptance:** hover ≤16ms at 5M spans; brush-select 100k spans without a frame drop; gestures behave identically in all three engines.
 **Benchmark criteria:** interaction latency table across all sizes and browsers.
 
-> **Status note (2026-08-30): inertial pan shipped, everything else in this phase still open.** Added
+> **Status note (2026-08-30): inertial pan shipped.** Added
 > `packages/core/src/interaction/inertia.ts` (`createVelocityTracker`/`decayVelocity` — pure
 > kinematics, no rAF loop or event listeners, same DOM-agnostic shape as `wheel.ts`/`pointer.ts`) and
 > wired it into `GPUTimeline.tsx`: wheel events feed the tracker, `WHEEL_IDLE_MS` after the last one
@@ -1450,10 +1450,25 @@ next concrete slice of work, in order (updated 2026-08-30):
 > `Date.now()`'s epoch-millis clock instead of the spec's `performance.now()`-based
 > `DOMHighResTimeStamp` — harmless until something first depended on the callback's timestamp
 > argument, which this feature is the first to do).
-> **Still open:** CPU hit-testing was already done in Phase 2 (§9.5's primary mechanism, listed here
-> too since it's this phase's own deliverable line); touch gesture state machines; async GPU
-> ID-buffer picking (an opt-in path for future components without a cheap CPU index — not needed for
-> Timeline itself, which already has one); and brush/lasso selection with a GPU bitset mask.
+> **Update (2026-08-30): brush selection shipped too.** Added `brushSelect.wgsl.ts` (one compute
+> pass, one invocation per span, `atomicOr`s a bit into a packed `selectionMask` — 1 bit/span, 32/word
+> — when the span overlaps the brush's time range and track range) and wired it end to end:
+> `timeline.wgsl.ts` gained an `isSelected()` bit-test read directly in the existing render shader (no
+> separate draw, no CPU set, matching §9.5's stated "Hybrid" model exactly), `hitTest.ts` gained
+> `selectSpansInRange` (a deliberately simple per-track linear scan — correct over clever, since it
+> runs once per gesture end, not per frame) for the final id set an app's `onBrushSelectionChange`
+> receives, and `GPUTimeline.tsx` gained a click-drag gesture (built on `pointer.ts`'s existing
+> `onDown`, unused until now) with a lightweight DOM selection-box overlay during the drag. **Scoped
+> to an axis-aligned rectangle, not true lasso** — a Timeline's 2D grid (discrete track rows ×
+> continuous time) doesn't need polygon containment; PLAN.md's own wording treats "brush/lasso" as
+> interchangeable, describing a region test either way. Verified against `vgpu/mock` (the
+> `atomicOr`/bitset wiring) and a jsdom integration test dispatching real pointer drag events, plus a
+> plain-click-still-uses-`onSelect` regression case.
+> **Still open, all deliberately out of Timeline's scope:** touch gesture state machines (Phase 3's
+> own stated "historically buggiest" deferred risk) and async GPU ID-buffer picking (an opt-in path
+> for *future* components without a cheap CPU index — Timeline already has one, so it was never
+> needed here). With inertial pan and brush selection both done, **Phase 3's Timeline-relevant
+> deliverables are complete.**
 
 ### Phase 4 — Performance & tooling *(2 weeks)*
 
