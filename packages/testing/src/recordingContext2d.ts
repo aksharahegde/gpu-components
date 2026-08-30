@@ -35,7 +35,17 @@ export interface RecordedPutImageData {
   readonly firstPixelAlpha: number;
 }
 
-export type RecordedCall = RecordedFillRect | RecordedStroke | RecordedPutImageData;
+export interface RecordedFillText {
+  readonly op: "fillText";
+  readonly text: string;
+  readonly x: number;
+  readonly y: number;
+  readonly font: string;
+  readonly align: string;
+  readonly fillStyle: string;
+}
+
+export type RecordedCall = RecordedFillRect | RecordedStroke | RecordedPutImageData | RecordedFillText;
 
 export interface RecordingContext2D {
   /** Pass this where a `CanvasRenderingContext2D` is expected. */
@@ -60,6 +70,13 @@ export function createRecordingContext2D(): RecordingContext2D {
   let cy = 0;
   let px = 0;
   let py = 0;
+  let font = "10px sans-serif";
+  let textAlign = "start";
+  let textBaseline = "alphabetic";
+
+  /** Monospace-ish estimate. Real metrics need a font engine; what tests assert on is *which*
+   * strings were drawn and whether truncation happened, not their exact pixel width. */
+  const CHAR_WIDTH = 7;
 
   const ctx = {
     get fillStyle() {
@@ -84,6 +101,32 @@ export function createRecordingContext2D(): RecordingContext2D {
     fillRect(x: number, y: number, w: number, h: number) {
       calls.push({ op: "fillRect", x, y, w, h, fillStyle });
     },
+    get font() {
+      return font;
+    },
+    set font(value: string) {
+      font = value;
+    },
+    get textAlign() {
+      return textAlign;
+    },
+    set textAlign(value: string) {
+      textAlign = value;
+    },
+    get textBaseline() {
+      return textBaseline;
+    },
+    set textBaseline(value: string) {
+      textBaseline = value;
+    },
+    measureText(text: string) {
+      return { width: text.length * CHAR_WIDTH } as TextMetrics;
+    },
+    fillText(text: string, x: number, y: number) {
+      calls.push({ op: "fillText", text, x, y, font, align: textAlign, fillStyle });
+    },
+    setTransform() {},
+    translate() {},
     beginPath() {},
     moveTo(x: number, y: number) {
       px = x;
