@@ -408,6 +408,19 @@ core/interaction/
 | Keyboard navigation | **CPU** | It moves focus through the *semantic* model, which is CPU-side by definition |
 | Tooltip content | **CPU** | Strings. Never GPU |
 
+> **Corrected by measurement (2026-08-30), see `registry/scatter/spatialIndex.ts`.** The claim below
+> that "graph nodes and dense scatter have no cheap CPU index" is **false for a scatter**. Its points
+> are immutable and only the viewport moves, so a uniform grid bucketed over the data bounds is
+> built once per dataset, costs O(n) to construct and O(1) to query, and gives an exact, *same-frame*
+> answer — verified against a brute-force oracle. `GPUScatter` therefore hovers and brush-selects
+> through the CPU index (73,673 points from one indexed query in the playground), and GPU picking
+> would have traded that for a render pass, a readback and a frame of latency.
+>
+> This section's own rule — "CPU by default… this is *better* than GPU picking, not a fallback from
+> it" — applies more strongly than the sentence that excluded scatter from it. **`core`'s `Picker`
+> remains unbuilt, and should now be justified by a *graph*, where positions change every frame and
+> the index would have to be rebuilt every frame.** That is a real case; a scatter was not.
+
 **The rule on GPU picking, stated plainly:** vgpu documents `target.read()` and `StorageBuffer.read()` as being for "tests, snapshots, and diagnostics", explicitly *not* a per-frame hot path — a synchronous readback stalls the pipeline. So **GPU picking is always asynchronous and always one frame late**, and we only reach for it when a CPU spatial index is genuinely impractical. For the Timeline, it is not needed at all; it exists in `core` for the components that will need it (graph, dense scatter), so those components do not each invent it.
 
 ---
@@ -1967,6 +1980,20 @@ next concrete slice of work, in order (updated 2026-08-30):
 **Acceptance:** a fresh app goes from `npm i` to a rendering component in under five minutes, verified by a scripted e2e test on all three bundlers; **`npx gpu-components add timeline` works in a fresh Vite app and a fresh Next.js app** *(moved here from Phase 2, 2026-08-30)*. Note the §18.1 and §13.2 drift notes both land on this phase: `add` copies a file list that no longer matches the registry, and copies `.wgsl.ts` template strings rather than the `.wgsl` files the bundler-config half of `doctor` exists to configure a loader for. Reconcile both **before** starting this phase.
 
 ### Phase 7 — Ecosystem *(ongoing)*
+
+> **Status (2026-08-30): `GPUScatter` shipped** — §6.2's second-ranked candidate (136.0) and the
+> only one scoring a perfect 10 on demonstrable perf delta. `registry/scatter/**`: one
+> `InstancedQuadLayer`, one draw call, N points, discs rounded in the fragment stage, category
+> filtering and hover as *uniform writes* over an immutable buffer (§5 gate 3 with nothing in the
+> way). 250,000 points in the playground.
+>
+> **Two findings.** It corrected §9.5's picking claim (see the note there) — a dense scatter does
+> have a cheap CPU index, so `core`'s `Picker` still has no justified consumer. And it needed one
+> genuine `core` change: `ViewportState.yContinuous`, because the y mapping bakes in half-band
+> centring that is right for a timeline's tracks and a heatmap's or grid's rows and wrong for a
+> continuous value axis — without it a scatter's points sit half a band low and its top row falls
+> off the surface. That is the third component-driven change to the viewport, and the strongest
+> argument yet for the domain-named rewrite `registry/heatmap/CORE-WISHLIST.md` proposes.
 
 Docs site, playground, contribution guide, component RFC process, community registry with mandatory review, and the additional components (`GPUScatter`, `GPUGraph`, flame-graph variant).
 
