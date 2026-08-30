@@ -42,6 +42,11 @@ const ITEMS = {
     description:
       "Image comparison. Split, onion-skin, difference and heat modes sampled from real textures, with a changed-pixel count computed by a compute pass.",
   },
+  logviewer: {
+    title: "GPULogViewer",
+    description:
+      "Streaming log viewer. A GPU-resident ring buffer with incremental appends, virtualised scroll, and match/error density reduced across the whole buffer for the minimap.",
+  },
   // GPUGraph is deliberately absent: its layout does not animate in the browser (a known open
   // defect), and a copy-source registry must not ship a component that is broken where it runs.
 };
