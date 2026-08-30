@@ -2041,6 +2041,36 @@ next concrete slice of work, in order (updated 2026-08-30):
 > wrong and was removed: `Function.length` stops counting at the first optional parameter, so it
 > reports 1 on the very class that supports the feature.
 
+> **Status (2026-08-31): `GPUCandlestick` shipped** — §6.2 candidate #7 (119.0), built as the
+> **acceptance test for `RingBuffer`** rather than for its own sake. That primitive had exactly one
+> consumer, so its eviction policy, wrap splitting and `slotOf` contract had all been designed while
+> looking at log lines; a primitive with one caller may just be that caller's internals in another
+> file. §29 ran this test on `core` with the heatmap and found two gaps. This run found one.
+>
+> **The gap: `RingBuffer.overwrite`.** A log line is history the moment it is written, so append-only
+> looked like the whole API. A candlestick's newest bar is *open* and every tick revises its high,
+> low, close and volume — expressible append-only only as a redundant record per tick or a full
+> re-upload, which are the two things the ring exists to avoid. One method, one write, and the ring
+> is now proven against a consumer that did not design it.
+>
+> **Honest positioning, per §8.1.** A few hundred visible bars is nothing for any renderer, and this
+> component's case is *not* draw-call count. Its GPU claims are the resident streaming buffer, pan
+> and zoom as uniform writes, and the overview strip's envelope across every bar in the history. The
+> visible price range that scales the y-axis is computed on the **CPU**, over the ~300 bars on
+> screen, because §5.2 says small-N work belongs there and a dispatch for 300 numbers would be
+> theatre. The docs say so.
+>
+> **Three defects the test suite could not see, all caught in the browser**, which is now four
+> components running: `push(...incoming)` overflowed the stack at 200,000 bars (tests used 3,000);
+> the overview strip normalised against placeholder extremes and painted a quad thousands of pixels
+> tall over the whole chart; and a readback scheduled on a 32ms timer lost its race with the compute
+> that produced it, so the strip stayed blank. The last is the instructive one — the fix was to order
+> the readback behind the dispatch on the GPU queue instead of guessing at wall-clock timing.
+>
+> **A fourth stray backtick inside a WGSL template literal** terminated a shader mid-string. The
+> ad-hoc scan run after the third occurrence did not prevent it, because it was not part of the
+> suite. `packages/core/src/wgslSyntax.test.ts` now is.
+
 Docs site, playground, contribution guide, component RFC process, community registry with mandatory review, and the additional components (`GPUScatter`, `GPUGraph`, flame-graph variant).
 
 ---
