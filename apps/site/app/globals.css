@@ -12,6 +12,98 @@
  * These rules are unlayered, which is why the plugin runs with
  * `useCSSLayers: false` — see next.config.ts.
  */
+
+/*
+ * Base `:root` declarations for every `stylex.defineVars` group in
+ * `src/tokens.stylex.ts` (color, font, radius, size), pasted in verbatim
+ * rather than left to the StyleX plugin.
+ *
+ * This is a workaround for the same upstream bug documented in
+ * `src/ui.tsx`'s breakpoints comment and `README.md`: `@stylexjs/unplugin`'s
+ * webpack integration collects every file's StyleX rules into one app-wide
+ * batch before calling `@stylexjs/babel-plugin`'s `processStylexRules`, and
+ * that batching silently drops these four rules (each file's own isolated
+ * transform emits them correctly — verified directly against the babel
+ * plugin). Every *usage* of a token (`var(--xtgewr7)`, etc.) still compiles
+ * fine at each call site; only the declaration that gives those variables a
+ * value goes missing, which meant every themed color, font, radius, and size
+ * in the site — including this container's own `padding-inline` — silently
+ * resolved to nothing.
+ *
+ * These four blocks are the *exact*, byte-for-byte output of running
+ * `@stylexjs/babel-plugin` on `src/tokens.stylex.ts` in isolation (verified
+ * deterministic — StyleX's hashes are content-based, not random). If
+ * `tokens.stylex.ts` ever changes, regenerate this block the same way rather
+ * than hand-editing it — run from `apps/site`, with `@babel/core` and
+ * `@stylexjs/babel-plugin` resolvable (they're transitive deps of
+ * `@stylexjs/unplugin`, already in `node_modules` after `npm install`):
+ *
+ *   node -e "
+ *     const { transformSync } = require('@babel/core');
+ *     const stylexBabel = require('@stylexjs/babel-plugin');
+ *     const fs = require('fs');
+ *     const path = require('path');
+ *     const file = path.resolve('src/tokens.stylex.ts');
+ *     const result = transformSync(fs.readFileSync(file, 'utf8'), {
+ *       babelrc: false, filename: file, presets: [],
+ *       plugins: [
+ *         require.resolve('@babel/plugin-syntax-typescript'),
+ *         [stylexBabel.default || stylexBabel, {
+ *           dev: false,
+ *           unstable_moduleResolution: { type: 'commonJS', rootDir: process.cwd() },
+ *         }],
+ *       ],
+ *     });
+ *     for (const [, obj] of result.metadata.stylex) console.log(obj.ltr);
+ *   "
+ */
+:root,
+.x1eeoxsw {
+  --xrfyece: #08090b;
+  --x16pffse: #0d0f13;
+  --xtq9ih4: #101318;
+  --xsvann1: #151920;
+  --xyy0n55: #1d222b;
+  --x1jkkunk: #2a313d;
+  --x1a4ewbo: #384253;
+  --x1z0vvm0: #e7e9ee;
+  --x1v04jjr: #a2aab8;
+  --x1g57ce8: #6d7686;
+  --xtgewr7: #8b9dff;
+  --x1y0q9md: #9dabff;
+  --x12i8rqg: #5f70cc;
+  --xjqjyzz: #0a0c12;
+  --x4ocvu8: #5be9b9;
+  --xu1gviz: #f0b072;
+  --x1i1lgk3: #f08a8a;
+  --x34b9jb: #cfd6e4;
+  --x1wcxofe: #5f6b7f;
+  --xregme6: #b7a4ff;
+  --xkplwfs: #7fd8b0;
+  --x1vxicz5: #8fb7ff;
+  --xvcfp5u: #f0b072;
+  --xb6ui5n: #c8d1e2;
+}
+:root,
+.x1bj29z8 {
+  --x1eblfvp: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial,
+    sans-serif;
+  --xtl17kj: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+:root,
+.x1uwf8c2 {
+  --x8euewz: 5px;
+  --xgr3n0k: 8px;
+  --x1a4x45o: 10px;
+  --xofk3nj: 999px;
+}
+:root,
+.x18vqpks {
+  --xn7eqpv: 1120px;
+  --x1q7wr5u: 24px;
+  --xwliee6: 58px;
+}
+
 *,
 *::before,
 *::after {

@@ -73,15 +73,23 @@ Constraints that shaped the code, worth knowing before editing it:
    doesn't apply. If a future StyleX release fixes the cross-file case, reintroducing a shared
    `defineConsts` file is a reasonable cleanup — confirm on a **cold** `next build` (`rm -rf .next
    out` first) before trusting it, since a warm build cache can mask this class of bug.
-3. **No descendant selectors.** StyleX is atomic per-element, so patterns like `.ul li::before` and
+3. **`app/globals.css` hand-pastes the base `:root` declarations for every `stylex.defineVars`
+   group in `tokens.stylex.ts`.** Same upstream bug as above, different symptom: the same
+   app-wide-batch collection silently drops the base `:root, .hash{...}` rule that gives every
+   colour/font/radius/size token its default value, while every individual *usage* of a token
+   (`var(--hash)`) still compiles fine. The effect was total — every themed value in the site,
+   including basic container padding, silently resolved to nothing. `globals.css` carries a
+   comment with the exact command to regenerate those four blocks if `tokens.stylex.ts` changes;
+   verify the same way — a cold `next build`, then grep the emitted CSS for `:root`.
+4. **No descendant selectors.** StyleX is atomic per-element, so patterns like `.ul li::before` and
    `table th` cannot exist. Lists render a real `<span>` marker (`LI` in `ui.tsx`) and tables use
    `Th`/`Td` components that style themselves. StyleX explicitly prefers real elements over
    `::before`, and here it also made the check/cross lists announce properly instead of leaking
    punctuation into the accessible name.
-4. **No attribute or `:last-child` selectors.** State that CSS would normally match on comes from
+5. **No attribute or `:last-child` selectors.** State that CSS would normally match on comes from
    JS instead: the nav's current-page underline uses `useIsCurrent` (`src/link.tsx`, backed by
    `usePathname()`), and `Td`/`Stat`/segmented buttons take a `last` prop.
-5. **Never combine `className` with a `stylex.props()` spread.** Components take an `sx` prop
+6. **Never combine `className` with a `stylex.props()` spread.** Components take an `sx` prop
    instead. The one place a raw class name is used is `SpanBenchmark`, which creates pooled `<div>`s
    imperatively — it pulls the compiled name out of `stylex.props(s.span).className` and keeps
    per-node values on `.style`, because those differ for every element.
