@@ -1,7 +1,7 @@
 import { createPointerController, createViewportController, normalizeWheel, rowRange } from "@gpu-components/core";
 import type { ViewportBounds, ViewportState } from "@gpu-components/core";
-import { useGpu, useGpuComponent } from "@gpu-components/react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { SR_ONLY, useGpu, useGpuA11y, useGpuComponent } from "@gpu-components/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, JSX } from "react";
 import { GridComponent } from "./GridComponent.ts";
 import { columnOffset, totalWidth, type GridData } from "./ingest.ts";
@@ -55,8 +55,6 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
   const { status } = useGpu();
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const textCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const liveRef = useRef<HTMLDivElement | null>(null);
-  const summaryId = useId();
 
   const [internalViewport, setInternalViewport] = useState(props.viewport);
   const viewport = onViewportChange ? props.viewport : internalViewport;
@@ -72,6 +70,14 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
     [data.rowCount],
   );
   const maxScrollX = Math.max(0, totalWidth(data) - viewport.width);
+
+  const [visibleRowStart, visibleRowEnd] = rowRange(viewport);
+  const a11y = useGpuA11y({
+    label: props["aria-label"] ?? "Data grid",
+    summary:
+      `${data.rowCount} rows, ${data.columns.length} columns. ` +
+      `Showing rows ${Math.floor(visibleRowStart)} to ${Math.ceil(visibleRowEnd)}.`,
+  });
 
   const viewportRef = useRef(viewport);
   viewportRef.current = viewport;
@@ -148,7 +154,7 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
       const row = hit ? Math.floor(Number(hit.id) / data.columns.length) : null;
       setFocusedRow(row);
       onSelectRow?.(row);
-      if (row != null && liveRef.current) liveRef.current.textContent = describeRow(data, row);
+      if (row != null) a11y.announce(describeRow(data, row));
     });
 
     const onWheel = (e: WheelEvent) => {
@@ -175,7 +181,7 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
       detach();
       el.removeEventListener("wheel", onWheel);
     };
-  }, [canvas, data, bounds, maxScrollX, onSelectRow]);
+  }, [canvas, data, bounds, maxScrollX, onSelectRow, a11y]);
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -198,7 +204,7 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
 
       setFocusedRow(row);
       onSelectRow?.(row);
-      if (liveRef.current) liveRef.current.textContent = describeRow(data, row);
+      a11y.announce(describeRow(data, row));
 
       // Scroll to keep the focused row visible — keyboard users navigate the whole dataset, not
       // just what happens to be on screen (§21.2).
@@ -208,7 +214,7 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
         setViewport({ ...viewport, rowStart: start, rowEnd: start + span });
       }
     },
-    [viewport, focusedRow, data, onSelectRow, setViewport],
+    [viewport, focusedRow, data, onSelectRow, setViewport, a11y],
   );
 
   const [rowStart, rowEnd] = rowRange(viewport);
@@ -219,10 +225,7 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
 
   return (
     <div
-      role="application"
-      aria-label={props["aria-label"] ?? "Data grid"}
-      aria-describedby={summaryId}
-      tabIndex={0}
+      {...a11y.rootProps}
       onKeyDown={onKeyDown}
       className={className}
       style={{ position: "relative", width: viewport.width, height: viewport.height, ...style }}
@@ -288,12 +291,10 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
         </div>
       )}
 
-      <div id={summaryId} style={srOnly}>
-        {`${data.rowCount} rows, ${data.columns.length} columns. Showing rows ${Math.floor(rowStart)} to ${Math.ceil(rowEnd)}.`}
-      </div>
+      {a11y.regions()}
       {/* `toAccessibleTable()` in DOM form (§21.2): the visible rows as a real table, so assistive
           technology that cannot use the canvas at all still gets structured, navigable content. */}
-      <table style={srOnly}>
+      <table style={SR_ONLY}>
         <thead>
           <tr>{data.columns.map((c) => <th key={c.key} scope="col">{c.label}</th>)}</tr>
         </thead>
@@ -305,19 +306,7 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
           ))}
         </tbody>
       </table>
-      <div ref={liveRef} aria-live="polite" style={srOnly} />
     </div>
   );
 }
 
-const srOnly: CSSProperties = {
-  position: "absolute",
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: "hidden",
-  clip: "rect(0 0 0 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};

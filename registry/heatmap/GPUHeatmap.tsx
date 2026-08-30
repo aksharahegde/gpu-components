@@ -8,8 +8,9 @@ import {
   timeToPixelX,
 } from "@gpu-components/core";
 import type { ViewportBounds, ViewportState } from "@gpu-components/core";
-import { useGpu, useGpuComponent } from "@gpu-components/react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { LabelOverlay, SR_ONLY, useGpu, useGpuA11y, useGpuComponent } from "@gpu-components/react";
+import type { PositionedLabel } from "@gpu-components/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, JSX } from "react";
 import { HeatmapComponent } from "./HeatmapComponent.ts";
 import { cellIndex, type HeatmapData } from "./ingest.ts";
@@ -71,8 +72,6 @@ export function GPUHeatmap(props: GPUHeatmapProps): JSX.Element {
   const { status } = useGpu();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
-  const liveRef = useRef<HTMLDivElement | null>(null);
-  const summaryId = useId();
 
   const [internalViewport, setInternalViewport] = useState(props.viewport);
   const viewport = onViewportChange ? props.viewport : internalViewport;
@@ -83,6 +82,18 @@ export function GPUHeatmap(props: GPUHeatmapProps): JSX.Element {
   viewportRef.current = viewport;
   const boundsRef = useRef(bounds);
   boundsRef.current = bounds;
+
+  const [visibleRowStart, visibleRowEnd] = rowRange(viewport);
+  // The shared §21.1 overlay: named root, described summary, debounced live region. Previously
+  // hand-rolled here, in GPUTimeline and in GPUDataGrid — three copies of one architectural claim.
+  const a11y = useGpuA11y({
+    label: props["aria-label"] ?? "Heatmap",
+    summary:
+      `${data.rows} rows by ${data.cols} columns. ` +
+      `Showing rows ${Math.floor(visibleRowStart)} to ${Math.ceil(visibleRowEnd)}, ` +
+      `columns ${Math.floor(viewport.timeStart)} to ${Math.ceil(viewport.timeEnd)}.`,
+  });
+  const announce = a11y.announce;
 
   const setViewport = useCallback(
     (next: ViewportState) => {
@@ -107,9 +118,6 @@ export function GPUHeatmap(props: GPUHeatmapProps): JSX.Element {
   );
   useGpuComponent(factory, canvas, componentProps);
 
-  const announce = useCallback((message: string) => {
-    if (liveRef.current) liveRef.current.textContent = message;
-  }, []);
 
   /**
    * Pointer and wheel, attached natively rather than through React's synthetic events: a passive
@@ -252,48 +260,43 @@ export function GPUHeatmap(props: GPUHeatmapProps): JSX.Element {
 
   // Row and column headers: real DOM text, positioned by the *same* transform the shader uses
   // (§21.1). Virtualised to the visible range and capped, per the text spike's measured budget.
-  const headers = useMemo(() => {
+  const headerLabels: PositionedLabel[] = useMemo(() => {
     const [rowStart, rowEnd] = rowRange(viewport);
     const rowHeight = trackRowHeight(viewport);
-    const rows: { key: string; text: string; top: number }[] = [];
+    const rows: PositionedLabel[] = [];
     if (rowHeight >= MIN_HEADER_PX) {
       for (let r = Math.max(0, Math.floor(rowStart)); r < Math.min(data.rows, Math.ceil(rowEnd)); r++) {
         if (rows.length >= MAX_HEADERS) break;
         rows.push({
           key: `r${r}`,
           text: data.rowLabels?.[r] ?? String(r),
-          top: trackToPixelY(viewport, r),
+          ariaLabel: `Row ${data.rowLabels?.[r] ?? r}`,
+          left: 2,
+          top: trackToPixelY(viewport, r) - 7,
         });
       }
     }
 
     const colWidth = viewport.width / Math.max(viewport.timeEnd - viewport.timeStart, 1e-9);
-    const cols: { key: string; text: string; left: number }[] = [];
+    const cols: PositionedLabel[] = [];
     if (colWidth >= MIN_HEADER_PX) {
       for (let c = Math.max(0, Math.floor(viewport.timeStart)); c < Math.min(data.cols, Math.ceil(viewport.timeEnd)); c++) {
         if (cols.length >= MAX_HEADERS) break;
         cols.push({
           key: `c${c}`,
           text: data.colLabels?.[c] ?? String(c),
+          ariaLabel: `Column ${data.colLabels?.[c] ?? c}`,
           left: timeToPixelX(viewport, c + 0.5),
+          top: 2,
         });
       }
     }
-    return { rows, cols };
+    return [...rows, ...cols];
   }, [viewport, data]);
-
-  const [rowStart, rowEnd] = rowRange(viewport);
-  const summary =
-    `${data.rows} rows by ${data.cols} columns. ` +
-    `Showing rows ${Math.floor(rowStart)} to ${Math.ceil(rowEnd)}, ` +
-    `columns ${Math.floor(viewport.timeStart)} to ${Math.ceil(viewport.timeEnd)}.`;
 
   return (
     <div
-      role="application"
-      aria-label={props["aria-label"] ?? "Heatmap"}
-      aria-describedby={summaryId}
-      tabIndex={0}
+      {...a11y.rootProps}
       onKeyDown={onKeyDown}
       className={className}
       style={{ position: "relative", width: viewport.width, height: viewport.height, ...style }}
@@ -312,59 +315,14 @@ export function GPUHeatmap(props: GPUHeatmapProps): JSX.Element {
         </div>
       )}
 
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        {headers.rows.map((r) => (
-          <span
-            key={r.key}
-            style={{
-              position: "absolute",
-              left: 2,
-              top: r.top,
-              transform: "translateY(-50%)",
-              font: "11px ui-monospace, monospace",
-              color: "#e7e9ee",
-              textShadow: "0 1px 2px rgba(0,0,0,0.8)",
-            }}
-          >
-            {r.text}
-          </span>
-        ))}
-        {headers.cols.map((c) => (
-          <span
-            key={c.key}
-            style={{
-              position: "absolute",
-              left: c.left,
-              top: 2,
-              transform: "translateX(-50%)",
-              font: "11px ui-monospace, monospace",
-              color: "#e7e9ee",
-              textShadow: "0 1px 2px rgba(0,0,0,0.8)",
-            }}
-          >
-            {c.text}
-          </span>
-        ))}
-      </div>
+      {/* Row and column headers through the shared overlay: real DOM text, positioned by the same
+          transform the shader uses, and capped at the measured DOM-label budget (§21.1, §13.4). */}
+      <LabelOverlay labels={headerLabels} style={{ textShadow: "0 1px 2px rgba(0,0,0,0.8)", paddingLeft: 0 }} />
 
-      <div id={summaryId} style={srOnly}>
-        {summary}
-      </div>
-      <div ref={liveRef} aria-live="polite" style={srOnly} />
-      {focused != null && <div style={srOnly}>{describeCell(data, focused)}</div>}
-      {hoveredCell != null && <div style={srOnly}>{describeCell(data, hoveredCell)}</div>}
+      {a11y.regions()}
+      {focused != null && <div style={SR_ONLY}>{describeCell(data, focused)}</div>}
+      {hoveredCell != null && <div style={SR_ONLY}>{describeCell(data, hoveredCell)}</div>}
     </div>
   );
 }
 
-const srOnly: CSSProperties = {
-  position: "absolute",
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: "hidden",
-  clip: "rect(0 0 0 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};
