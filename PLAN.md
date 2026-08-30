@@ -501,6 +501,24 @@ Feature requests must be conditional — vgpu is explicit that unsupported `requ
 
 ### 10.7 `Profiler` — **v1: yes, restricted to real metrics** (§28)
 
+> **Shipped (2026-08-30):** `packages/core/src/profiler.ts`'s `Profiler`/`createProfiler`, wired
+> into `FrameScheduler` (a `timer.span("${componentId}:${passName}")` per render pass — component-id-
+> qualified, since `RenderPass.name` collides across components, e.g. every `TimelineComponent` names
+> its pass `"timeline"`) and exposed as `runtime.profiler`. CPU frame stats (`FrameStats` —
+> `cpuMs`/`componentCount`/`passCount`/`dispatchCount`) are tracked unconditionally, free; the GPU
+> half (`span()`/`onGpuResults()`, real `timestamp-query` timing) is gated on `options.profiling &&
+> caps.timestampQuery`, matching `initGpu()`'s existing feature-request gating. Fixed a real bug this
+> surfaced in `@gpu-components/testing`'s `createMockGpu`: it configured the mock *adapter's*
+> declared feature support but never passed `requiredFeatures` to request the feature on the device
+> itself, so `timer(gpu)` failed with `VGPU-TIMER-INVALID` even when the caller asked for
+> `["timestamp-query"]` — nothing had exercised a feature-gated API through that helper before.
+> **Not done:** compute-pass GPU timing (`vgpu`'s `Compute.dispatch()` has no `timer` option the way
+> `FramePassOptions` does — a different, larger integration point); the React `<GpuInspector>` panel
+> and its warnings pane (§28.2) — this is the data layer they would read from, not the UI itself. The
+> bench investigation's own conclusion (§29 Phase 3's "next phase" list, item 4) — that a real signal
+> on the shared-vs-independent-device founding claim needs direct GPU timing, not
+> `requestAnimationFrame`-interval measurement — can now actually be attempted; not yet done.
+
 ### 10.8 `Renderer` as a distinct object — **v1: NO.** vgpu's `draw`/`effect` *are* the renderer. A `Renderer` class here would be a pass-through.
 
 ### 10.9 `Device` / `Queue` as our own abstractions — **v1: NO.** `gpu.device` and `gpu.gpu` exist as documented escape hatches. Wrapping them hides vgpu's structured `VGPU-*` errors, which are one of its best features.
@@ -1414,15 +1432,17 @@ next concrete slice of work, in order (updated 2026-08-30):
    `vgpu`'s `timer(gpu)` GPU timestamp-query spans — i.e. build the Phase 4 `Profiler` (§10.7),
    currently not implemented, before attempting this measurement again. Recorded honestly: the
    founding claim is still neither confirmed nor contradicted.
-4. Not yet started: a version of item 3's scenario using direct encode/submit timing instead of
-   `requestAnimationFrame`-interval measurement (needs the Phase 4 `Profiler`/`timer(gpu)` spans —
-   the actual way to get a real signal on the architectural bet, per item 3's conclusion); the
-   remaining Phase 3 interaction items (inertial pan/zoom, brush/lasso selection with a GPU bitset
-   mask, async GPU ID-buffer picking) — all currently absent and flagged as deferred in the code's own
-   doc comments (`TimelineComponent.ts`, `GPUTimeline.tsx`); and empirically tuning `lodThreshold`'s
-   default (currently `4`, per §31 open question #4, not yet measured against real frame-time data).
-   With items 1-2 done, Phase 2's own deliverables are now essentially complete except the CLI `add`
-   command (Phase 6-scoped) — Phase 3 interaction is the natural next slice of work.
+   > **Update (2026-08-30): the prerequisite now exists.** §10.7's `Profiler` is built and wired into
+   > `FrameScheduler`/`GpuRuntime`. Re-running this investigation with real per-pass GPU timing
+   > instead of `requestAnimationFrame`-interval measurement is now possible — not yet done.
+4. Both Phase 3 (inertial pan, brush selection with a GPU bitset mask) and Phase 2's CLI item are
+   done or tracked elsewhere; see those sections' own status notes. Phase 4 is now underway — the
+   `Profiler` core primitive (§10.7) shipped 2026-08-30. Not yet started: the React `<GpuInspector>`
+   panel + warnings pane (§28.2, the UI layer over the `Profiler` data that now exists); compute-pass
+   GPU timing; re-running the bench founding-claim investigation with real GPU timing (item 3's own
+   follow-up, now unblocked); adaptive quality; `bundle()` for static chrome; the glyph atlas; the
+   nightly perf regression gate; empirically tuning `lodThreshold`'s default (§31 open question #4,
+   currently `4`, not yet measured against real frame-time data — the `Profiler` also unblocks this).
 
 ### Phase 3 — Interaction *(1.5 weeks)*
 

@@ -101,6 +101,16 @@ describe("FrameScheduler", () => {
     assert.equal(a.dispatchCalls, a.planCalls, "every plan()'s compute pass must dispatch");
     assert.equal(a.encodeCalls, a.planCalls, "every plan()'s render pass must encode");
 
+    // The default (unspecified) profiler is CPU-only — no `timestamp-query` needed — but its
+    // frame stats are real: at least one tick did work (both components started dirty).
+    const frame = scheduler.profiler.lastFrame;
+    assert.ok(frame, "expected at least one tick to have recorded frame stats");
+    assert.ok(frame!.cpuMs >= 0);
+    assert.ok(frame!.componentCount >= 1);
+    assert.ok(frame!.passCount >= 1);
+    assert.ok(frame!.dispatchCount >= 1);
+    assert.equal(scheduler.profiler.enabled, false, "no timer/profiler was passed in, so GPU timing stays off");
+
     scheduler.stop();
     gpu.dispose();
   });
