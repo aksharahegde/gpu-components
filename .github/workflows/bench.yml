@@ -1,0 +1,46 @@
+name: bench
+
+# Written as part of backfilling PLAN.md's Phase 0 — NOT YET VERIFIED by an actual push/PR run.
+# Confirm on the first real trigger; adjust cache paths / Playwright browser install step if the
+# environment behaves differently in Actions than it did locally.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Nightly, for the vgpu/node trend script — see ci/trend.mjs's own doc comment.
+    - cron: "0 6 * * *"
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run typecheck --workspace=apps/bench
+      - run: npm run test --workspace=apps/bench
+      - name: Install Playwright Chromium
+        run: npx --prefix apps/bench playwright install --with-deps chromium
+      # Push/PR: the quick subset (fast feedback, catches a broken harness). The full 6-size ×
+      # 3-shape matrix is slow (5M/10M-span cells alone can take minutes) — reserved for the
+      # nightly schedule so it doesn't block every PR.
+      - name: Run benchmark matrix (quick subset)
+        if: github.event_name != 'schedule'
+        run: npm run bench:quick --workspace=apps/bench
+      - name: Run benchmark matrix (full, nightly)
+        if: github.event_name == 'schedule'
+        run: npm run bench --workspace=apps/bench
+      - name: Run vgpu/node trend script (headless WebGPU)
+        run: npm run trend --workspace=apps/bench
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-results
+          path: |
+            apps/bench/results/BASELINES.md
+            apps/bench/results/baselines.json
+            apps/bench/results/trend.jsonl

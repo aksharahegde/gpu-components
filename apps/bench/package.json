@@ -1,0 +1,26 @@
+{
+  "name": "@gpu-components/bench",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "PLAN.md §20 benchmark harness — DOM/Canvas2D/WebGL2/WebGPU baselines, phase 0.",
+  "scripts": {
+    "typecheck": "tsc --noEmit --pretty",
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
+    "bench": "playwright test",
+    "bench:quick": "BENCH_QUICK=1 playwright test",
+    "trend": "node ci/trend.mjs"
+  },
+  "dependencies": {
+    "@gpu-components/core": "*",
+    "@gpu-components/testing": "*",
+    "vgpu": "^0.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^22.10.2",
+    "@webgpu/types": "^0.1.72",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
