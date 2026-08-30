@@ -1381,18 +1381,26 @@ next concrete slice of work, in order (updated 2026-08-30):
    to a place it can be honestly benchmarked; the visibility cull alone helps mid-zoom perf but does
    not bound per-frame cost at extreme zoom-out the way density binning does. Also the prerequisite
    primitive for Phase 3's brush-selection bitset and Phase 5's `GPUHeatmap`/`GPUDataGrid`.
-3. **← current next step: investigate the unconfirmed "one device beats N devices" result in
-   `apps/bench/results/BASELINES.md`.** The benchmark's own numbers currently read as *not*
-   confirming the architectural bet — shared-device p50 ties independent-device p50, and worst-case
-   is measured *worse* for the shared-device path. That is the single foundational claim the whole
-   runtime is justified by (§2(a), §11). Either the measurement methodology needs fixing (wrong thing
-   measured) or the architecture needs revisiting — leaving a founding claim silently unconfirmed is
-   a bigger risk than any single missing feature, and it should be resolved before or alongside the
-   density-field LOD binning work, not after.
-4. Then, not yet started: the density-field binning + `RasterLayer` compositing carried over from
-   item 2, and the remaining Phase 3 interaction items (inertial pan/zoom, brush/lasso selection
-   with a GPU bitset mask, async GPU ID-buffer picking) — all currently absent and flagged as
-   deferred in the code's own doc comments (`TimelineComponent.ts`, `GPUTimeline.tsx`).
+3. ~~Investigate the unconfirmed "one device beats N devices" result~~ — **investigated, 2026-08-30**
+   (`apps/bench/results/decision-record.md`). Root cause found and fixed: the benchmark measured bare
+   `requestAnimationFrame` cadence, not the runtime — `GpuRuntime.invalidate()` only marks surfaces
+   dirty, not components, so the scheduler's `active` list was empty for every "measured" frame and
+   nothing was ever encoded or submitted; the original "shared is worse" reading was a single
+   anomalous dropped frame in an otherwise fully-idle loop, not a real finding. Fixed
+   (`sharedContextScenario.ts` now keeps components genuinely active) and re-run scaled to 2/4/8
+   components. **Result: inconclusive, honestly reported as such** — every configuration at every
+   count ties at the vsync floor; an empty-payload component's per-frame cost (a 0-instance indirect
+   draw, a 16-byte buffer write) is far too cheap, even ×8 devices, to approach the 16.6ms frame
+   budget, so this measurement currently has no signal on the architectural bet either way. Getting a
+   real signal needs non-trivial per-component payload or a component count high enough to risk a
+   browser's `GPUDevice` cap — neither done; explicitly flagged as open, not silently left implied as
+   resolved.
+4. Not yet started: a version of item 3's scenario with non-trivial per-component payload (the actual
+   way to get a real signal on the architectural bet); the density-field binning + `RasterLayer`
+   compositing carried over from item 2; and the remaining Phase 3 interaction items (inertial
+   pan/zoom, brush/lasso selection with a GPU bitset mask, async GPU ID-buffer picking) — all
+   currently absent and flagged as deferred in the code's own doc comments (`TimelineComponent.ts`,
+   `GPUTimeline.tsx`).
 
 ### Phase 3 — Interaction *(1.5 weeks)*
 
