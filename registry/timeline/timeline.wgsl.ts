@@ -22,6 +22,9 @@ struct SpanInstance {
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
 @group(0) @binding(1) var<storage, read> instances: array<SpanInstance>;
+// Written by cull.wgsl.ts's compute pass: the indices of spans visible in the current viewport,
+// compacted so \`instanceIndex\` here walks 0..visibleCount, not 0..totalSpanCount.
+@group(0) @binding(2) var<storage, read> visibleIndices: array<u32>;
 
 struct VertexOut {
   @builtin(position) position: vec4f,
@@ -41,7 +44,7 @@ fn vs_main(
     vec2f(0.0, 1.0), vec2f(1.0, 0.0), vec2f(1.0, 1.0),
   );
   let corner = corners[vertexIndex];
-  let span = instances[instanceIndex];
+  let span = instances[visibleIndices[instanceIndex]];
 
   let xStart = span.start * viewport.timeToClip.x + viewport.timeToClip.y;
   var xEnd = (span.start + span.duration) * viewport.timeToClip.x + viewport.timeToClip.y;
