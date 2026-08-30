@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,15 +11,37 @@ const cliRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const registry = JSON.parse(readFileSync(path.join(cliRoot, "registry.json"), "utf8")) as Registry;
 const componentsRoot = path.join(cliRoot, "components");
 
-function scratch(): { io: Io; out: string[]; err: string[]; cwd: string } {
+function scratch(overrides: Partial<Io> = {}): {
+  io: Io;
+  out: string[];
+  err: string[];
+  cwd: string;
+  asked: string[];
+} {
   const cwd = mkdtempSync(path.join(tmpdir(), "gpu-components-"));
   const out: string[] = [];
   const err: string[] = [];
+  const asked: string[] = [];
   return {
     cwd,
     out,
     err,
-    io: { cwd, assumeYes: true, log: (m) => out.push(m), error: (m) => err.push(m) },
+    asked,
+    io: {
+      cwd,
+      assumeYes: true,
+      log: (m) => {
+        out.push(m);
+      },
+      error: (m) => {
+        err.push(m);
+      },
+      confirm: (question) => {
+        asked.push(question);
+        return true;
+      },
+      ...overrides,
+    },
   };
 }
 
@@ -133,7 +155,7 @@ describe("add", () => {
 
 describe("missing dependencies", () => {
   it("lists what the project has not declared", () => {
-    const { io, cwd } = scratch();
+    const { cwd } = scratch();
     writeFileSync(
       path.join(cwd, "package.json"),
       JSON.stringify({ dependencies: { react: "^18.0.0", vgpu: "^0.3.1" } }),
@@ -186,12 +208,6 @@ describe("diff", () => {
     add(registry, componentsRoot, "scatter", io);
     const dir = targetDir(io, "scatter");
     writeFileSync(path.join(dir, "mine.ts"), "export const mine = 1;\n");
-    mkdirSync(path.join(dir, "..", "tmp"), { recursive: true });
-    // Simulate deletion by pointing at a fresh directory containing everything but one file.
-    const { io: io2 } = scratch();
-    add(registry, componentsRoot, "scatter", io2);
-    writeFileSync(path.join(targetDir(io2, "scatter"), "ingest.ts"), "");
-
     out.length = 0;
     diff(registry, componentsRoot, "scatter", io);
     assert.ok(out.some((l) => l.includes("mine.ts")), "a file the user added should be listed");
@@ -247,5 +263,72 @@ describe("list", () => {
     const text = out.join("\n");
     for (const item of registry.items) assert.ok(text.includes(item.name), item.name);
     assert.match(text, /npx gpu-components add/);
+  });
+});
+
+describe("confirmation before writing (§24.3)", () => {
+  it("asks before writing when not running with --yes", () => {
+    const { io, cwd, asked } = scratch({ assumeYes: false });
+    assert.equal(add(registry, componentsRoot, "scatter", io), 0);
+    assert.equal(asked.length, 1, "should have asked exactly once");
+    assert.match(asked[0]!, /Write \d+ files/);
+    assert.ok(readdirSync(path.join(cwd, "components/gpu/scatter")).length > 0);
+  });
+
+  it("writes nothing when the user declines", () => {
+    const { io, cwd, out } = scratch({ assumeYes: false, confirm: () => false });
+    assert.equal(add(registry, componentsRoot, "scatter", io), 1);
+    assert.equal(existsSync(path.join(cwd, "components/gpu/scatter")), false, "no directory created");
+    assert.ok(out.some((l) => l.includes("Cancelled")));
+  });
+
+  it("does not ask when assumeYes is set", () => {
+    const { io, asked } = scratch({ assumeYes: true });
+    add(registry, componentsRoot, "scatter", io);
+    assert.deepEqual(asked, []);
+  });
+
+  it("still lists the files before asking, so there is something to read", () => {
+    const { io, out } = scratch({ assumeYes: false });
+    add(registry, componentsRoot, "scatter", io);
+    const printedBeforePrompt = out.some((l) => l.includes("index.ts"));
+    assert.ok(printedBeforePrompt, "the file list is the thing the user is confirming");
+  });
+});
+
+describe("registry path containment (§24.1 supply chain)", () => {
+  /** A registry whose entry escapes its directory — what a tampered package would look like. */
+  function tamperedRegistry(escapePath: string): Registry {
+    const scatter = registry.items.find((i) => i.name === "scatter")!;
+    return {
+      ...registry,
+      items: [{ ...scatter, files: [{ path: escapePath, type: "registry:component", hash: "0".repeat(64) }] }],
+    };
+  }
+
+  it("refuses a traversing path instead of writing outside the target", () => {
+    const { io } = scratch();
+    assert.throws(
+      () => add(tamperedRegistry("../../../evil.ts"), componentsRoot, "scatter", io),
+      /resolves outside its component directory/,
+    );
+  });
+
+  it("refuses an absolute path", () => {
+    const { io } = scratch();
+    assert.throws(
+      () => add(tamperedRegistry("/tmp/evil.ts"), componentsRoot, "scatter", io),
+      /resolves outside its component directory/,
+    );
+  });
+
+  it("still allows an ordinary nested path", () => {
+    // Containment must not ban legitimate subdirectories — a component may ship shaders/foo.wgsl.
+    const { io } = scratch();
+    assert.throws(
+      () => add(tamperedRegistry("shaders/foo.ts"), componentsRoot, "scatter", io),
+      /registry file missing from the package/,
+      "should fail on the missing file, not on containment",
+    );
   });
 });

@@ -25,6 +25,8 @@ export interface Io {
   readonly cwd: string;
   /** Non-interactive runs skip confirmation; §24.3 requires it otherwise. */
   readonly assumeYes: boolean;
+  /** Asks the user to approve a write. Only consulted when `assumeYes` is false. */
+  readonly confirm: (question: string) => boolean;
 }
 
 export interface AddOptions {
@@ -38,9 +40,29 @@ export function targetDir(io: Io, item: string, options: AddOptions = {}): strin
   return path.resolve(io.cwd, options.path ?? DEFAULT_TARGET, item);
 }
 
+/**
+ * Resolves `file` inside `base` and refuses anything that escapes it.
+ *
+ * Registry entries are data, and `add` writes wherever they point. Integrity verification hashes
+ * file *contents*, not paths, and `registry.json` itself is unsigned — so a tampered package could
+ * name `../../../.npmrc` and have it written into the user's project. PLAN.md §24.1 ranks the
+ * registry supply chain third among its threats; this is the containment that belongs with it.
+ */
+function resolveWithin(base: string, file: string): string {
+  const full = path.resolve(base, file);
+  const relative = path.relative(base, full);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    throw new Error(
+      `gpu-components: registry entry "${file}" resolves outside its component directory. ` +
+        `Refusing to continue — this package may be corrupted or tampered with.`,
+    );
+  }
+  return full;
+}
+
 /** Reads a bundled component file and verifies it against the registry hash before use. */
 function readVerified(componentsRoot: string, item: RegistryItem, file: string, hash: string): string {
-  const full = path.join(componentsRoot, item.name, file);
+  const full = resolveWithin(path.join(componentsRoot, item.name), file);
   if (!existsSync(full)) {
     throw new Error(`gpu-components: registry file missing from the package: ${item.name}/${file}`);
   }
@@ -99,8 +121,16 @@ export function add(registry: Registry, componentsRoot: string, name: string, io
   for (const file of files) io.log(`  ${file.path}`);
   io.log(`\nThis code becomes yours to edit. Requires: ${item.dependencies.join(", ")}`);
 
+  // §24.3: "`add` prints the file list and requires confirmation outside CI". The whole security
+  // property of the copy model is that users read code before it runs, which requires a moment to
+  // read it in. `--yes`, `-y` and CI waive the prompt.
+  if (!io.assumeYes && !io.confirm(`Write ${files.length} files to ${relative}/?`)) {
+    io.log(`Cancelled — nothing was written.`);
+    return 1;
+  }
+
   mkdirSync(dir, { recursive: true });
-  for (const file of files) writeFileSync(path.join(dir, file.path), file.content);
+  for (const file of files) writeFileSync(resolveWithin(dir, file.path), file.content);
 
   io.log(`\nWrote ${files.length} files.`);
   const missing = missingDependencies(io.cwd, item);
@@ -157,7 +187,7 @@ export function diff(registry: Registry, componentsRoot: string, name: string, i
 
   const entries: DiffEntry[] = [];
   for (const file of item.files) {
-    const local = path.join(dir, file.path);
+    const local = resolveWithin(dir, file.path);
     if (!existsSync(local)) {
       entries.push({ path: file.path, status: "missing" });
       continue;

@@ -1,4 +1,6 @@
 import {
+  assertBufferBudget,
+  dispatchWorkgroups,
   InstancedQuadLayer,
   LINE_INSTANCE_STRIDE,
   LineLayer,
@@ -114,6 +116,10 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
   /** PLAN.md §31 open question #4: spans-per-pixel-column crossover into raster LOD mode. */
   private readonly lodThreshold: number;
   private gpu: Gpu | null = null;
+  /** Device limits, captured at `create()` so dispatches and allocations can be bounded against
+   * them (PLAN.md §24.2). Before this existed they were probed and never read. */
+  private caps: ComponentContext["caps"] | null = null;
+  private warnings: ComponentContext["runtime"]["warnings"] | null = null;
   private layer: InstancedQuadLayer | null = null;
   private highlightLayer: InstancedQuadLayer | null = null;
   /** PLAN.md §12.2's axis rules, through `core`'s `LineLayer` (§12.1's second primitive). */
@@ -178,6 +184,8 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
 
   create(ctx: ComponentContext): void {
     this.gpu = ctx.gpu;
+    this.caps = ctx.caps;
+    this.warnings = ctx.runtime.warnings;
     this.layer = new InstancedQuadLayer({
       gpu: ctx.gpu,
       shader: TIMELINE_WGSL,
@@ -304,6 +312,11 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
 
   update(props: TimelineProps): void {
     if (props.spans !== this.uploadedSpans) {
+      // Fail with the real numbers before allocating, rather than letting WebGPU reject the buffer
+      // (§14.3). Checked here because this is where a new dataset's size first becomes known.
+      if (this.caps) {
+        assertBufferBudget(this.caps, props.spans.count * INSTANCE_STRIDE, "GPUTimeline spans", INSTANCE_STRIDE);
+      }
       this.originTime = computeOrigin(props.spans);
       this.domainSpan = computeDomainMax(props.spans) - this.originTime;
       this.layer?.upload(packInstances(props.spans, this.originTime), props.spans.count);
@@ -361,6 +374,15 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       new Uint8Array(this.ruleScratch.buffer, 0, rules.length * LINE_INSTANCE_STRIDE),
       rules.length,
     );
+  }
+
+  /** Workgroup count for `count` items, clamped to the device limit and reported if it clamps. */
+  private workgroupsFor(count: number, source: string): number {
+    if (!this.caps) return Math.ceil(count / CULL_WORKGROUP_SIZE);
+    return dispatchWorkgroups(this.caps, count, CULL_WORKGROUP_SIZE, {
+      warnings: this.warnings ?? undefined,
+      source,
+    });
   }
 
   private uploadHighlights(spans: SpanBuffers): void {
@@ -453,7 +475,7 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       timeEnd: viewport.timeEnd - this.originTime,
       count: spans.count,
     });
-    this.cullPipeline.dispatch(Math.ceil(spans.count / CULL_WORKGROUP_SIZE));
+    this.cullPipeline.dispatch(this.workgroupsFor(spans.count, "timeline-cull"));
   }
 
   /** Resets `densityBuffer` to zero and, when there's data and a viewport, dispatches
@@ -476,7 +498,7 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       timeEnd: viewport.timeEnd - this.originTime,
       count: spans.count,
     });
-    this.densityBinPipeline.dispatch(Math.ceil(spans.count / CULL_WORKGROUP_SIZE));
+    this.densityBinPipeline.dispatch(this.workgroupsFor(spans.count, "timeline-density-bin"));
   }
 
   /** Resets `maxPerTrackBuffer` to zero and dispatches `reduceDensity.wgsl.ts` — one thread per
@@ -490,7 +512,7 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
     const viewport = this.currentViewport;
     if (!viewport || viewport.trackCount === 0) return;
     const total = PIXEL_COLUMNS * viewport.trackCount;
-    this.reduceDensityPipeline.dispatch(Math.ceil(total / CULL_WORKGROUP_SIZE));
+    this.reduceDensityPipeline.dispatch(this.workgroupsFor(total, "timeline-reduce-density"));
   }
 
   /** Resets `selectionMask` to zero and dispatches `brushSelect.wgsl.ts` against the current
@@ -511,7 +533,7 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       trackMax: rect.trackMax,
       count: spans.count,
     });
-    this.brushPipeline.dispatch(Math.ceil(spans.count / CULL_WORKGROUP_SIZE));
+    this.brushPipeline.dispatch(this.workgroupsFor(spans.count, "timeline-brush-select"));
   }
 
   dispose(): void {

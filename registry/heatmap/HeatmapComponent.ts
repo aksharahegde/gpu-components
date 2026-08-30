@@ -1,4 +1,4 @@
-import { RasterLayer, rowRange, viewportUniforms, visibleRows } from "@gpu-components/core";
+import { assertBufferBudget, dispatchWorkgroups, RasterLayer, rowRange, viewportUniforms, visibleRows } from "@gpu-components/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -66,6 +66,8 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
   animating = false;
 
   private gpu: Gpu | null = null;
+  private caps: ComponentContext["caps"] | null = null;
+  private warnings: ComponentContext["runtime"]["warnings"] | null = null;
   private raster: RasterLayer | null = null;
   private viewportUniform: SharedUniforms<ViewportUniforms> | null = null;
   private gridUniform: SharedUniforms<GridUniforms> | null = null;
@@ -98,6 +100,8 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
 
   create(ctx: ComponentContext): void {
     this.gpu = ctx.gpu;
+    this.caps = ctx.caps;
+    this.warnings = ctx.runtime.warnings;
     this.registry = ctx.registry;
 
     this.raster = new RasterLayer({
@@ -181,6 +185,7 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
   /** Allocates the value buffer and binds it everywhere it is read. */
   private allocValues(count: number): void {
     if (!this.gpu) return;
+    if (this.caps) assertBufferBudget(this.caps, count * VALUE_STRIDE, "GPUHeatmap values", VALUE_STRIDE);
     this.valueCapacity = Math.max(1, count);
     this.valuesBuffer = storage(this.gpu, this.valueCapacity * VALUE_STRIDE, "read");
     this.reduceChunk?.set({ values: this.valuesBuffer });
@@ -295,7 +300,16 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
 
   private dispatchReduceChunk(): void {
     if (!this.reduceChunk || !this.uploadedData || this.uploadedData.values.length === 0) return;
-    this.reduceChunk.dispatch(this.chunkCount);
+    // chunkCount is already bounded by MAX_CHUNKS, but clamp anyway: the bound is ours and the
+    // limit is the device's, and only one of those is guaranteed to be the smaller.
+    this.reduceChunk.dispatch(
+      this.caps
+        ? dispatchWorkgroups(this.caps, this.chunkCount * REDUCE_WORKGROUP_SIZE, REDUCE_WORKGROUP_SIZE, {
+            warnings: this.warnings ?? undefined,
+            source: "heatmap-reduce-chunk",
+          })
+        : this.chunkCount,
+    );
   }
 
   private dispatchReduceFinal(): void {
