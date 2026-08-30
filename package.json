@@ -12,6 +12,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present && npm run typecheck:registry",
     "typecheck:registry": "tsc -p registry/tsconfig.json --pretty",
     "test": "npm run test --workspaces --if-present && npm run test:registry",
-    "test:registry": "node --experimental-strip-types --import ./registry/timeline/test/register.mjs --test registry/timeline/*.test.ts registry/timeline/*.test.tsx"
+    "test:registry": "node --experimental-strip-types --import ./registry/timeline/test/register.mjs --test registry/timeline/*.test.ts registry/timeline/*.test.tsx",
+    "//test:registry": "the glob above already picks up render.pixels.test.ts, which renders through real Dawn (vgpu/node) and skips itself if Dawn is unavailable"
   }
 }

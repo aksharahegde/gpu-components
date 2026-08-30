@@ -31,22 +31,36 @@ export function trackedUniforms<T extends Record<string, unknown>>(
   let lastValue: Partial<T> | null = null;
   let unchangedStreak = 0;
 
-  return {
-    set(values: Partial<T>) {
-      if (lastValue && shallowEqual(lastValue, values)) {
-        unchangedStreak++;
-        if (unchangedStreak === UNCHANGED_WARN_THRESHOLD) {
-          warnings.report({
-            code: "redundant-uniform-write",
-            source,
-            message: `set() called ${unchangedStreak}x in a row with an unchanged value — hoist out of the loop`,
-          });
-        }
-      } else {
-        unchangedStreak = 0;
+  const originalSet = inner.set.bind(inner);
+
+  // Wrap `set` *on the real uniform object* rather than returning a `{ set }` stand-in.
+  //
+  // This is load-bearing, and getting it wrong cost this project a silently blank canvas. A bare
+  // `{ set }` object satisfies the `SharedUniforms<T>` type — that is all the public type
+  // structurally requires — but `uniforms()` returns a real GPU-backed resource whose *other*
+  // members are what `draw.set({ viewport: … })` binds. Hand vgpu the stand-in and the binding
+  // resolves to nothing: the shader reads an all-zero uniform block, `trackToClip` becomes
+  // `[0, 0]`, every span quad collapses to zero height, and the component renders a perfectly
+  // clean, perfectly empty frame — no error, no warning, no failed test.
+  //
+  // Mutating in place keeps the object's identity, prototype and internals intact, so vgpu's
+  // bind-group cache (which is keyed by resource identity) sees exactly the object it made.
+  inner.set = (values: Partial<T>) => {
+    if (lastValue && shallowEqual(lastValue, values)) {
+      unchangedStreak++;
+      if (unchangedStreak === UNCHANGED_WARN_THRESHOLD) {
+        warnings.report({
+          code: "redundant-uniform-write",
+          source,
+          message: `set() called ${unchangedStreak}x in a row with an unchanged value — hoist out of the loop`,
+        });
       }
-      lastValue = { ...values };
-      inner.set(values);
-    },
+    } else {
+      unchangedStreak = 0;
+    }
+    lastValue = { ...values };
+    originalSet(values);
   };
+
+  return inner;
 }
