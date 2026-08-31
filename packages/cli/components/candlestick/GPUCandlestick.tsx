@@ -129,7 +129,7 @@ export function GPUCandlestick(props: GPUCandlestickProps): JSX.Element {
     const onMove = (e: MouseEvent) => {
       const rect = el.getBoundingClientRect();
       const hit = componentRef.current?.hitTest(e.clientX - rect.left, e.clientY - rect.top);
-      const index = hit ? hit.id : null;
+      const index = hit ? Number(hit.id) : null;
       setHovered(index);
       const bar = index === null ? null : componentRef.current?.barAt(index) ?? null;
       onHoverBar?.(bar && index !== null ? { index, bar } : null);

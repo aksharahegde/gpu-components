@@ -160,7 +160,7 @@ export function GPULogViewer(props: GPULogViewerProps): JSX.Element {
     const onClick = (e: MouseEvent) => {
       const rect = el.getBoundingClientRect();
       const hit = componentRef.current?.hitTest(e.clientX - rect.left, e.clientY - rect.top);
-      onSelectLine?.(hit ? hit.id : null);
+      onSelectLine?.(hit ? Number(hit.id) : null);
     };
     const onKeyDown = (e: KeyboardEvent) => {
       const page = Math.max(viewport.height - lineHeight, lineHeight);
