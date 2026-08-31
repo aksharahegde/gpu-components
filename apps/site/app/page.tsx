@@ -75,6 +75,7 @@ const s = stylex.create({
     alignItems: 'center',
   },
   cta: { alignItems: 'flex-start' },
+  heroCta: { gap: 10 },
 })
 
 const VGPU_SPLIT: Array<[string, string, string]> = [
@@ -128,7 +129,7 @@ function Home() {
           <div {...stylex.props(s.heroGrid)}>
             <Stack gap={24}>
               <Row>
-                <Status state="planned">Pre-implementation · design published for review</Status>
+                <Status state="live">Runtime & playground live · pre-1.0</Status>
               </Row>
               <H1>
                 GPU components that
@@ -140,15 +141,16 @@ function Home() {
                 <A href="https://vgpu.sh">vgpu</A>. One device, one frame, one submit — across every
                 component on the page.
               </Lead>
-              <Row>
-                <LinkBtn to="/architecture" primary>
-                  Read the architecture
+              <Row sx={s.heroCta}>
+                <LinkBtn to="/playground" primary>
+                  Try the playground
                 </LinkBtn>
-                <LinkBtn to="/why-gpu">Why GPU?</LinkBtn>
+                <LinkBtn to="/architecture">Read the architecture</LinkBtn>
               </Row>
               <Small sx={util.narrow}>
-                No code has shipped yet. Every number on this site is either measured in your
-                browser as you read it, or explicitly labelled as an unvalidated target.
+                Benchmark numbers below are measured in your browser. Harness baselines live in{' '}
+                <C>apps/bench</C>; anything not yet produced there stays labelled as a{' '}
+                <span {...stylex.props(util.monoSm, tone.amber)}>target</span>.
               </Small>
             </Stack>
 
@@ -226,10 +228,11 @@ function Home() {
             beyond that it stops being a benchmark and starts being a hang.
           </Notice>
           <Notice variant="accent">
-            <B>The WebGPU button is disabled on purpose.</B> The runtime is not implemented. The
-            plan targets 5M spans at p95 ≤ 16.6ms on a mid-range discrete GPU — a <em>target</em>,
-            not a result. It gets published here only once the benchmark harness produces it,
-            alongside a WebGL2 baseline that may well be close.
+            <B>The WebGPU row is real.</B> It renders through the in-progress{' '}
+            <C>GPUTimeline</C> and the same runtime the playground uses — not a stand-in. Cross-browser
+            harness numbers publish only once <C>apps/bench</C> produces them; until then, plan
+            targets such as 5M spans at p95 ≤ 16.6ms stay labelled as <em>targets</em>, alongside a
+            WebGL2 baseline that may well be close.
           </Notice>
         </Grid>
       </Section>
@@ -330,7 +333,7 @@ function Home() {
           <Card lg>
             <Stack gap={16}>
               <Row>
-                <Status state="progress">Phase 2 · the MVP component</Status>
+                <Status state="live">Live in playground · MVP component</Status>
               </Row>
               <H3>GPUTimeline</H3>
               <Body>
@@ -460,13 +463,14 @@ function Home() {
         <Card lg sx={s.cta}>
           <Stack gap={16}>
             <Eyebrow>Status</Eyebrow>
-            <H2>Week 1 is measurement, not code.</H2>
+            <H2>Measurement first. Then the runtime.</H2>
             <Body>
-              The first deliverable is a benchmark harness and honest baselines for DOM, Canvas2D
-              and WebGL2 — because if the WebGPU advantage is smaller than assumed, that should
-              change the plan before it changes the marketing.
+              Phase 0 baselines for DOM, Canvas2D, WebGL2, and WebGPU are committed in{' '}
+              <C>apps/bench</C> — because if the WebGPU advantage is smaller than assumed, that
+              should change the plan before it changes the marketing. The runtime and playground
+              demos build on those numbers, not ahead of them.
             </Body>
-            <Row>
+            <Row sx={s.heroCta}>
               <LinkBtn to="/roadmap" primary>
                 See the roadmap
               </LinkBtn>

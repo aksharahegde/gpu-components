@@ -143,7 +143,8 @@ export function GPUImageDiff(props: GPUImageDiffProps): JSX.Element {
       }
       if (!onHover) return;
       const hit = componentRef.current?.hitTest(state.x, state.y);
-      onHover(hit ? { x: hit.id % pair.width, y: Math.floor(hit.id / pair.width) } : null);
+      const id = hit ? Number(hit.id) : null;
+      onHover(id !== null ? { x: id % pair.width, y: Math.floor(id / pair.width) } : null);
     });
     const unsubUp = pointer.onUp(() => {
       dragFrom = null;
