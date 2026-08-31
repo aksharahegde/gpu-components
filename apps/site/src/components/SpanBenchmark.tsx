@@ -126,7 +126,17 @@ const s = stylex.create({
     cursor: 'pointer',
   },
   segBtnLast: { borderInlineEndWidth: 0 },
-  segBtnOn: {
+  segBtnOnDom: {
+    backgroundColor: color.rose,
+    color: color.onAccent,
+    fontWeight: 600,
+  },
+  segBtnOnCanvas: {
+    backgroundColor: color.amber,
+    color: color.onAccent,
+    fontWeight: 600,
+  },
+  segBtnOnWebgpu: {
     backgroundColor: color.accent,
     color: color.onAccent,
     fontWeight: 600,
@@ -376,21 +386,21 @@ export function SpanBenchmark() {
             <button
               onClick={() => setMode('dom')}
               aria-pressed={mode === 'dom'}
-              {...stylex.props(s.segBtn, mode === 'dom' && s.segBtnOn)}
+              {...stylex.props(s.segBtn, mode === 'dom' && s.segBtnOnDom)}
             >
               DOM
             </button>
             <button
               onClick={() => setMode('canvas')}
               aria-pressed={mode === 'canvas'}
-              {...stylex.props(s.segBtn, mode === 'canvas' && s.segBtnOn)}
+              {...stylex.props(s.segBtn, mode === 'canvas' && s.segBtnOnCanvas)}
             >
               Canvas2D
             </button>
             <button
               onClick={() => setMode('webgpu')}
               aria-pressed={mode === 'webgpu'}
-              {...stylex.props(s.segBtn, s.segBtnLast, mode === 'webgpu' && s.segBtnOn)}
+              {...stylex.props(s.segBtn, s.segBtnLast, mode === 'webgpu' && s.segBtnOnWebgpu)}
             >
               WebGPU
             </button>

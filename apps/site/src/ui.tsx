@@ -428,6 +428,9 @@ const list = stylex.create({
     marginBlockStart: 10,
     marginInlineStart: 3,
   },
+  bulletAccent: { backgroundColor: color.accent },
+  bulletMint: { backgroundColor: color.mint },
+  bulletAmber: { backgroundColor: color.amber },
   glyph: { fontSize: 12, lineHeight: 1.6, width: 13 },
   check: { color: color.mint },
   cross: { color: color.rose, fontSize: 11 },
@@ -435,6 +438,7 @@ const list = stylex.create({
 })
 
 type ListVariant = 'bullet' | 'check' | 'cross'
+type BulletTone = 'default' | 'accent' | 'mint' | 'amber'
 
 /**
  * StyleX has no descendant selectors and prefers real elements over `::before`,
@@ -457,11 +461,28 @@ export function List({
   )
 }
 
-export function LI({ children, variant = 'bullet' }: { children: ReactNode; variant?: ListVariant }) {
+export function LI({
+  children,
+  variant = 'bullet',
+  bulletTone = 'default',
+}: {
+  children: ReactNode
+  variant?: ListVariant
+  bulletTone?: BulletTone
+}) {
+  const bulletStyle =
+    bulletTone === 'accent'
+      ? list.bulletAccent
+      : bulletTone === 'mint'
+        ? list.bulletMint
+        : bulletTone === 'amber'
+          ? list.bulletAmber
+          : list.bullet
+
   return (
     <li {...stylex.props(list.li)}>
       {variant === 'bullet' ? (
-        <span aria-hidden="true" {...stylex.props(list.marker, list.bullet)} />
+        <span aria-hidden="true" {...stylex.props(list.marker, bulletStyle)} />
       ) : (
         <span aria-hidden="true" {...stylex.props(list.marker, list.glyph, list[variant])}>
           {variant === 'check' ? '✓' : '✕'}
