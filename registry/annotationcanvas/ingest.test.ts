@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { ingestField } from "./ingest.ts";
+import { ingestField, MAX_FIELD_DIM } from "./ingest.ts";
 import { areaEllipse, areaPolygon, areaRect, lengthOf } from "./measure.ts";
 
 describe("ingestField", () => {
@@ -15,6 +15,17 @@ describe("ingestField", () => {
   it("rejects size/length mismatch and non-positive dims", () => {
     assert.throws(() => ingestField({ width: 2, height: 2, values: new Float32Array(3) }), /expected 4/);
     assert.throws(() => ingestField({ width: 0, height: 1, values: new Float32Array(0) }), /positive/);
+  });
+
+  it("rejects width or height beyond MAX_FIELD_DIM", () => {
+    assert.throws(
+      () => ingestField({ width: MAX_FIELD_DIM + 1, height: 1, values: new Float32Array(MAX_FIELD_DIM + 1) }),
+      /MAX_FIELD_DIM/,
+    );
+    assert.throws(
+      () => ingestField({ width: 1, height: MAX_FIELD_DIM + 1, values: new Float32Array(MAX_FIELD_DIM + 1) }),
+      /MAX_FIELD_DIM/,
+    );
   });
 
   it("honours explicit window", () => {

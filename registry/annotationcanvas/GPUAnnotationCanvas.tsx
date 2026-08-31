@@ -160,10 +160,11 @@ export function GPUAnnotationCanvas(props: GPUAnnotationCanvasProps): JSX.Elemen
 
   const [draft, setDraft] = useState<Annotation | null>(null);
 
+  const effectiveWindow = props.window ?? field.window;
   const a11y = useGpuA11y({
     label: props["aria-label"] ?? "Annotation canvas",
     summary:
-      `${field.width} by ${field.height} field, window ${field.window.min.toFixed(3)} to ${field.window.max.toFixed(3)}. ` +
+      `${field.width} by ${field.height} field, window ${effectiveWindow.min.toFixed(3)} to ${effectiveWindow.max.toFixed(3)}. ` +
       `${countsByKind(annotations)}.`,
   });
   const announce = a11y.announce;

@@ -55,9 +55,11 @@ function movedEnough(x0: number, y0: number, x1: number, y1: number): boolean {
 }
 
 /** Appends a freehand sample in place, skipping an exact repeat of the last point (a stationary
- * pointer-up after the last move) and the cap once full. */
+ * pointer-up after the last move). Collection is uncapped — a long stroke's raw samples all stay
+ * until `simplifyPoints` downsamples the *whole* stroke at gesture end, so the emitted annotation's
+ * last point is always the last sampled position rather than whatever sample happened to land on
+ * an early cap. */
 function appendFreehandSample(points: Point2D[], p: ImagePoint): void {
-  if (points.length >= MAX_POLYGON_POINTS) return;
   const last = points[points.length - 1];
   if (last && last.x === p.x && last.y === p.y) return;
   points.push({ x: p.x, y: p.y });

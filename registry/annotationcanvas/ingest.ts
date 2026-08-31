@@ -37,6 +37,11 @@ export function ingestField(input: IngestFieldInput): FieldData {
       `gpu-components/annotationcanvas: width and height must be positive integers, got ${width}x${height}`,
     );
   }
+  if (width > MAX_FIELD_DIM || height > MAX_FIELD_DIM) {
+    throw new RangeError(
+      `gpu-components/annotationcanvas: ${width}x${height} exceeds the ${MAX_FIELD_DIM}px MAX_FIELD_DIM limit`,
+    );
+  }
   const expected = width * height;
   if (values.length !== expected) {
     throw new RangeError(
