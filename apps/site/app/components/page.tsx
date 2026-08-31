@@ -263,8 +263,8 @@ function Components() {
         </Grid>
 
         <Row>
-          <LinkBtn to="/roadmap" primary>
-            See the roadmap
+          <LinkBtn to="/playground" primary>
+            Try the playground
           </LinkBtn>
           <LinkBtn to="/why-gpu">Why GPU?</LinkBtn>
         </Row>

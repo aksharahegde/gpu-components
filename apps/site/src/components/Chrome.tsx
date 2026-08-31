@@ -12,7 +12,6 @@ const ROUTES = [
   { to: '/why-gpu', label: 'Why GPU' },
   { to: '/architecture', label: 'Architecture' },
   { to: '/components', label: 'Components' },
-  { to: '/roadmap', label: 'Roadmap' },
   { to: '/start', label: 'Get started' },
 ]
 
@@ -254,9 +253,6 @@ export function Footer() {
           </Small>
         </Stack>
         <Stack gap={8} sx={s.footerCol}>
-          <Link to="/roadmap" sx={s.footerLink}>
-            Roadmap
-          </Link>
           <Link to="/start" sx={s.footerLink}>
             Get started
           </Link>

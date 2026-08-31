@@ -20,7 +20,6 @@ const ROUTES = [
   ['/why-gpu', 'why-gpu/index.html', ['Do not use the GPU merely because it is possible', 'Main thread']],
   ['/architecture', 'architecture/index.html', ['One device, a scheduler', 'RenderPass', 'InstancedQuadLayer']],
   ['/components', 'components/index.html', ['GPUTimeline', 'GPUDataGrid', '147.0']],
-  ['/roadmap', 'roadmap/index.html', ['Week one is measurement, not code', 'Phase 5', 'ACCEPTANCE']],
   ['/start', 'start/index.html', ['Nothing is published yet', 'gpu-components add timeline']],
   ['/nope', '404.html', ['No such page']],
 ]
@@ -91,7 +90,7 @@ for (const [route, file, expectations] of ROUTES) {
   }
 
   const hrefs = new Set(Array.from(html.matchAll(/href="([^"]*)"/g)).map((m) => m[1]))
-  const required = ['/why-gpu/', '/architecture/', '/components/', '/roadmap/', '/start/']
+  const required = ['/why-gpu/', '/architecture/', '/components/', '/playground/', '/start/']
   const dead = required.filter((r) => !hrefs.has(r))
   if (dead.length) {
     console.error(`✗ nav — missing links: ${dead.join(', ')}`)
