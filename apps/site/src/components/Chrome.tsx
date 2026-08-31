@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import * as stylex from '@stylexjs/stylex'
+import { usePathname } from 'next/navigation'
 import { Link, useIsCurrent } from '../link'
 import { useTheme } from '../theme'
 import { color, font, radius, size } from '../tokens.stylex'
 import { Btn, Small, Stack, Wrap, typo, util } from '../ui'
 
-const ROUTES = [
-  { to: '/playground', label: 'Playground' },
+const ROUTES: Array<{ to: string; label: string; section?: boolean }> = [
+  { to: '/playground', label: 'Playground', section: true },
   { to: '/why-gpu', label: 'Why GPU' },
   { to: '/architecture', label: 'Architecture' },
   { to: '/components', label: 'Components' },
@@ -34,13 +35,17 @@ const s = stylex.create({
     display: 'flex',
     alignItems: 'center',
     gap: 9,
-    color: color.text,
+    color: { default: color.text, ':hover': color.text },
     fontFamily: font.mono,
     fontSize: 14,
     fontWeight: 600,
     letterSpacing: '-0.01em',
     textDecoration: { default: 'none', ':hover': 'none' },
+    outline: { default: 'none', ':focus-visible': `2px solid ${color.accent}` },
+    outlineOffset: { default: 0, ':focus-visible': 2 },
+    borderRadius: radius.sm,
   },
+  mark: { display: 'block', flex: 'none' },
   links: {
     display: { default: 'flex', [NAV]: 'none' },
     gap: 22,
@@ -62,11 +67,12 @@ const s = stylex.create({
     borderBottomStyle: 'solid',
     borderBottomColor: { default: 'transparent', [NAV]: color.border },
     padding: { default: 0, [NAV]: '8px 24px 16px' },
+    zIndex: { default: 'auto', [NAV]: 1 },
   },
   link: {
     color: { default: color.textDim, ':hover': color.text },
     fontSize: 14,
-    paddingBlock: { default: 4, [NAV]: 10 },
+    paddingBlock: { default: 4, [NAV]: 12 },
     borderBottomWidth: 1.5,
     borderBottomStyle: 'solid',
     borderBottomColor: { default: 'transparent', [NAV]: color.border },
@@ -75,6 +81,9 @@ const s = stylex.create({
     outline: { default: 'none', ':focus-visible': `2px solid ${color.accent}` },
     outlineOffset: { default: 0, ':focus-visible': 2 },
     borderRadius: radius.sm,
+    transitionProperty: 'color, border-color',
+    transitionDuration: '140ms',
+    transitionTimingFunction: 'ease',
   },
   // The active indicator is applied from router state — StyleX has no
   // attribute selectors, and `aria-current` is set on the element anyway.
@@ -82,11 +91,14 @@ const s = stylex.create({
   toggle: {
     display: { default: 'none', [NAV]: 'inline-flex' },
     marginInlineStart: 'auto',
-    paddingBlock: 6,
-    paddingInline: 10,
+    minHeight: 40,
+    minWidth: 40,
+    paddingBlock: 8,
+    paddingInline: 12,
     fontSize: 13,
     fontFamily: font.mono,
     backgroundColor: { default: 'transparent', ':hover': color.surface },
+    borderColor: { default: 'transparent', ':hover': color.borderHover },
     borderRadius: radius.md,
   },
   themeToggle: {
@@ -95,8 +107,8 @@ const s = stylex.create({
     justifyContent: 'center',
     flex: 'none',
     marginInlineStart: 14,
-    width: 32,
-    height: 32,
+    width: { default: 32, [NAV]: 40 },
+    height: { default: 32, [NAV]: 40 },
     padding: 0,
     color: { default: color.textDim, ':hover': color.text },
     backgroundColor: { default: 'transparent', ':hover': color.surface },
@@ -135,6 +147,7 @@ const s = stylex.create({
     color: color.text,
     textDecoration: 'none',
   },
+  extIcon: { marginInlineStart: 5, verticalAlign: '-0.1em' },
 })
 
 /** A styled external anchor, for use inside prose. */
@@ -154,10 +167,33 @@ export function SkipLink() {
   )
 }
 
-function NavLink({ to, label, onNavigate }: { to: string; label: string; onNavigate: () => void }) {
-  const current = useIsCurrent(to)
+function inSection(to: string, pathname: string | null) {
+  const base = to.replace(/\/+$/, '') || '/'
+  const here = (pathname ?? '/').replace(/\/+$/, '') || '/'
+  return here === base || here.startsWith(`${base}/`)
+}
+
+function NavLink({
+  to,
+  label,
+  section,
+  onNavigate,
+}: {
+  to: string
+  label: string
+  section?: boolean
+  onNavigate: () => void
+}) {
+  const exact = useIsCurrent(to)
+  const pathname = usePathname()
+  const current = exact || (section === true && inSection(to, pathname))
   return (
-    <Link to={to} sx={[s.link, current && s.linkCurrent]} onClick={onNavigate}>
+    <Link
+      to={to}
+      sx={[s.link, current && s.linkCurrent]}
+      onClick={onNavigate}
+      aria-current={current ? 'page' : undefined}
+    >
       {label}
     </Link>
   )
@@ -165,6 +201,16 @@ function NavLink({ to, label, onNavigate }: { to: string; label: string; onNavig
 
 export function Nav() {
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
   return (
     <header {...stylex.props(s.header)}>
       <Wrap sx={s.inner}>
@@ -172,12 +218,23 @@ export function Nav() {
           <Mark />
           gpu-components
         </Link>
-        <Btn sx={s.toggle} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <Btn
+          sx={s.toggle}
+          aria-expanded={open}
+          aria-controls="site-nav"
+          onClick={() => setOpen((o) => !o)}
+        >
           {open ? 'Close' : 'Menu'}
         </Btn>
-        <nav {...stylex.props(s.links, open && s.linksOpen)} aria-label="Main">
+        <nav id="site-nav" {...stylex.props(s.links, open && s.linksOpen)} aria-label="Main">
           {ROUTES.map((r) => (
-            <NavLink key={r.to} to={r.to} label={r.label} onNavigate={() => setOpen(false)} />
+            <NavLink
+              key={r.to}
+              to={r.to}
+              label={r.label}
+              section={r.section}
+              onNavigate={() => setOpen(false)}
+            />
           ))}
           <a
             href="https://vgpu.sh"
@@ -185,7 +242,9 @@ export function Nav() {
             rel="noreferrer noopener"
             {...stylex.props(s.link)}
           >
-            vgpu ↗
+            vgpu
+            <span {...stylex.props(util.srOnly)}> (opens in a new tab)</span>
+            <ExternalIcon />
           </a>
         </nav>
         <ThemeToggle />
@@ -230,13 +289,27 @@ function MoonIcon() {
   )
 }
 
+function ExternalIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true" {...stylex.props(s.extIcon)}>
+      <path
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4.5 2.5H2.75A1.25 1.25 0 0 0 1.5 3.75v5.5A1.25 1.25 0 0 0 2.75 10.5h5.5A1.25 1.25 0 0 0 9.5 9.25V7.5M7 1.5h3.5V5M6.5 5.5 10.5 1.5"
+      />
+    </svg>
+  )
+}
+
 function Mark() {
   return (
-    <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="7" fill="#12151c" />
-      <rect x="6" y="9" width="20" height="3" rx="1.5" fill="#8b9dff" />
-      <rect x="6" y="14.5" width="13" height="3" rx="1.5" fill="#5be9b9" />
-      <rect x="6" y="20" width="17" height="3" rx="1.5" fill="#8b9dff" opacity=".55" />
+    <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true" {...stylex.props(s.mark)}>
+      <rect width="32" height="32" rx="7" fill={color.surface2} />
+      <rect x="6" y="9" width="20" height="3" rx="1.5" fill={color.accent} />
+      <rect x="6" y="14.5" width="13" height="3" rx="1.5" fill={color.mint} />
+      <rect x="6" y="20" width="17" height="3" rx="1.5" fill={color.accent} opacity="0.55" />
     </svg>
   )
 }
