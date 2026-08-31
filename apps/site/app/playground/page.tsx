@@ -7,7 +7,7 @@ import { color, font, radius } from '../../src/tokens.stylex'
 export const metadata: Metadata = {
     title: 'Playground — gpu-components',
   description:
-    'Twelve GPU components, one page each — live demos running in your browser on your GPU.',
+    'Thirteen GPU components, one page each — live demos running in your browser on your GPU.',
 }
 
 const COMPONENTS = [
@@ -83,6 +83,12 @@ const COMPONENTS = [
     blurb: 'Force-laid service mesh with status, link health, and traffic pulse.',
     note: 'Playground-only until the shared force-layout animation defect is fixed.',
   },
+  {
+    slug: 'annotationcanvas',
+    name: 'GPUAnnotationCanvas',
+    blurb: 'A Float32 field with a GPU colormap and a host-owned rect/ellipse/point/ruler/polygon overlay.',
+    note: 'Hybrid interaction: every draw tool emits an event, and the page decides whether to keep it.',
+  },
 ] as const
 
 export default function PlaygroundIndex() {
@@ -91,13 +97,13 @@ export default function PlaygroundIndex() {
       <PageHead
         eyebrow="Playground"
         title="Grab the components"
-        lead="Everything else on this site argues that the runtime works. These pages let you check — twelve components, one page each, each running live in your browser on your GPU."
+        lead="Everything else on this site argues that the runtime works. These pages let you check — thirteen components, one page each, each running live in your browser on your GPU."
       />
 
       <Section flush>
         <Stack gap={20}>
           <Row>
-            <Status state="live">12 live demos · one device per page</Status>
+            <Status state="live">13 live demos · one device per page</Status>
           </Row>
           <div {...stylex.props(s.grid)}>
             {COMPONENTS.map((component) => (
