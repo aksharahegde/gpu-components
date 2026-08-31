@@ -68,6 +68,28 @@ for (const [route, file, expectations] of ROUTES) {
     console.log(`✓ stylex — ${atomic.length} elements carry compiled atomic classes`)
   }
 
+  const cssFiles = Array.from(
+    html.matchAll(/href="(\/_next\/static\/css\/[^"]+\.css)"/g),
+    (m) => m[1],
+  )
+  if (!cssFiles.length) {
+    console.error('✗ stylex — no stylesheet linked from index.html')
+    failures++
+  } else {
+    const cssPath = join(OUT_DIR, cssFiles[0].slice(1))
+    const css = readFileSync(cssPath, 'utf8')
+    const hasAtomicRules = /background-color:\s*var\(--x[a-z0-9]+\)/.test(css)
+    const hasTokenDefaults = css.includes('--xrfyece:#08090b') || css.includes('--xrfyece: #08090b')
+    if (css.length < 8000 || !hasAtomicRules || !hasTokenDefaults) {
+      console.error(
+        `✗ stylex css — bundle looks incomplete (${css.length} bytes; atomic=${hasAtomicRules}; tokens=${hasTokenDefaults})`,
+      )
+      failures++
+    } else {
+      console.log(`✓ stylex css — ${css.length.toLocaleString()} bytes with token defaults and atomic rules`)
+    }
+  }
+
   const hrefs = new Set(Array.from(html.matchAll(/href="([^"]*)"/g)).map((m) => m[1]))
   const required = ['/why-gpu/', '/architecture/', '/components/', '/roadmap/', '/start/']
   const dead = required.filter((r) => !hrefs.has(r))
