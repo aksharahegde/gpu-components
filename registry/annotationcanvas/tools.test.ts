@@ -162,16 +162,23 @@ describe("createToolController — freehand", () => {
     }
   });
 
-  it("simplifies to the vertex cap when sampled points exceed it", () => {
+  it("simplifies the full stroke to the vertex cap when sampled points exceed it, rather than truncating", () => {
     const controller = createToolController("freehand");
     controller.onPointerDown({ x: 0, y: 0 });
     for (let i = 1; i <= MAX_POLYGON_POINTS + 50; i++) {
       controller.onPointerMove({ x: i, y: 0 });
     }
-    const result = controller.onPointerUp({ x: MAX_POLYGON_POINTS + 51, y: 0 });
+    const lastSampled = MAX_POLYGON_POINTS + 51;
+    const result = controller.onPointerUp({ x: lastSampled, y: 0 });
     assert.ok(result && result.kind === "freehand");
     if (result && result.kind === "freehand") {
-      assert.ok(result.points.length <= MAX_POLYGON_POINTS);
+      assert.equal(result.points.length, MAX_POLYGON_POINTS, "downsampled to exactly the cap");
+      assert.deepEqual(result.points[0], { x: 0, y: 0 }, "start of the stroke is preserved");
+      assert.deepEqual(
+        result.points[result.points.length - 1],
+        { x: lastSampled, y: 0 },
+        "last point equals the last sampled position, not an early-cap point",
+      );
     }
   });
 

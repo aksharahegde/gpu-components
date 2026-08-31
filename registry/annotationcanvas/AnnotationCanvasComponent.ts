@@ -22,6 +22,7 @@ import type { Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { buildColormapLut, colormapKey, LUT_SIZE, type ColormapName } from "../heatmap/colormap.ts";
 import { VALUE_STRIDE, type FieldData } from "./ingest.ts";
 import { createScene, type Annotation, type Scene } from "./scene.ts";
+import { MAX_POLYGON_POINTS } from "./tools.ts";
 import {
   ANNOTATION_COLOR_SHIFT,
   ANNOTATION_FLAG_SELECTED,
@@ -61,6 +62,11 @@ interface AnnotationUniforms extends Record<string, unknown> {
   readonly strokeOpacity: number;
 }
 
+/** Soft cap for `props.annotations.length` — past this, a component keeps working but warns
+ * (via `runtime.warnings` when available) rather than throwing, since annotation count is host
+ * data the component should degrade gracefully under, unlike the hard `MAX_FIELD_DIM` limit. */
+const RECOMMENDED_MAX_ANNOTATIONS = 2000;
+
 const DEFAULT_COLORMAP: AnnotationColormap = "gray";
 const STROKE_WIDTH_PX = 2;
 const SELECTED_STROKE_WIDTH_PX = 3;
@@ -68,7 +74,10 @@ const POINT_SIZE_PX = 8;
 const FILL_OPACITY = 0.18;
 const STROKE_OPACITY = 0.95;
 const INITIAL_QUAD_CAPACITY = 64;
-const INITIAL_LINE_CAPACITY = 64;
+/** Presized to `MAX_POLYGON_POINTS`: a single freehand/polygon draft can grow to that many edges,
+ * and growing past an undersized capacity mid-drag is exactly the buffer-growth thrashing
+ * `InstancedQuadLayer` warns about (see `packages/core`'s `buffer-growth` warning). */
+const INITIAL_LINE_CAPACITY = MAX_POLYGON_POINTS;
 
 /** Matches `ANNOTATIONS_WGSL`'s `PALETTE` array (8 entries) — kept in lockstep by hand since the
  * quad shader bakes its own copy and `LineLayer` colours are packed CPU-side. */
@@ -216,6 +225,7 @@ export class AnnotationCanvasComponent implements GpuComponent<AnnotationCanvasP
   private gpu: Gpu | null = null;
   private caps: ComponentContext["caps"] | null = null;
   private registry: ComponentContext["registry"] | null = null;
+  private warnings: ComponentContext["runtime"]["warnings"] | null = null;
 
   private raster: RasterLayer | null = null;
   private quadLayer: InstancedQuadLayer | null = null;
@@ -245,6 +255,7 @@ export class AnnotationCanvasComponent implements GpuComponent<AnnotationCanvasP
     this.gpu = ctx.gpu;
     this.caps = ctx.caps;
     this.registry = ctx.registry;
+    this.warnings = ctx.runtime.warnings;
 
     this.raster = new RasterLayer({ gpu: ctx.gpu, shader: FIELD_WGSL, label: `${this.id}-field` });
     this.quadLayer = new InstancedQuadLayer({
@@ -332,6 +343,15 @@ export class AnnotationCanvasComponent implements GpuComponent<AnnotationCanvasP
   }
 
   private uploadAnnotations(annotations: readonly Annotation[], selectedId: string | null): void {
+    if (annotations.length > RECOMMENDED_MAX_ANNOTATIONS) {
+      this.warnings?.report({
+        code: "annotationcanvas-size",
+        source: this.id,
+        message:
+          `${annotations.length.toLocaleString("en-US")} annotations exceeds the ~${RECOMMENDED_MAX_ANNOTATIONS.toLocaleString("en-US")} ` +
+          `soft cap — CPU hit-testing and per-change buffer rebuilds scale linearly with this count`,
+      });
+    }
     const { bytes, count } = packQuadInstances(annotations, selectedId);
     this.quadLayer?.upload(bytes, count);
     this.lineLayer?.uploadLines(packLineInstances(annotations, selectedId));
