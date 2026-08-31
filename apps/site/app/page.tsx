@@ -29,6 +29,7 @@ import { A } from '../src/components/Chrome'
 import { LinkBtn } from '../src/components/LinkBtn'
 import { Layers } from '../src/components/Layers'
 import { SpanBenchmark } from '../src/components/SpanBenchmark'
+import { heroMotion } from '../src/heroMotion.stylex'
 
 export const metadata: Metadata = {
   title: 'gpu-components — GPU components that share one device',
@@ -52,7 +53,10 @@ const s = stylex.create({
     insetBlockStart: '-40%',
     height: 620,
     pointerEvents: 'none',
-    backgroundImage: `radial-gradient(ellipse 60% 50% at 50% 0%, color-mix(in srgb, ${color.accent} 15%, transparent), transparent 70%)`,
+    backgroundImage: [
+      `radial-gradient(ellipse 58% 48% at 50% 0%, color-mix(in srgb, ${color.accent} 20%, transparent), transparent 68%)`,
+      `radial-gradient(ellipse 42% 36% at 72% 18%, color-mix(in srgb, ${color.mint} 9%, transparent), transparent 72%)`,
+    ].join(', '),
   },
   heroInner: { position: 'relative' },
   heroGrid: {
@@ -66,30 +70,43 @@ const s = stylex.create({
   },
   heroCta: { gap: 10 },
   runtime: { display: 'grid', gridTemplateColumns: { default: 'minmax(0, 1fr) minmax(0, 1fr)', [HERO]: 'minmax(0, 1fr)' }, gap: 24 },
+  delay80: { animationDelay: '80ms' },
+  delay160: { animationDelay: '160ms' },
+  delay240: { animationDelay: '240ms' },
+  delay320: { animationDelay: '320ms' },
+  ctaBand: {
+    padding: '28px 26px',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: `color-mix(in srgb, ${color.accent} 28%, ${color.border})`,
+    borderRadius: '10px',
+    backgroundColor: `color-mix(in srgb, ${color.accent} 5%, ${color.surface})`,
+  },
 })
 
 function Home() {
   return (
     <>
       <section {...stylex.props(s.hero)}>
-        <div {...stylex.props(s.glow)} aria-hidden="true" />
+        <div {...stylex.props(s.glow, heroMotion.glowIn)} aria-hidden="true" />
         <Wrap sx={s.heroInner}>
           <div {...stylex.props(s.heroGrid)}>
             <Stack gap={24}>
-              <Row>
+              <Row sx={[heroMotion.rise, s.delay80]}>
                 <Status state="live">Runtime & playground live · pre-1.0</Status>
               </Row>
-              <H1>
+              <H1 sx={[heroMotion.rise, s.delay160]}>
                 GPU components that
                 <br />
-                share one device.
+                <span {...stylex.props(tone.accent)}>share one device.</span>
               </H1>
-              <Lead>
+              <Lead sx={[heroMotion.rise, s.delay240]}>
                 A framework-independent WebGPU runtime for application components, built on{' '}
-                <A href="https://vgpu.sh">vgpu</A>. One device, one frame, one submit — across every
-                component on the page.
+                <A href="https://vgpu.sh">vgpu</A>.{' '}
+                <span {...stylex.props(tone.accent)}>One device, one frame, one submit</span> — across
+                every component on the page.
               </Lead>
-              <Row sx={s.heroCta}>
+              <Row sx={[s.heroCta, heroMotion.rise, s.delay320]}>
                 <LinkBtn to="/playground" primary>
                   Try the playground
                 </LinkBtn>
@@ -145,15 +162,15 @@ function Home() {
           </Code>
 
           <List>
-            <LI>
+            <LI bulletTone="accent">
               <B>One command buffer per tick.</B> Every mounted component’s passes land in a single{' '}
               <C>frame()</C>, compute before render.
             </LI>
-            <LI>
+            <LI bulletTone="mint">
               <B>Shared caches.</B> Pipelines, samplers, colormaps, and transient uniforms — not one
               set per component.
             </LI>
-            <LI>
+            <LI bulletTone="amber">
               <B>Honest fallbacks.</B> Every component documents when not to use GPU, with measured
               crossover numbers. See <LinkBtn to="/why-gpu">Why GPU</LinkBtn> and the{' '}
               <LinkBtn to="/components">component matrix</LinkBtn>.
@@ -163,24 +180,26 @@ function Home() {
       </Section>
 
       <Section flush>
-        <Stack gap={16}>
-          <H2>Try it, then decide.</H2>
-          <Body>
-            The playground runs eight components live in your browser. Architecture, distribution,
-            and the full candidate scoring live on their own pages when you need the detail.
-          </Body>
-          <Row sx={s.heroCta}>
-            <LinkBtn to="/playground" primary>
-              Open the playground
-            </LinkBtn>
-            <LinkBtn to="/start">Get started</LinkBtn>
-          </Row>
-          <Small sx={util.narrow}>
-            Benchmark numbers on this page are measured here. Anything not yet produced by{' '}
-            <C>apps/bench</C> carries a{' '}
-            <span {...stylex.props(util.monoSm, tone.amber)}>target</span> label.
-          </Small>
-        </Stack>
+        <div {...stylex.props(s.ctaBand)}>
+          <Stack gap={16}>
+            <H2>Try it, then decide.</H2>
+            <Body>
+              The playground runs eight components live in your browser. Architecture, distribution,
+              and the full candidate scoring live on their own pages when you need the detail.
+            </Body>
+            <Row sx={s.heroCta}>
+              <LinkBtn to="/playground" primary>
+                Open the playground
+              </LinkBtn>
+              <LinkBtn to="/start">Get started</LinkBtn>
+            </Row>
+            <Small sx={util.narrow}>
+              Benchmark numbers on this page are measured here. Anything not yet produced by{' '}
+              <C>apps/bench</C> carries a{' '}
+              <span {...stylex.props(util.monoSm, tone.amber)}>target</span> label.
+            </Small>
+          </Stack>
+        </div>
       </Section>
     </>
   )
