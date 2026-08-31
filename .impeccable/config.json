@@ -1,3 +1,15 @@
 {
-  "buildPath": "comp"
+  "buildPath": "comp",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-color",
+        "value": "rgba(0,0,0,0.85)",
+        "createdAt": "2026-08-31T17:25:25.605Z",
+        "reason": "matches heatmap LabelOverlay textShadow convention for readable labels on dark GPU canvas"
+      }
+    ]
+  }
 }

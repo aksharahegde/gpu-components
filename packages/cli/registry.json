@@ -479,6 +479,50 @@
           "hash": "7067b0ff5a7aba9ca349d4e6c12366ccd758ec8602723862ae4d528af505b001"
         }
       ]
+    },
+    {
+      "name": "depgraph",
+      "type": "registry:component",
+      "title": "GPUDepGraph",
+      "description": "Sugiyama layered dependency graph. CPU layout at ingest (cycle break, ranks, barycenter order, orthogonal routes); GPU draws nodes and line segments only.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "DepGraphComponent.ts",
+          "type": "registry:component",
+          "hash": "6397a98dfbf2e04fa604477d126e8276361ed1c87068e557b2cfdcc73bc328cf"
+        },
+        {
+          "path": "GPUDepGraph.tsx",
+          "type": "registry:component",
+          "hash": "e4e4f64bf076b985f02fbd4ca2d0d2b1265df381528a89aa7f356599740c16ee"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "084ea24f7f46f757e8172251534774014f1348a332b4295589afcdeee0550d80"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "620895f38240c5c67465a98fb7b19996536d71abe50b9ae4410cbb9e88961d24"
+        },
+        {
+          "path": "layout.ts",
+          "type": "registry:component",
+          "hash": "7011f7268f22ce42b7bc785e745a171c648993f4c2bcda8a6e3d4974ba9a3baf"
+        },
+        {
+          "path": "nodes.wgsl.ts",
+          "type": "registry:component",
+          "hash": "556ce5465faabb3cbf601d8a8afdb352ea4b7e61ceedb82cc4f66c35d8492099"
+        }
+      ]
     }
   ]
 }
