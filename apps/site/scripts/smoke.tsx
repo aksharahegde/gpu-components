@@ -48,7 +48,6 @@ const ROUTES: Array<[string, string[]]> = [
   ['/why-gpu', ['Do not use the GPU merely because it is possible', 'Main thread']],
   ['/architecture', ['One device, a scheduler', 'RenderPass', 'InstancedQuadLayer']],
   ['/components', ['GPUTimeline', 'GPUDataGrid', '147.0']],
-  ['/roadmap', ['Week one is measurement, not code', 'Phase 5', 'ACCEPTANCE']],
   ['/start', ['Nothing is published yet', 'gpu-components add timeline']],
   ['/nope', ['No such page']],
 ]
@@ -123,7 +122,7 @@ async function main() {
         (a as HTMLAnchorElement).getAttribute('href'),
       ),
     )
-    const required = ['/why-gpu', '/architecture', '/components', '/roadmap', '/start']
+    const required = ['/why-gpu', '/architecture', '/components', '/playground', '/start']
     const dead = required.filter((r) => !hrefs.has(r))
     if (dead.length) {
       console.error(`✗ nav — missing links: ${dead.join(', ')}`)

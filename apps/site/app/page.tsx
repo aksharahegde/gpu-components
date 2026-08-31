@@ -471,10 +471,10 @@ function Home() {
               demos build on those numbers, not ahead of them.
             </Body>
             <Row sx={s.heroCta}>
-              <LinkBtn to="/roadmap" primary>
-                See the roadmap
+              <LinkBtn to="/start" primary>
+                Get started
               </LinkBtn>
-              <LinkBtn to="/start">Get started</LinkBtn>
+              <LinkBtn to="/playground">Try the playground</LinkBtn>
             </Row>
             <Small>
               Unvalidated numbers carry a{' '}

@@ -7,14 +7,14 @@ export default function NotFound() {
       <PageHead
         eyebrow="404"
         title="No such page."
-        lead="The site has six pages. This is not one of them."
+        lead="The site has five pages. This is not one of them."
       />
       <Section flush>
         <Row>
           <LinkBtn to="/" primary>
             Back to the start
           </LinkBtn>
-          <LinkBtn to="/roadmap">Roadmap</LinkBtn>
+          <LinkBtn to="/playground">Playground</LinkBtn>
         </Row>
       </Section>
     </>

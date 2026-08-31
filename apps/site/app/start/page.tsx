@@ -200,7 +200,7 @@ function Start() {
           <LinkBtn to="/architecture" primary>
             Read the architecture
           </LinkBtn>
-          <LinkBtn to="/roadmap">See the roadmap</LinkBtn>
+          <LinkBtn to="/playground">Try the playground</LinkBtn>
           <LinkBtn to="/why-gpu">Why GPU?</LinkBtn>
         </Row>
       </Section>
