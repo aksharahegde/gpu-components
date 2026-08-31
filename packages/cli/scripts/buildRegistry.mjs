@@ -57,6 +57,11 @@ const ITEMS = {
     description:
       "Geospatial hexbin density map. Lon/lat projected to Web Mercator, GPU atomic hexbin, colormap fill, and graticule / world-outline chrome — no tile basemap.",
   },
+  histogram: {
+    title: "GPUHistogram",
+    description:
+      "1D value histogram. Freedman–Diaconis (Sturges fallback) bins at ingest, GPU atomic binning, and instanced bar quads.",
+  },
   // GPUGraph is deliberately absent: its layout does not animate in the browser (a known open
   // defect), and a copy-source registry must not ship a component that is broken where it runs.
 };

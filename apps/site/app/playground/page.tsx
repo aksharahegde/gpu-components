@@ -7,7 +7,7 @@ import { color, font, radius } from '../../src/tokens.stylex'
 export const metadata: Metadata = {
     title: 'Playground — gpu-components',
   description:
-    'Nine GPU components, one page each — live demos running in your browser on your GPU.',
+    'Ten GPU components, one page each — live demos running in your browser on your GPU.',
 }
 
 const COMPONENTS = [
@@ -65,6 +65,12 @@ const COMPONENTS = [
     blurb: '200,000 lon/lat points hexbinned on the GPU over Web Mercator — graticule chrome, no tiles.',
     note: 'The geospatial density candidate: projection at ingest, atomic hexbin, colormap fill.',
   },
+  {
+    slug: 'histogram',
+    name: 'GPUHistogram',
+    blurb: '250,000 values, Freedman–Diaconis bins at ingest, GPU atomic binning into instanced bars.',
+    note: 'Adaptive layout on the CPU once; the GPU owns the N-wide bin pass and the draw.',
+  },
 ] as const
 
 export default function PlaygroundIndex() {
@@ -73,13 +79,13 @@ export default function PlaygroundIndex() {
       <PageHead
         eyebrow="Playground"
         title="Grab the components"
-        lead="Everything else on this site argues that the runtime works. These pages let you check — nine components, one page each, each running live in your browser on your GPU."
+        lead="Everything else on this site argues that the runtime works. These pages let you check — ten components, one page each, each running live in your browser on your GPU."
       />
 
       <Section flush>
         <Stack gap={20}>
           <Row>
-            <Status state="live">9 live demos · one device per page</Status>
+            <Status state="live">10 live demos · one device per page</Status>
           </Row>
           <div {...stylex.props(s.grid)}>
             {COMPONENTS.map((component) => (

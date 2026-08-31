@@ -420,6 +420,65 @@
           "hash": "a0194f54a6ef0868bda10d2767e1cdaad2ebfb1d628c5f09aaeeb3d6a80e3b9b"
         }
       ]
+    },
+    {
+      "name": "histogram",
+      "type": "registry:component",
+      "title": "GPUHistogram",
+      "description": "1D value histogram. Freedman–Diaconis (Sturges fallback) bins at ingest, GPU atomic binning, and instanced bar quads.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUHistogram.tsx",
+          "type": "registry:component",
+          "hash": "8a6ef08963f0f0b61790062d4dafdc1d6e009be2137e022cbdec88077a2b1746"
+        },
+        {
+          "path": "HistogramComponent.ts",
+          "type": "registry:component",
+          "hash": "0799d2eebae64c885c9d41b51c32186e734641f2b0b8acc907b35515e4e923ce"
+        },
+        {
+          "path": "axisRules.ts",
+          "type": "registry:component",
+          "hash": "44b62b9665f88f80dba22d06ebfc5b8487ca93498785a4a1418d0557ea81472f"
+        },
+        {
+          "path": "bars.wgsl.ts",
+          "type": "registry:component",
+          "hash": "9f6cc43f52f08a3b4928fd192cede80a9750131f92a4214426c5d1f6c7c24a24"
+        },
+        {
+          "path": "bin.wgsl.ts",
+          "type": "registry:component",
+          "hash": "49af14dddc0ab709ddb18acc4124af65e290d36f39b8558311df65a88ac51be4"
+        },
+        {
+          "path": "bins.ts",
+          "type": "registry:component",
+          "hash": "816a8d1cdbed895f089ea2028e668d6dc82de27c5bc6a057ad4561247b826304"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "22b03499a7463888abcf755ffdd253bf563e5785f78f86784a782f01232ffc9f"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "9b4cb6018d00b45223c3738636ed228760e4760bccf3e5a99471be35160f1a59"
+        },
+        {
+          "path": "reduce.wgsl.ts",
+          "type": "registry:component",
+          "hash": "7067b0ff5a7aba9ca349d4e6c12366ccd758ec8602723862ae4d528af505b001"
+        }
+      ]
     }
   ]
 }
