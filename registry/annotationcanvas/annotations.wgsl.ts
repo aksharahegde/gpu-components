@@ -122,6 +122,15 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
   if (in.kind == KIND_RECT) {
     let edge = (vec2f(1.0) - abs(in.local)) * in.sizePx * 0.5;
     distanceToEdgePx = min(edge.x, edge.y);
+  } else if (in.kind == KIND_ELLIPSE) {
+    let halfExtents = max(in.sizePx * 0.5, vec2f(1.0));
+    let r = length(in.local);
+    let scalePx = select(
+      min(halfExtents.x, halfExtents.y),
+      length(halfExtents * in.local / r),
+      r > 1e-5,
+    );
+    distanceToEdgePx = (1.0 - r) * scalePx;
   } else {
     let radiusPx = max(min(in.sizePx.x, in.sizePx.y) * 0.5, 1.0);
     distanceToEdgePx = (1.0 - length(in.local)) * radiusPx;
