@@ -113,6 +113,13 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  background-color: #08090b;
+  color-scheme: dark;
+}
+
+html[data-theme='light'] {
+  background-color: #f7f8fa;
+  color-scheme: light;
 }
 
 /*
