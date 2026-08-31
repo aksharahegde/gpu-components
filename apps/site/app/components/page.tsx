@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   title: 'Components — gpu-components',
 }
 
-type Tag = 'mvp' | 'variant' | 'p5' | 'p7' | 'later' | 'no'
+type Tag = 'mvp' | 'variant' | 'p5' | 'p7' | 'playground' | 'later' | 'no'
 
 const MATRIX: Array<[string, number, number, number, number, number, Tag]> = [
   ['GPUTimeline', 9, 9, 9, 9, 147.0, 'mvp'],
@@ -42,19 +42,20 @@ const MATRIX: Array<[string, number, number, number, number, number, Tag]> = [
   ['GPUDensityMap', 9, 6, 8, 3, 114.5, 'p7'],
   ['GPUHistogram', 7, 6, 7, 4, 112.5, 'p7'],
   ['GPUDepGraph', 7, 5, 7, 6, 110.0, 'p7'],
-  ['GPUNetworkTopology', 7, 5, 6, 5, 102.0, 'p7'],
-  ['GPUAnnotationCanvas', 6, 5, 7, 5, 99.0, 'p7'],
+  ['GPUNetworkTopology', 7, 5, 6, 5, 102.0, 'playground'],
+  ['GPUAnnotationCanvas', 6, 5, 7, 5, 99.0, 'playground'],
   ['GPUSpreadsheet', 5, 5, 8, 9, 97.5, 'later'],
   ['GPUNodeEditor', 4, 6, 8, 5, 97.0, 'later'],
   ['GPUWhiteboard', 5, 6, 7, 4, 95.0, 'later'],
   ['GPUPdfViewer', 5, 4, 8, 7, 92.5, 'later'],
 ]
 
-const TAG: Record<Tag, { label: string; state: 'planned' | 'progress' }> = {
+const TAG: Record<Tag, { label: string; state: 'planned' | 'progress' | 'live' }> = {
   mvp: { label: 'MVP · phase 2', state: 'progress' },
   variant: { label: 'same primitive', state: 'planned' },
   p5: { label: 'phase 5', state: 'planned' },
   p7: { label: 'phase 7', state: 'planned' },
+  playground: { label: 'playground', state: 'live' },
   later: { label: 'backlog', state: 'planned' },
   no: { label: 'not planned', state: 'planned' },
 }
