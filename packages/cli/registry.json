@@ -240,12 +240,12 @@
         {
           "path": "GPUImageDiff.tsx",
           "type": "registry:component",
-          "hash": "f5afbc5b57fbdcbd6f9c4278138f14e947e062f17d28f1b34617bc82cdca7b98"
+          "hash": "f5b3beee293a88604adfdc1d40d2f0642b6c9f0766b60778366d672c171aca53"
         },
         {
           "path": "ImageDiffComponent.ts",
           "type": "registry:component",
-          "hash": "055a45202ea65deed6602c183e2e1914e0caec512be411917dd6ded538a034f2"
+          "hash": "b6abeba100969538d2662a760e80108922e7f7ee6f78ce8348ec7e5b79dbb057"
         },
         {
           "path": "imagediff.wgsl.ts",
@@ -279,12 +279,12 @@
         {
           "path": "GPULogViewer.tsx",
           "type": "registry:component",
-          "hash": "71e1901e3e302efed3c300c180b90b9f20880d3204948747dd34404eaf8ff290"
+          "hash": "191987c145a55f33fa17d10bddc853cf98c7244edd8b6310218da0dc49547615"
         },
         {
           "path": "LogViewerComponent.ts",
           "type": "registry:component",
-          "hash": "6f05e4d4458e54b5fac671805d4c83b1602e9442fcaa00ea3ac664a3c743bf79"
+          "hash": "4175966a34e2d89c04bc9b0784ecdd2a375b2d46699e04d8603d4e5cf20153bf"
         },
         {
           "path": "index.ts",
@@ -323,12 +323,12 @@
         {
           "path": "CandlestickComponent.ts",
           "type": "registry:component",
-          "hash": "b6216f77dfc27c786e065127f37c22170d5899bc33f1ee3d521b75ee57c7cf94"
+          "hash": "abcff62c3830d1d8d9f0dae63d3470d2b28eb3907e46493412d8f64940fb9dd8"
         },
         {
           "path": "GPUCandlestick.tsx",
           "type": "registry:component",
-          "hash": "d31331aae885ee48a39126726d1f5a1c1ac48b058fe94261636a4032ce935e6d"
+          "hash": "63a4e8237ffc1de9954f011fc45484d0b3232a66299f262a7ca8de3c64048329"
         },
         {
           "path": "candlestick.wgsl.ts",
@@ -344,6 +344,80 @@
           "path": "ingest.ts",
           "type": "registry:component",
           "hash": "719d97f409da70fe3f485137d67415f95ad5b4f781a148242993304ee44240ff"
+        }
+      ]
+    },
+    {
+      "name": "densitymap",
+      "type": "registry:component",
+      "title": "GPUDensityMap",
+      "description": "Geospatial hexbin density map. Lon/lat projected to Web Mercator, GPU atomic hexbin, colormap fill, and graticule / world-outline chrome — no tile basemap.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "DensityMapComponent.ts",
+          "type": "registry:component",
+          "hash": "deb5fa1d59008255b67931e0e8f8a20568ee37dda082a08ca252d5761204b833"
+        },
+        {
+          "path": "GPUDensityMap.tsx",
+          "type": "registry:component",
+          "hash": "e08fe63e29121ec8806e93fdba8c244b86b768ed625c2b4c2b662562fbdebb2f"
+        },
+        {
+          "path": "colormap.ts",
+          "type": "registry:component",
+          "hash": "accacd789cb3afe4510e5576670fe8e4d936ff643a7deb653ead21eb84cc39a4"
+        },
+        {
+          "path": "graticule.ts",
+          "type": "registry:component",
+          "hash": "4d615e9aa6e376a2b534fc1c2322622f0bd7d04b5cf75fab3960f9ab8dbc078c"
+        },
+        {
+          "path": "hex.wgsl.ts",
+          "type": "registry:component",
+          "hash": "d4ba9f46f6cfc0c06241da238e1d095038aed0f637840659f5fec6f75ed9dd4f"
+        },
+        {
+          "path": "hexbin.wgsl.ts",
+          "type": "registry:component",
+          "hash": "88cad44fca5c67bafa9804c5fecb7de5dd2e6ea63b2746ca767749bad35b8ee0"
+        },
+        {
+          "path": "hexmath.ts",
+          "type": "registry:component",
+          "hash": "0ea8d34b47447fedd6675bfbe331e30f77f4c3763c8b38a25e3e44327585f8cc"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "23d8c4a11df8da3e29297c73a5449aa99d0e415f04942853290f1b851a62ff63"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "e6b07f1dd1548eb1081839ace16d82ea7b115b9ef5daaf2c43d498eb45f70b50"
+        },
+        {
+          "path": "mercator.ts",
+          "type": "registry:component",
+          "hash": "35ce72fc25bed2dc9a0ef2823825547fa75341144e3f1d158ec1cea0427fff53"
+        },
+        {
+          "path": "reduce.wgsl.ts",
+          "type": "registry:component",
+          "hash": "36ac286233be09dc22e202a599ce7d551641113e969281b7c1e00382546535d3"
+        },
+        {
+          "path": "worldOutline.ts",
+          "type": "registry:component",
+          "hash": "a0194f54a6ef0868bda10d2767e1cdaad2ebfb1d628c5f09aaeeb3d6a80e3b9b"
         }
       ]
     }

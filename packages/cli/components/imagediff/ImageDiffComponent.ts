@@ -213,7 +213,7 @@ export class ImageDiffComponent implements GpuComponent<ImageDiffProps> {
   async readStats(): Promise<DiffStats | null> {
     if (!this.statsBuffer || !this.uploadedPair) return null;
     const raw = await this.statsBuffer.read();
-    const values = new Uint32Array(raw.buffer ?? (raw as unknown as ArrayBuffer));
+    const values = new Uint32Array(raw);
     return {
       changedPixels: values[0] ?? 0,
       totalPixels: this.uploadedPair.width * this.uploadedPair.height,

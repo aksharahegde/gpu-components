@@ -7,7 +7,12 @@ import type {
   ViewportState,
 } from "@gpu-components/core";
 import { compute, draw, storage, uniforms } from "vgpu";
-import type { Compute, Drawable, SharedUniforms, StorageBuffer } from "vgpu";
+import type { Compute, Draw, SharedUniforms, StorageBuffer } from "vgpu";
+
+/** vgpu's public `StorageBuffer` type omits the write offset the runtime actually supports. */
+interface OffsetWritableBuffer extends StorageBuffer {
+  write(data: BufferSource, offset?: number): void;
+}
 import {
   LOG_RECORD_STRIDE,
   formatLogLine,
@@ -92,8 +97,8 @@ export class LogViewerComponent implements GpuComponent<LogViewerProps> {
   private ring: RingBuffer | null = null;
   private params: SharedUniforms<Record<string, unknown>> | null = null;
   private minimapParams: SharedUniforms<Record<string, unknown>> | null = null;
-  private rowDraw: Drawable | null = null;
-  private minimapDraw: Drawable | null = null;
+  private rowDraw: Draw | null = null;
+  private minimapDraw: Draw | null = null;
   private minimapCompute: Compute | null = null;
   private matchBuffer: StorageBuffer | null = null;
   private bucketBuffer: StorageBuffer | null = null;
@@ -260,9 +265,10 @@ export class LogViewerComponent implements GpuComponent<LogViewerProps> {
   private writeMatchSlots(slot: number, count: number): void {
     if (!this.matchBuffer || count === 0) return;
     const untilEnd = Math.min(count, this.capacity - slot);
-    this.matchBuffer.write(this.matchFlags.subarray(slot, slot + untilEnd), slot * 4);
+    const writable = this.matchBuffer as OffsetWritableBuffer;
+    writable.write(this.matchFlags.subarray(slot, slot + untilEnd), slot * 4);
     if (count > untilEnd) {
-      this.matchBuffer.write(this.matchFlags.subarray(0, count - untilEnd), 0);
+      writable.write(this.matchFlags.subarray(0, count - untilEnd), 0);
     }
   }
 
@@ -396,7 +402,7 @@ export class LogViewerComponent implements GpuComponent<LogViewerProps> {
   async readMinimap(): Promise<MinimapReading | null> {
     if (!this.bucketBuffer) return null;
     const raw = await this.bucketBuffer.read();
-    const buckets = new Uint32Array(raw.buffer ?? (raw as unknown as ArrayBuffer));
+    const buckets = new Uint32Array(raw);
     let peakMatched = 1;
     let peakErrors = 1;
     for (let i = 0; i < MINIMAP_BUCKETS; i++) {
