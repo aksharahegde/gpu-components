@@ -377,6 +377,8 @@ export const button = stylex.create({
     transitionProperty: 'background-color, border-color',
     transitionDuration: '140ms',
     transitionTimingFunction: 'ease',
+    outline: { default: 'none', ':focus-visible': `2px solid ${color.accent}` },
+    outlineOffset: { default: 0, ':focus-visible': 2 },
   },
   primary: {
     backgroundColor: { default: color.accent, ':hover': color.accentHover },

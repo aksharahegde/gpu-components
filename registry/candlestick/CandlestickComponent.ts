@@ -8,7 +8,7 @@ import type {
   ViewportState,
 } from "@gpu-components/core";
 import { compute, draw, storage, uniforms } from "vgpu";
-import type { Compute, Drawable, SharedUniforms, StorageBuffer } from "vgpu";
+import type { Compute, Draw, SharedUniforms, StorageBuffer } from "vgpu";
 import { BAR_STRIDE, packBars, priceRange, validateBars, type Bar } from "./ingest.ts";
 import {
   CANDLE_WGSL,
@@ -85,8 +85,8 @@ export class CandlestickComponent implements GpuComponent<CandlestickProps> {
   private ring: RingBuffer | null = null;
   private params: SharedUniforms<Record<string, unknown>> | null = null;
   private overviewParams: SharedUniforms<Record<string, unknown>> | null = null;
-  private candleDraw: Drawable | null = null;
-  private overviewDraw: Drawable | null = null;
+  private candleDraw: Draw | null = null;
+  private overviewDraw: Draw | null = null;
   private overviewCompute: Compute | null = null;
   private bucketBuffer: StorageBuffer | null = null;
 
@@ -300,7 +300,7 @@ export class CandlestickComponent implements GpuComponent<CandlestickProps> {
   async readOverview(): Promise<OverviewReading | null> {
     if (!this.bucketBuffer) return null;
     const raw = await this.bucketBuffer.read();
-    const buckets = new Uint32Array(raw.buffer ?? (raw as unknown as ArrayBuffer));
+    const buckets = new Uint32Array(raw);
     const floats = new Float32Array(buckets.buffer);
 
     let lowest = Infinity;

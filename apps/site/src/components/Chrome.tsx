@@ -73,6 +73,9 @@ const s = stylex.create({
     borderBottomColor: { default: 'transparent', [NAV]: color.border },
     width: { default: 'auto', [NAV]: '100%' },
     textDecoration: { default: 'none', ':hover': 'none' },
+    outline: { default: 'none', ':focus-visible': `2px solid ${color.accent}` },
+    outlineOffset: { default: 0, ':focus-visible': 2 },
+    borderRadius: radius.sm,
   },
   // The active indicator is applied from router state — StyleX has no
   // attribute selectors, and `aria-current` is set on the element anyway.
@@ -112,7 +115,13 @@ const s = stylex.create({
   footerInner: { display: 'flex', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' },
   footerCol: { textAlign: 'right' },
   footerLink: { color: color.textDim, textDecoration: { default: 'none', ':hover': 'underline' } },
-  anchor: { color: color.accent, textDecoration: { default: 'none', ':hover': 'underline' } },
+  anchor: {
+    color: color.accent,
+    textDecoration: { default: 'none', ':hover': 'underline' },
+    outline: { default: 'none', ':focus-visible': `2px solid ${color.accent}` },
+    outlineOffset: { default: 0, ':focus-visible': 2 },
+    borderRadius: radius.sm,
+  },
   skip: {
     position: 'absolute',
     insetInlineStart: { default: -9999, ':focus': 16 },
@@ -240,7 +249,7 @@ export function Footer() {
         <Stack gap={8}>
           <span {...stylex.props(typo.mono, typo.bodyInline)}>gpu-components</span>
           <Small>
-            Pre-implementation. Design published for review · MIT (intended) · built on{' '}
+            In active development · playground live · MIT (intended) · built on{' '}
             <A href="https://vgpu.sh">vgpu</A>
           </Small>
         </Stack>
