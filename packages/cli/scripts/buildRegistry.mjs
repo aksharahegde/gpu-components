@@ -62,6 +62,11 @@ const ITEMS = {
     description:
       "1D value histogram. Freedman–Diaconis (Sturges fallback) bins at ingest, GPU atomic binning, and instanced bar quads.",
   },
+  depgraph: {
+    title: "GPUDepGraph",
+    description:
+      "Sugiyama layered dependency graph. CPU layout at ingest (cycle break, ranks, barycenter order, orthogonal routes); GPU draws nodes and line segments only.",
+  },
   // GPUGraph is deliberately absent: its layout does not animate in the browser (a known open
   // defect), and a copy-source registry must not ship a component that is broken where it runs.
 };
