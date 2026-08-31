@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-31T14:30:00.000Z",
+  "title": "Design System: gpu-components",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Obsidian Base",
+        "canonical": "#08090b",
+        "tonalRamp": ["#08090b", "#0d0f13", "#101318", "#151920", "#1d222b", "#2a313d", "#384253", "#6d7686"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Panel Surface",
+        "canonical": "#101318",
+        "tonalRamp": ["#08090b", "#0d0f13", "#101318", "#151920", "#1d222b", "#2a313d", "#384253", "#6d7686"]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Instrument Periwinkle",
+        "canonical": "#8b9dff",
+        "tonalRamp": ["#0a0c12", "#2a3366", "#4a5bd4", "#5f70cc", "#8b9dff", "#9dabff", "#b7c4ff", "#e8ecff"]
+      },
+      "mint": {
+        "role": "semantic",
+        "displayName": "Signal Mint",
+        "canonical": "#5be9b9",
+        "tonalRamp": ["#0a2e22", "#0f5a44", "#0f8a5f", "#1aad7a", "#5be9b9", "#7aedc9", "#a8f2da", "#d4f9ed"]
+      },
+      "amber": {
+        "role": "semantic",
+        "displayName": "Caution Amber",
+        "canonical": "#f0b072",
+        "tonalRamp": ["#3d2200", "#6b3d00", "#a15c00", "#c47a1a", "#f0b072", "#f5c494", "#fad8b8", "#fdeee0"]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Primary Text",
+        "canonical": "#e7e9ee",
+        "tonalRamp": ["#12151b", "#2a2f38", "#454c59", "#6d7686", "#a2aab8", "#c5cad3", "#e7e9ee", "#f7f8fa"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headlines on landing and high-impact page titles."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section titles within Section and PageHead components."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Eyebrows, table headers, architecture ownership tags — mono uppercase."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Code blocks, inline code, brand wordmark, numeric data."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "ease",
+        "purpose": "Default easing for button background and border transitions."
+      },
+      {
+        "name": "duration-control",
+        "value": "140ms",
+        "purpose": "Button hover transition duration."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "620px" },
+      { "name": "nav", "value": "720px" },
+      { "name": "md", "value": "900px" },
+      { "name": "hero", "value": "940px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary call-to-action — accent fill, dark text, quiet hover brighten.",
+      "html": "<button class=\"ds-btn-primary\">Get started</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 10px 17px; border-radius: 8px; font-size: 14.5px; font-weight: 620; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; border: 1px solid #8b9dff; background: #8b9dff; color: #0a0c12; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease; } .ds-btn-primary:hover { background: #9dabff; border-color: #9dabff; } .ds-btn-primary:focus-visible { outline: 2px solid #8b9dff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default bordered control for secondary actions and chrome toggles.",
+      "html": "<button class=\"ds-btn-secondary\">View playground</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 8px; padding: 10px 17px; border-radius: 8px; font-size: 14.5px; font-weight: 550; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; border: 1px solid #2a313d; background: #101318; color: #e7e9ee; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease; } .ds-btn-secondary:hover { background: #151920; border-color: #384253; } .ds-btn-secondary:focus-visible { outline: 2px solid #8b9dff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Default contained surface for grouped content — flat, bordered, no shadow.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Shared GPU runtime</h3><p class=\"ds-card-body\">One device, one frame loop, one submit across every component on the page.</p></div>",
+      "css": ".ds-card { background: #101318; border: 1px solid #1d222b; border-radius: 10px; padding: 22px; } .ds-card-title { margin: 0 0 8px; font-size: 18px; font-weight: 620; line-height: 1.25; letter-spacing: -0.015em; color: #e7e9ee; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; } .ds-card-body { margin: 0; font-size: 16px; line-height: 1.65; color: #a2aab8; max-width: 74ch; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Roadmap/status indicator with semantic dot — live, done, progress, planned.",
+      "html": "<span class=\"ds-chip\"><span class=\"ds-chip-dot ds-chip-dot-live\"></span>Live</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 7px; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid #2a313d; background: #101318; color: #a2aab8; white-space: nowrap; } .ds-chip-dot { width: 6px; height: 6px; border-radius: 999px; flex: none; } .ds-chip-dot-live { background: #8b9dff; }"
+    },
+    {
+      "name": "Navigation Link",
+      "kind": "nav",
+      "refersTo": "button-secondary",
+      "description": "Main nav link — dim default, accent underline when active.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link ds-nav-link-active\" href=\"#\">Architecture</a><a class=\"ds-nav-link\" href=\"#\">Components</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 22px; align-items: center; } .ds-nav-link { color: #a2aab8; font-size: 14px; padding-block: 4px; border-bottom: 1.5px solid transparent; text-decoration: none; transition: color 140ms ease, border-color 140ms ease; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; } .ds-nav-link:hover { color: #e7e9ee; text-decoration: none; } .ds-nav-link-active { color: #e7e9ee; border-bottom-color: #8b9dff; }"
+    },
+    {
+      "name": "Notice Callout",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Constraint or caution callout with left accent bar and subtle tint.",
+      "html": "<div class=\"ds-notice\"><strong>Benchmark cap.</strong> DOM rendering stops at 20,000 nodes — shown in UI, not hidden.</div>",
+      "css": ".ds-notice { border: 1px solid #2a313d; border-left: 3px solid #f0b072; border-radius: 8px; padding: 16px 18px; font-size: 14.5px; line-height: 1.6; color: #a2aab8; background: color-mix(in srgb, #f0b072 6%, #101318); font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; } .ds-notice strong { color: #e7e9ee; font-weight: 600; }"
+    },
+    {
+      "name": "Code Block",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "File-labelled code sample with syntax token colors.",
+      "html": "<div class=\"ds-code\"><div class=\"ds-code-bar\">TimelineComponent.ts</div><pre class=\"ds-code-pre\"><code><span class=\"ds-kw\">export</span> <span class=\"ds-kw\">class</span> <span class=\"ds-fn\">TimelineComponent</span> { }</code></pre></div>",
+      "css": ".ds-code { background: #0d0f13; border: 1px solid #1d222b; border-radius: 10px; overflow: hidden; } .ds-code-bar { display: flex; align-items: center; padding: 9px 14px; border-bottom: 1px solid #1d222b; background: #101318; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #6d7686; } .ds-code-pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; line-height: 1.7; color: #cfd6e4; tab-size: 2; } .ds-kw { color: #b7a4ff; } .ds-fn { color: #8fb7ff; }"
+    },
+    {
+      "name": "Architecture Layer Row",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Stack diagram row showing runtime ownership — signature component.",
+      "html": "<div class=\"ds-layer ds-layer-ours\"><span class=\"ds-layer-name\">@gpu-components/core</span><span class=\"ds-layer-who\">ours · npm</span></div>",
+      "css": ".ds-layer { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 15px; font-size: 13.5px; border: 1px solid #1d222b; border-radius: 8px; background: #101318; } .ds-layer-ours { border-color: color-mix(in srgb, #8b9dff 42%, #1d222b); background: color-mix(in srgb, #8b9dff 9%, #101318); } .ds-layer-name { font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; color: #e7e9ee; } .ds-layer-who { font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: #8b9dff; white-space: nowrap; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Instrument Panel",
+    "overview": "This is a developer-evaluation surface for a GPU runtime library — not a consumer product landing page and not a decorative WebGPU showcase. The visual world reads like calibrated instrumentation: dark by default, system-native typography, monospace for operational labels, and color reserved for signal (accent), success (mint), and caution (amber). Expression comes from information density and honest measurement, not from gradient heroics or motion for its own sake.\n\nThe site (apps/site) implements this world in StyleX with compile-time atomic CSS, a primitive component library in src/ui.tsx, and themeable color tokens in src/tokens.stylex.ts. Light mode exists as a createTheme override but dark is the default and the primary design reference.",
+    "keyCharacteristics": [
+      "Dark-first tonal layering — depth via surface steps (bg → surface → surface2) and 1px borders, not drop shadows",
+      "System UI fonts throughout; monospace reserved for labels, code, brand mark, and table headers",
+      "Periwinkle accent (#8b9dff) used sparingly for links, primary actions, and active nav — never as ambient fill",
+      "Clinical minimal component feel: bordered controls, quiet 140ms hovers, maximum readable content per viewport",
+      "Credible anti-hype posture — benchmarks disabled or capped rather than fabricated; notices for constraints",
+      "StyleX constraints shape the system: no descendant selectors, real elements over pseudo-content, breakpoints inlined per file"
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule",
+        "body": "The primary accent appears on ≤10% of any viewport — CTAs, active nav, links, and deliberate highlights only. Its rarity signals action and credibility; flooding screens with periwinkle reads as marketing, not instrumentation.",
+        "section": "colors"
+      },
+      {
+        "name": "The Measured Signal Rule",
+        "body": "Mint, amber, and rose are semantic only (status, notices, list polarity). Never use them as decorative gradients or ambient backgrounds except at ≤6% color-mix tints inside notice callouts.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Boundary Rule",
+        "body": "Monospace is for operational text — eyebrows, chips, code, brand wordmark, table headers, architecture labels. Never set body paragraphs or headlines in mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The Measure Rule",
+        "body": "Prose blocks cap at 68–74ch. Tables and code blocks may exceed width inside horizontal scroll containers, not by stretching line length in copy.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces rest flat. Do not add box-shadow to cards, buttons, or sections. If something needs emphasis, step the surface color or strengthen the border — not the shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Frosted Chrome Rule",
+        "body": "Backdrop blur is permitted only on sticky/fixed chrome (nav) where content scrolls beneath. Nowhere else.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use system UI fonts exclusively — no webfont imports for the site shell",
+      "Do express depth through surface steps and 1px borders (border → borderStrong → borderHover)",
+      "Do cap prose at 68–74ch and put wide data in scroll containers",
+      "Do use mono for operational labels (eyebrows, chips, code, table headers, brand)",
+      "Do keep accent usage sparse — CTAs, links, active nav, deliberate highlights",
+      "Do use real elements for list markers and state (StyleX has no ::before descendants)",
+      "Do pass state via props (last, current, primary) rather than CSS attribute selectors",
+      "Do label unmeasured performance as targets; disable controls that cannot produce real numbers"
+    ],
+    "donts": [
+      "Don't add box shadows to cards, buttons, or sections — this system is flat",
+      "Don't use gradient meshes, particle effects, or WebGPU shader backgrounds as decoration",
+      "Don't flood the UI with accent color — rarity is the credibility signal",
+      "Don't use mint/amber/rose outside semantic contexts (status, notices, polarity lists)",
+      "Don't combine className with stylex.props() — use the sx prop pattern",
+      "Don't share StyleX breakpoints via cross-file defineConsts (known webpack batching bug)",
+      "Don't print benchmark numbers the harness has not produced"
+    ]
+  }
+}
