@@ -10,7 +10,7 @@ const ZOOM_SPEED = 0.0015;
 
 export interface GPUNetworkTopologyProps {
   readonly data: TopologyData;
-    10|  readonly viewport: ViewportState;
+  readonly viewport: ViewportState;
   readonly onViewportChange?: (viewport: ViewportState) => void;
   readonly paused?: boolean;
   readonly nodeSizePx?: number;
@@ -20,7 +20,7 @@ export interface GPUNetworkTopologyProps {
   readonly pulseSpeed?: number;
   /** Fires as the layout runs, so a host can show progress or a settled state. */
   readonly onIterate?: (iterations: number, settled: boolean) => void;
-    20|  readonly style?: CSSProperties;
+  readonly style?: CSSProperties;
   readonly className?: string;
   readonly "aria-label"?: string;
 }
@@ -31,7 +31,7 @@ export interface GPUNetworkTopologyProps {
  * Structurally `GPUGraph`'s wrapper (pan, zoom, pause, live a11y summary; no hover, for the same
  * reason `GPUGraph` has none — positions live only on the GPU, so there is nothing on the CPU to
  * hit-test) plus one addition: the pulse in `topology.wgsl.ts`'s edge fragment shader is a function
-    30| * of a `time` uniform that `NetworkTopologyComponent` does not advance on its own. This wrapper
+ * of a `time` uniform that `NetworkTopologyComponent` does not advance on its own. This wrapper
  * owns that clock — a `requestAnimationFrame` loop advances local `time` state while not paused,
  * so hot links keep shimmering even after the layout settles (`NetworkTopologyComponent`'s doc
  * comment on why `animating` outlives `iterations >= MAX_ITERATIONS`).
@@ -43,7 +43,7 @@ export interface GPUNetworkTopologyProps {
  * back cheaply enough to keep labels truthful.
  */
 export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element {
-    40|  const { data, onViewportChange, onIterate, style, className } = props;
+  const { data, onViewportChange, onIterate, style, className } = props;
   const { status } = useGpu();
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [internalViewport, setInternalViewport] = useState(props.viewport);
@@ -53,7 +53,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
 
   const bounds: ViewportBounds = useMemo(
     () => ({ timeMin: -4, timeMax: 4, rowMin: -4, rowMax: 4 }),
-    50|    [],
+    [],
   );
 
   const statusCounts = useMemo(() => {
@@ -64,7 +64,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
       const s = data.status[i];
       if (s === STATUS.down) down++;
       else if (s === STATUS.degraded) degraded++;
-    60|      else up++;
+      else up++;
     }
     return { up, degraded, down };
   }, [data]);
@@ -75,7 +75,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
       `${data.nodeCount.toLocaleString("en-US")} nodes ` +
       `(${statusCounts.up} up, ${statusCounts.degraded} degraded, ${statusCounts.down} down), ` +
       `${data.edgeCount.toLocaleString("en-US")} edges. ` +
-    70|      (progress.settled
+      (progress.settled
         ? `Layout settled after ${progress.iterations} iterations.`
         : `Layout is still settling (${progress.iterations} iterations so far).`),
   });
@@ -86,7 +86,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
   const setViewport = useCallback(
     (next: ViewportState) => {
       if (onViewportChange) onViewportChange(next);
-    80|      else setInternalViewport(next);
+      else setInternalViewport(next);
     },
     [onViewportChange],
   );
@@ -97,7 +97,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
   const progressRef = useRef(setProgress);
   progressRef.current = setProgress;
 
-    90|  const componentRef = useRef<NetworkTopologyComponent | null>(null);
+  const componentRef = useRef<NetworkTopologyComponent | null>(null);
   const factory = useCallback(() => {
     const component = new NetworkTopologyComponent();
     component.onProgress = (iterations, settled) => progressRef.current({ iterations, settled });
@@ -107,7 +107,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
   useGpuComponent(
     factory,
     canvas,
-   100|    useMemo(
+    useMemo(
       () => ({
         data,
         viewport,
@@ -117,7 +117,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
         selectedNode: props.selectedNode,
         pulseSpeed: props.pulseSpeed,
         time,
-   110|      }),
+      }),
       [data, viewport, props.paused, props.nodeSizePx, props.edgeWidthPx, props.selectedNode, props.pulseSpeed, time],
     ),
   );
@@ -127,7 +127,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
   }, [progress, onIterate]);
 
   // The pulse clock: keeps advancing `time` every frame while not paused, independent of whether
-   120| // the force layout itself is still settling — see the class doc for why the two are decoupled.
+  // the force layout itself is still settling — see the class doc for why the two are decoupled.
   const pausedRef = useRef(props.paused);
   pausedRef.current = props.paused;
   const timeRef = useRef(0);
@@ -138,7 +138,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
       if (last != null && !pausedRef.current) {
         timeRef.current += (now - last) / 1000;
         setTime(timeRef.current);
-   130|      }
+      }
       last = now;
       raf = requestAnimationFrame(tick);
     };
@@ -149,7 +149,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
   useEffect(() => {
     const el = canvas;
     if (!el) return;
-   140|    const pointer = createPointerController();
+    const pointer = createPointerController();
     const detach = pointer.attach(el);
     let dragFrom: { x: number; y: number } | null = null;
 
@@ -160,7 +160,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
       if (!dragFrom || !state.dragging) return;
       const controller = createViewportController(viewportRef.current, bounds);
       controller.panByPixels(-(state.x - dragFrom.x), -(state.y - dragFrom.y));
-   150|      dragFrom = { x: state.x, y: state.y };
+      dragFrom = { x: state.x, y: state.y };
       setViewportRef.current(controller.getState());
     });
     const unsubUp = pointer.onUp(() => {
@@ -171,7 +171,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
       e.preventDefault();
       const rect = el.getBoundingClientRect();
       const { deltaY } = normalizeWheel(e);
-   160|      const factor = Math.exp(deltaY * ZOOM_SPEED);
+      const factor = Math.exp(deltaY * ZOOM_SPEED);
       const controller = createViewportController(viewportRef.current, bounds);
       controller.zoomAt(e.clientX - rect.left, factor);
       controller.zoomAtY(e.clientY - rect.top, factor);
@@ -181,7 +181,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       unsubDown();
-   170|      unsubMove();
+      unsubMove();
       unsubUp();
       detach();
       el.removeEventListener("wheel", onWheel);
@@ -192,7 +192,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
     <div
       {...a11y.rootProps}
       className={className}
-   180|      style={{ position: "relative", width: viewport.width, height: viewport.height, ...style }}
+      style={{ position: "relative", width: viewport.width, height: viewport.height, ...style }}
     >
       <canvas
         aria-hidden="true"
@@ -202,7 +202,7 @@ export function GPUNetworkTopology(props: GPUNetworkTopologyProps): JSX.Element 
       {status === "unsupported" && (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 13 }}>
           WebGPU unavailable.
-   190|        </div>
+        </div>
       )}
       {a11y.regions()}
     </div>
