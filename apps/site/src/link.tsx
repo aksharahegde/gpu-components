@@ -33,7 +33,7 @@ export function Link({
   children: ReactNode
   sx?: SX
   onClick?: () => void
-} & { 'aria-label'?: string; title?: string }) {
+} & { 'aria-label'?: string; title?: string; 'aria-current'?: 'page' }) {
   const isCurrent = useIsCurrent(to)
   const isHash = to.startsWith('#')
 

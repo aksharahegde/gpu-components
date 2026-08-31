@@ -401,7 +401,12 @@ export function Btn({
   primary?: boolean
   type?: 'button' | 'submit'
   sx?: SX
-} & { 'aria-expanded'?: boolean; title?: string }) {
+} & {
+  'aria-expanded'?: boolean
+  'aria-controls'?: string
+  'aria-label'?: string
+  title?: string
+}) {
   return (
     <button
       type={type}
