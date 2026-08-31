@@ -7,7 +7,7 @@ import { color, font, radius } from '../../src/tokens.stylex'
 export const metadata: Metadata = {
     title: 'Playground — gpu-components',
   description:
-    'Eleven GPU components, one page each — live demos running in your browser on your GPU.',
+    'Twelve GPU components, one page each — live demos running in your browser on your GPU.',
 }
 
 const COMPONENTS = [
@@ -77,6 +77,12 @@ const COMPONENTS = [
     blurb: 'Sugiyama layered package DAG with orthogonal edges — layout once on the CPU, GPU draw only.',
     note: 'Cycles become styled back-edges; no force layout, no continuous animation.',
   },
+  {
+    slug: 'networktopology',
+    name: 'GPUNetworkTopology',
+    blurb: 'Force-laid service mesh with status, link health, and traffic pulse.',
+    note: 'Playground-only until the shared force-layout animation defect is fixed.',
+  },
 ] as const
 
 export default function PlaygroundIndex() {
@@ -85,13 +91,13 @@ export default function PlaygroundIndex() {
       <PageHead
         eyebrow="Playground"
         title="Grab the components"
-        lead="Everything else on this site argues that the runtime works. These pages let you check — eleven components, one page each, each running live in your browser on your GPU."
+        lead="Everything else on this site argues that the runtime works. These pages let you check — twelve components, one page each, each running live in your browser on your GPU."
       />
 
       <Section flush>
         <Stack gap={20}>
           <Row>
-            <Status state="live">11 live demos · one device per page</Status>
+            <Status state="live">12 live demos · one device per page</Status>
           </Row>
           <div {...stylex.props(s.grid)}>
             {COMPONENTS.map((component) => (

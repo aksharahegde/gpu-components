@@ -42,7 +42,7 @@ const MATRIX: Array<[string, number, number, number, number, number, Tag]> = [
   ['GPUDensityMap', 9, 6, 8, 3, 114.5, 'p7'],
   ['GPUHistogram', 7, 6, 7, 4, 112.5, 'p7'],
   ['GPUDepGraph', 7, 5, 7, 6, 110.0, 'p7'],
-  ['GPUNetworkTopology', 7, 5, 6, 5, 102.0, 'later'],
+  ['GPUNetworkTopology', 7, 5, 6, 5, 102.0, 'p7'],
   ['GPUAnnotationCanvas', 6, 5, 7, 5, 99.0, 'later'],
   ['GPUSpreadsheet', 5, 5, 8, 9, 97.5, 'later'],
   ['GPUNodeEditor', 4, 6, 8, 5, 97.0, 'later'],

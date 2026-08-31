@@ -12,7 +12,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present && npm run typecheck:registry",
     "typecheck:registry": "tsc -p registry/tsconfig.json --pretty",
     "test": "npm run test --workspaces --if-present && npm run test:registry",
-    "test:registry": "node --experimental-strip-types --import ./registry/timeline/test/register.mjs --test registry/timeline/*.test.ts registry/timeline/*.test.tsx registry/heatmap/*.test.ts registry/heatmap/*.test.tsx registry/grid/*.test.ts registry/scatter/*.test.ts registry/scatter/*.test.tsx registry/graph/*.test.ts registry/imagediff/*.test.ts registry/logviewer/*.test.ts registry/candlestick/*.test.ts registry/densitymap/*.test.ts registry/histogram/*.test.ts registry/depgraph/*.test.ts",
+    "test:registry": "node --experimental-strip-types --import ./registry/timeline/test/register.mjs --test registry/timeline/*.test.ts registry/timeline/*.test.tsx registry/heatmap/*.test.ts registry/heatmap/*.test.tsx registry/grid/*.test.ts registry/scatter/*.test.ts registry/scatter/*.test.tsx registry/graph/*.test.ts registry/imagediff/*.test.ts registry/logviewer/*.test.ts registry/candlestick/*.test.ts registry/densitymap/*.test.ts registry/histogram/*.test.ts registry/depgraph/*.test.ts registry/networktopology/*.test.ts",
     "//test:registry": "the glob above already picks up render.pixels.test.ts, which renders through real Dawn (vgpu/node) and skips itself if Dawn is unavailable",
     "pretypecheck": "npm run build:packages",
     "pretest": "npm run build:packages",
