@@ -5,6 +5,7 @@ import {
   B,
   Body,
   C,
+  Card,
   Code,
   H1,
   H2,
@@ -69,7 +70,13 @@ const s = stylex.create({
     alignItems: 'center',
   },
   heroCta: { gap: 10 },
-  runtime: { display: 'grid', gridTemplateColumns: { default: 'minmax(0, 1fr) minmax(0, 1fr)', [HERO]: 'minmax(0, 1fr)' }, gap: 24 },
+  runtime: {
+    display: 'grid',
+    gridTemplateColumns: { default: 'minmax(0, 1fr) minmax(0, 1fr)', [HERO]: 'minmax(0, 1fr)' },
+    gap: 24,
+    alignItems: 'stretch',
+  },
+  runtimeList: { display: 'flex', flexDirection: 'column', justifyContent: 'center' },
   delay80: { animationDelay: '80ms' },
   delay160: { animationDelay: '160ms' },
   delay240: { animationDelay: '240ms' },
@@ -161,21 +168,23 @@ function Home() {
             {'>'}
           </Code>
 
-          <List>
-            <LI bulletTone="accent">
-              <B>One command buffer per tick.</B> Every mounted component’s passes land in a single{' '}
-              <C>frame()</C>, compute before render.
-            </LI>
-            <LI bulletTone="mint">
-              <B>Shared caches.</B> Pipelines, samplers, colormaps, and transient uniforms — not one
-              set per component.
-            </LI>
-            <LI bulletTone="amber">
-              <B>Honest fallbacks.</B> Every component documents when not to use GPU, with measured
-              crossover numbers. See <LinkBtn to="/why-gpu">Why GPU</LinkBtn> and the{' '}
-              <LinkBtn to="/components">component matrix</LinkBtn>.
-            </LI>
-          </List>
+          <Card lg sx={s.runtimeList}>
+            <List>
+              <LI bulletTone="accent">
+                <B>One command buffer per tick.</B> Every mounted component’s passes land in a single{' '}
+                <C>frame()</C>, compute before render.
+              </LI>
+              <LI bulletTone="mint">
+                <B>Shared caches.</B> Pipelines, samplers, colormaps, and transient uniforms — not one
+                set per component.
+              </LI>
+              <LI bulletTone="amber">
+                <B>Honest fallbacks.</B> Every component documents when not to use GPU, with measured
+                crossover numbers. See <LinkBtn to="/why-gpu">Why GPU</LinkBtn> and the{' '}
+                <LinkBtn to="/components">component matrix</LinkBtn>.
+              </LI>
+            </List>
+          </Card>
         </div>
       </Section>
 
