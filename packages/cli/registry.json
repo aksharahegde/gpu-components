@@ -523,6 +523,75 @@
           "hash": "556ce5465faabb3cbf601d8a8afdb352ea4b7e61ceedb82cc4f66c35d8492099"
         }
       ]
+    },
+    {
+      "name": "spreadsheet",
+      "type": "registry:component",
+      "title": "GPUSpreadsheet",
+      "description": "Editable spreadsheet. GPU cell chrome, selection rectangle and dirty-cell flash; a CPU dependency-graph formula engine, cell editing, clipboard, and pivot tables — formulas never touch the GPU.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUSpreadsheet.tsx",
+          "type": "registry:component",
+          "hash": "6cd256a89bc3cbc9e7fe4dec74742478ab25e5f2108b5f9636c7b36261bf2e53"
+        },
+        {
+          "path": "SpreadsheetComponent.ts",
+          "type": "registry:component",
+          "hash": "ceb2924db13be992e3f5c89a9b3ee9ca4a3b70a2c6798bbfeaa79c5c8362b7a1"
+        },
+        {
+          "path": "cellRef.ts",
+          "type": "registry:component",
+          "hash": "31ff6aae6b02b3350eb000cbc2bf8da50b539aad6707d1befab1acda0bf2d229"
+        },
+        {
+          "path": "editing.ts",
+          "type": "registry:component",
+          "hash": "2c039f00156030b2e818ab8f04c7a5d4425170e7ce90c3ccdd2075c448b2f3a5"
+        },
+        {
+          "path": "formulaEngine.ts",
+          "type": "registry:component",
+          "hash": "1a1de7a405da9d3a3a9810d1811f4452d5d48d28db6d5fd0d1b7fe3c50bdb004"
+        },
+        {
+          "path": "formulaParser.ts",
+          "type": "registry:component",
+          "hash": "55fb14e296563bc59721ce56f1c31f583d6b8a1a89f0c8635201262479d7e680"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "6c5baa8d6b31a212ad5a6a35adae4b251e34710a9a4d6146a4ab48c1e43b94f3"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "1e28e4647a0bb67f215811558e57e049f9aa29a61726be5942f1458d834e8e98"
+        },
+        {
+          "path": "pivot.ts",
+          "type": "registry:component",
+          "hash": "88bb94f1d666cee4d586645df2ce4664ed3a12673ab40f2e3150454fb1cb3140"
+        },
+        {
+          "path": "spreadsheet.wgsl.ts",
+          "type": "registry:component",
+          "hash": "58361f135d7391d2c523890f6ddc2ecc366249ab37681331cc37fedc7f3b2cb9"
+        },
+        {
+          "path": "textLayer.ts",
+          "type": "registry:component",
+          "hash": "33ce36fdcdf2990dad36e777690cfe6aab0d719679354bce7b2847a5ad6cdaac"
+        }
+      ]
     }
   ]
 }

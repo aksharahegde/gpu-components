@@ -15,6 +15,24 @@
         "value": "rgba(0,0,0,0.8)",
         "createdAt": "2026-08-31T19:10:38.375Z",
         "reason": "matches existing identical textShadow value in registry/heatmap/GPUHeatmap.tsx's LabelOverlay usage, not new drift"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#d7dbe4",
+        "files": [
+          "registry/spreadsheet/textLayer.ts"
+        ],
+        "createdAt": "2026-09-04T19:09:58.992Z",
+        "reason": "registry/spreadsheet is a GPU-component package outside apps/site's DESIGN.md token system; mirrors the pre-existing hardcoded-hex convention in registry/grid/textLayer.ts's DEFAULT_THEME"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fff",
+        "files": [
+          "registry/spreadsheet/GPUSpreadsheet.tsx"
+        ],
+        "createdAt": "2026-09-04T19:11:18.149Z",
+        "reason": "registry/spreadsheet is a GPU-component package outside apps/site's DESIGN.md token system; mirrors the pre-existing #fff overlay-text literal in registry/grid/GPUDataGrid.tsx"
       }
     ]
   }
