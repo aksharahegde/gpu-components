@@ -64,10 +64,26 @@ function stylexClientCssInjection(stylex: StylexPlugin) {
 const nextConfig: NextConfig = {
   output: 'export',
   trailingSlash: true,
-  webpack(config, { isServer }) {
-    const stylex = stylexWebpack({ useCSSLayers: false })
+  webpack(config, { isServer, dev }) {
+    // `next dev` recompiles incrementally: only the modules touched by a
+    // given rebuild re-run the StyleX babel transform, but the unplugin
+    // resets its entire collected-rules store on every compilation (see
+    // `@stylexjs/unplugin`'s webpack.js `thisCompilation` hook). The result
+    // is that `stylexClientCssInjection` below only ever sees whatever
+    // subset of modules happened to rebuild most recently — in practice,
+    // almost nothing, since most modules build once at startup and never
+    // rebuild again. That's a `next build`/export-only concern: production
+    // does one full compilation, so the collected rules are complete.
+    //
+    // In dev, skip static extraction entirely and use StyleX's runtime
+    // injection instead — each `stylex.create()` call injects its own CSS
+    // into `<head>` when the module evaluates, independent of which modules
+    // webpack happens to rebuild. Slightly less optimal than atomic
+    // extraction, but correct, and irrelevant to the exported production
+    // bundle.
+    const stylex = stylexWebpack({ useCSSLayers: false, runtimeInjection: dev })
     config.plugins.push(stylex)
-    if (!isServer) config.plugins.push(stylexClientCssInjection(stylex))
+    if (!isServer && !dev) config.plugins.push(stylexClientCssInjection(stylex))
     return config
   },
 }
