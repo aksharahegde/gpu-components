@@ -1,3 +1,5 @@
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import type { NextConfig } from 'next'
 import stylexWebpack from '@stylexjs/unplugin/webpack'
 
@@ -9,18 +11,36 @@ import stylexWebpack from '@stylexjs/unplugin/webpack'
 // specificity, not layer order.
 //
 // Next runs separate server and client webpack builds. StyleX must transform
-// both (server components call stylex.create/defineVars at build time). The
-// unplugin's built-in CSS injection runs at PROCESS_ASSETS_STAGE_SUMMARIZE,
-// before Next's client build has emitted its extracted `.css` asset, so it
-// no-ops ("No CSS asset found to inject into"). A second hook on the client
-// build at PROCESS_ASSETS_STAGE_REPORT appends the collected rules once the
-// CSS asset exists.
-type StylexPlugin = ReturnType<typeof stylexWebpack> & {
-  __stylexCollectCss?: () => string | undefined
+// both (server components call stylex.create/defineVars at build time), and
+// the collected rules from BOTH builds — most component styling lives in
+// Server Components, whose modules never ship to the client compiler at all —
+// have to land in the client CSS asset, since that's the only CSS the static
+// export serves. `@stylexjs/unplugin`'s webpack entrypoint tracks rules in a
+// `globalThis`-scoped store shared across every plugin instance in the
+// process (see its `core.js` `getSharedStore`), so a server-compiled and a
+// client-compiled module both register into the same place. But the plugin
+// instance `stylexWebpack()` hands back only exposes a webpack-plugin-shaped
+// `{ apply }` — `unplugin`'s `createWebpackPlugin` wraps the raw plugin and
+// does not forward its `__stylexCollectCss` helper onto the object it
+// returns. Reach the real helper by constructing a second, throwaway raw
+// plugin instance via the package's internal (non-exported-subpath) factory —
+// loaded through an absolute `require`, which bypasses the package's
+// `exports` map restriction on package-specifier resolution — and read the
+// shared store through *that* instance instead. It never transforms
+// anything itself; it only calls into the same global store the real
+// transforming instances already populated.
+const unpluginCoreRequire = createRequire(import.meta.url)
+const unpluginCorePath = path.join(
+  path.dirname(unpluginCoreRequire.resolve('@stylexjs/unplugin/webpack')),
+  'core.js',
+)
+const { unpluginFactory: stylexUnpluginFactory } = unpluginCoreRequire(unpluginCorePath) as {
+  unpluginFactory: (
+    options: Record<string, unknown>,
+  ) => { __stylexCollectCss?: () => string | undefined }
 }
 
-function stylexClientCssInjection(stylex: StylexPlugin) {
-  const collectCss = stylex.__stylexCollectCss?.bind(stylex)
+function stylexClientCssInjection() {
   return {
     apply(compiler: {
       hooks: { thisCompilation: { tap: Function } }
@@ -39,7 +59,8 @@ function stylexClientCssInjection(stylex: StylexPlugin) {
         compilation.hooks.processAssets.tap(
           { name: '@stylexjs/unplugin/client-inject', stage },
           (assets: Record<string, unknown>) => {
-            const css = collectCss?.()
+            const collector = stylexUnpluginFactory({ useCSSLayers: false, runtimeInjection: false })
+            const css = collector.__stylexCollectCss?.()
             if (!css) return
             const cssAssets = Object.keys(assets).filter((f) => f.endsWith('.css'))
             if (!cssAssets.length) return
@@ -64,26 +85,27 @@ function stylexClientCssInjection(stylex: StylexPlugin) {
 const nextConfig: NextConfig = {
   output: 'export',
   trailingSlash: true,
-  webpack(config, { isServer, dev }) {
-    // `next dev` recompiles incrementally: only the modules touched by a
-    // given rebuild re-run the StyleX babel transform, but the unplugin
-    // resets its entire collected-rules store on every compilation (see
-    // `@stylexjs/unplugin`'s webpack.js `thisCompilation` hook). The result
-    // is that `stylexClientCssInjection` below only ever sees whatever
-    // subset of modules happened to rebuild most recently — in practice,
-    // almost nothing, since most modules build once at startup and never
-    // rebuild again. That's a `next build`/export-only concern: production
-    // does one full compilation, so the collected rules are complete.
+  webpack(config, { isServer }) {
+    // Runtime injection (`stylex.create()` inserting its own CSS into
+    // `<head>` when a module evaluates) only works for code that actually
+    // executes in the browser. Most of this site's styling lives in Server
+    // Components (`page.tsx`, `ui.tsx`, `Layers.tsx`, ...), which under the
+    // App Router only ever run on the server/build machine — there is no
+    // `document` for their `stylex.create()` calls to inject into, dev or
+    // prod. So static extraction (below) is the only path that reaches
+    // those styles at all; `runtimeInjection` stays off unconditionally.
     //
-    // In dev, skip static extraction entirely and use StyleX's runtime
-    // injection instead — each `stylex.create()` call injects its own CSS
-    // into `<head>` when the module evaluates, independent of which modules
-    // webpack happens to rebuild. Slightly less optimal than atomic
-    // extraction, but correct, and irrelevant to the exported production
-    // bundle.
-    const stylex = stylexWebpack({ useCSSLayers: false, runtimeInjection: dev })
+    // `@stylexjs/unplugin`'s webpack integration resets its *local*
+    // per-instance rule map on every compilation (see its webpack.js
+    // `thisCompilation` hook) — relevant because `next dev` recompiles
+    // incrementally, one `thisCompilation` per rebuild. But collected rules
+    // also land in a `globalThis`-scoped store shared across every plugin
+    // instance in the process (see its core.js `getSharedStore`), which
+    // that per-compilation reset does not touch — so rules collected by an
+    // earlier dev rebuild are still there on the next one.
+    const stylex = stylexWebpack({ useCSSLayers: false, runtimeInjection: false })
     config.plugins.push(stylex)
-    if (!isServer && !dev) config.plugins.push(stylexClientCssInjection(stylex))
+    if (!isServer) config.plugins.push(stylexClientCssInjection())
     return config
   },
 }
