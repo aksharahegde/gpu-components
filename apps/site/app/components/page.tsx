@@ -11,7 +11,6 @@ import {
   PageHead,
   Row,
   Section,
-  Small,
   Stack,
   Status,
   Table,
@@ -19,7 +18,6 @@ import {
   Td,
   Th,
   tone,
-  util,
 } from '../../src/ui'
 import { LinkBtn } from '../../src/components/LinkBtn'
 
@@ -81,66 +79,6 @@ function Components() {
         title="Eighteen candidates, scored, and one chosen."
         lead="Weights encode this project's priorities: we are building a runtime first, so reusable primitives and GPU necessity outrank raw market size."
       />
-
-      <Section
-        eyebrow="Decision"
-        title="GPUTimeline first. GPUDataGrid second."
-        lead="The stated hypothesis was DataGrid → runtime → Graph. Two of those three changed, and the reasoning is the most load-bearing part of the plan."
-      >
-        <Grid cols={3}>
-          <Card lg>
-            <Stack gap={12}>
-              <Row>
-                <Status state="progress">Chosen · phase 2</Status>
-              </Row>
-              <H3>GPUTimeline</H3>
-              <Body sm>
-                Traces, spans, flame graphs, Gantt, waterfalls — one primitive. GPU necessity is
-                unarguable, the label budget is bounded by screen width, and it produces every
-                primitive the grid will later need.
-              </Body>
-              <Small>
-                Score{' '}
-                <span {...stylex.props(util.tabular, tone.mint)}>
-                  <B>147.0</B>
-                </span>
-              </Small>
-            </Stack>
-          </Card>
-          <Card lg>
-            <Stack gap={12}>
-              <Row>
-                <Status state="planned">Deferred · phase 5</Status>
-              </Row>
-              <H3>GPUDataGrid</H3>
-              <Body sm>
-                Highest usefulness (10) and adoption (10) of any candidate — and lowest feasibility
-                (4). Its render cost is glyph raster bounded by the viewport, which is why Canvas2D
-                grids already scroll millions of rows. The honest GPU wins are in the data path.
-              </Body>
-              <Small>
-                Score <B>129.5</B>
-              </Small>
-            </Stack>
-          </Card>
-          <Card lg>
-            <Stack gap={12}>
-              <Row>
-                <Status state="planned">Demoted · phase 7</Status>
-              </Row>
-              <H3>GPUGraph</H3>
-              <Body sm>
-                GPU force layout at ~1M nodes is already solved well in WebGL. A WebGPU rewrite is
-                the lowest-differentiation option, force layout is poorly deterministic (bad for
-                snapshot tests), and it yields the fewest reusable primitives.
-              </Body>
-              <Small>
-                Score <B>118.0</B>
-              </Small>
-            </Stack>
-          </Card>
-        </Grid>
-      </Section>
 
       <Section
         eyebrow="Matrix"
