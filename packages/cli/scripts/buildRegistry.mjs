@@ -67,6 +67,11 @@ const ITEMS = {
     description:
       "Sugiyama layered dependency graph. CPU layout at ingest (cycle break, ranks, barycenter order, orthogonal routes); GPU draws nodes and line segments only.",
   },
+  spreadsheet: {
+    title: "GPUSpreadsheet",
+    description:
+      "Editable spreadsheet. GPU cell chrome, selection rectangle and dirty-cell flash; a CPU dependency-graph formula engine, cell editing, clipboard, and pivot tables — formulas never touch the GPU.",
+  },
   // GPUGraph is deliberately absent: its layout does not animate in the browser (a known open
   // defect), and a copy-source registry must not ship a component that is broken where it runs.
 };

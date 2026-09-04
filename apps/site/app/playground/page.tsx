@@ -7,7 +7,7 @@ import { color, font, radius } from '../../src/tokens.stylex'
 export const metadata: Metadata = {
     title: 'Playground — gpu-components',
   description:
-    'Thirteen GPU components, one page each — live demos running in your browser on your GPU.',
+    'Fourteen GPU components, one page each — live demos running in your browser on your GPU.',
 }
 
 const COMPONENTS = [
@@ -89,6 +89,12 @@ const COMPONENTS = [
     blurb: 'A Float32 field with a GPU colormap and a host-owned rect/ellipse/point/ruler/polygon overlay.',
     note: 'Hybrid interaction: every draw tool emits an event, and the page decides whether to keep it.',
   },
+  {
+    slug: 'spreadsheet',
+    name: 'GPUSpreadsheet',
+    blurb: 'Editable cells, a dependency-graph formula engine, selection, clipboard, and pivot tables.',
+    note: 'The lowest-feasibility candidate in the plan’s own scoring — formulas stay on the CPU.',
+  },
 ] as const
 
 export default function PlaygroundIndex() {
@@ -97,13 +103,13 @@ export default function PlaygroundIndex() {
       <PageHead
         eyebrow="Playground"
         title="Grab the components"
-        lead="Everything else on this site argues that the runtime works. These pages let you check — thirteen components, one page each, each running live in your browser on your GPU."
+        lead="Everything else on this site argues that the runtime works. These pages let you check — fourteen components, one page each, each running live in your browser on your GPU."
       />
 
       <Section flush>
         <Stack gap={20}>
           <Row>
-            <Status state="live">13 live demos · one device per page</Status>
+            <Status state="live">14 live demos · one device per page</Status>
           </Row>
           <div {...stylex.props(s.grid)}>
             {COMPONENTS.map((component) => (
