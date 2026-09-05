@@ -636,6 +636,55 @@
           "hash": "16db8b1bfb90079684da8e6ed769b688f2c21b1e1cf207e4975098a4d49eafe8"
         }
       ]
+    },
+    {
+      "name": "whiteboard",
+      "type": "registry:component",
+      "title": "GPUWhiteboard",
+      "description": "Freeform infinite canvas. A procedural dot-grid background, instanced rect/ellipse/point shapes plus ruler/polygon/freehand ink, and exact CPU hit-testing — pan and zoom only in v1, draw tools and multi-select land in later phases.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUWhiteboard.tsx",
+          "type": "registry:component",
+          "hash": "1f8ec5e2736bfcdb970b5ae44c4afd98ae4eb53a0435c7b095e0cc5dd9353664"
+        },
+        {
+          "path": "WhiteboardComponent.ts",
+          "type": "registry:component",
+          "hash": "02ee305d4fb3a241531d3fdd420321f3080703514fdbaadbb48961675247f60d"
+        },
+        {
+          "path": "background.wgsl.ts",
+          "type": "registry:component",
+          "hash": "db900c84ad6073d9595c623eaf966f4339dfb5e46b7c953cbb746676a603080e"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "f87053bcc29b5f85b0773e7c6ca70293c4b29b51f729b1e638ad1f07b6a4c1b8"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "c02dacfb760347ffc39d823c7f34356ab0f2f9502fe82077ec26e281faa17aac"
+        },
+        {
+          "path": "scene.ts",
+          "type": "registry:component",
+          "hash": "0b3486a95ff8b99298864b088974f9ceea8249a9d4ebcae6f40585a10b4252d9"
+        },
+        {
+          "path": "shapes.wgsl.ts",
+          "type": "registry:component",
+          "hash": "3e6a82c32372d9b33e214b8165cf4dba7ef1004483a7fb3c4496176f5894b21c"
+        }
+      ]
     }
   ]
 }
