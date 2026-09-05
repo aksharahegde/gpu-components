@@ -9,10 +9,10 @@ import { color, font, radius, size } from '../tokens.stylex'
 import { Btn, Small, Stack, Wrap, typo, util } from '../ui'
 
 const ROUTES: Array<{ to: string; label: string; section?: boolean }> = [
-  { to: '/playground', label: 'Playground', section: true },
+  { to: '/playground', label: 'Components', section: true },
   { to: '/why-gpu', label: 'Why GPU' },
   { to: '/architecture', label: 'Architecture' },
-  { to: '/components', label: 'Components' },
+  { to: '/components', label: 'Scoring' },
   { to: '/start', label: 'Get started' },
 ]
 
@@ -321,7 +321,7 @@ export function Footer() {
         <Stack gap={8}>
           <span {...stylex.props(typo.mono, typo.bodyInline)}>gpu-components</span>
           <Small>
-            In active development · playground live · MIT (intended) · built on{' '}
+            In active development · playground live · Licence not yet chosen · built on{' '}
             <A href="https://vgpu.sh">vgpu</A>
           </Small>
         </Stack>

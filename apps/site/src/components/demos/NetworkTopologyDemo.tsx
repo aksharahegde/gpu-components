@@ -129,9 +129,9 @@ function TopologyStage() {
       </div>
 
       <p {...stylex.props(s.footnote)}>
-        The force layout is GPU-resident — same ping-pong buffer approach as <code>GPUGraph</code> —
-        and a known browser animation defect affecting that shared layout may still apply here. Not
-        yet exposed through the CLI registry.
+        The force layout is GPU-resident — same ping-pong buffer approach as <code>GPUGraph</code>.
+        The layout animation can still stutter in some browsers — a bug we are tracking, and the
+        reason this component is demo-only for now.
       </p>
     </div>
   )

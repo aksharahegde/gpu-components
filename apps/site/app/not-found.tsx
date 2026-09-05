@@ -7,7 +7,7 @@ export default function NotFound() {
       <PageHead
         eyebrow="404"
         title="No such page."
-        lead="The site has five pages. This is not one of them."
+        lead="The site has six pages and seventeen demos. This is not one of them."
       />
       <Section flush>
         <Row>

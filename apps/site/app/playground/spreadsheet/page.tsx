@@ -13,7 +13,7 @@ export default function GPUSpreadsheetPage() {
       <PageHead
         eyebrow="GPUSpreadsheet"
         title="Spreadsheet"
-        lead="Editable, formula-driven. GPU cell chrome, selection, and a dirty-cell flash; a CPU dependency-graph formula engine, cell editing, and clipboard — formulas never touch the GPU."
+        lead="Double-click a cell to edit it, then try typing =D2+1 into D3 and =D3+1 into D2 — the dependency graph catches the circular reference instead of hanging. Watch cells flash briefly whenever a recalculation touches them."
       />
       <Section>
         <SpreadsheetDemo />

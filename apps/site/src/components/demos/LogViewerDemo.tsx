@@ -122,9 +122,9 @@ function LogViewerStage() {
         buffer. The strip down the right edge is the payoff: match and error density across all{' '}
         {fmtInt(source.lines.length)} lines, reduced by a compute pass over every record rather than
         the ~29 on screen — the question a CPU cannot answer on the main thread. The glyphs are{' '}
-        <em>not</em> on the GPU, and that is measured rather than assumed:{' '}
-        <code>spikes/log-text-budget.md</code> put per-run Canvas2D text at 0.1ms for a window this
-        size and found no crossover where a glyph atlas would win.
+        <em>not</em> on the GPU, and that is measured rather than assumed: per-run Canvas2D text
+        measured at 0.1ms for a window this size, with no crossover point where a glyph atlas would
+        win.
       </p>
     </div>
   )

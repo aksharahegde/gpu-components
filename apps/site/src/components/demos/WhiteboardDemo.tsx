@@ -82,9 +82,9 @@ function WhiteboardStage() {
         )}
       </div>
       <p {...stylex.props(s.footnote)}>
-        Phase 1: pan, zoom, and exact CPU hover over a static board — shapes forked from
-        GPUAnnotationCanvas, background is a procedural dot-grid with no geometry of its own. Draw
-        tools, select/move, and multi-select land in later phases.
+        Today: pan, zoom, and exact CPU hover over a static board — shapes forked from
+        GPUAnnotationCanvas, background is a procedural dot-grid with no geometry of its own.
+        Drawing tools, select/move and multi-select are next.
       </p>
     </div>
   )

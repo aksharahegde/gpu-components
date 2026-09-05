@@ -75,10 +75,10 @@ function HeatmapStage() {
         <Hint keys="Tab then arrows">walk cells</Hint>
       </div>
       <p {...stylex.props(s.footnote)}>
-        This is the component PLAN.md §29 calls the architecture test: it was built to find out
-        whether <code>@gpu-components/core</code> could host a second, differently-shaped component
-        without changes. It needed exactly one — a second axis on the viewport — and that finding is
-        recorded in <code>registry/heatmap/CORE-WISHLIST.md</code> rather than quietly patched.
+        This component was the architecture test: it was built to find out whether{' '}
+        <code>@gpu-components/core</code> could host a second, differently-shaped component without
+        changes. It needed exactly one — a second axis on the viewport — and that one change was
+        written down rather than quietly patched.
       </p>
     </div>
   )

@@ -196,7 +196,7 @@ function AnnotationCanvasStage() {
       </div>
 
       <p {...stylex.props(s.footnote)}>
-        Interaction is hybrid, per the design doc: <code>annotations</code> is a host-owned prop,
+        Interaction is hybrid: <code>annotations</code> is a host-owned prop,
         and <code>GPUAnnotationCanvas</code> never mutates it directly — it emits{' '}
         <code>onCreate</code>/<code>onChange</code>/<code>onDelete</code> for this page to apply.
       </p>

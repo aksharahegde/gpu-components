@@ -115,7 +115,8 @@ function GraphStage() {
             Deliberately, and it is the interesting part. Every other component hit-tests on the CPU
             because its coordinates sit in a typed array. A graph&apos;s coordinates move every
             iteration and live only in GPU memory, so there is nothing on the CPU to test against.
-            This is the case PLAN.md §9.5 reserves asynchronous GPU picking for.
+            This is the case that genuinely needs asynchronous GPU picking: there is no cheap CPU
+            index for node positions that change every frame.
           </p>
         </Panel>
 

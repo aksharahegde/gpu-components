@@ -120,12 +120,13 @@ function CandlestickStage() {
       </div>
 
       <p {...stylex.props(s.footnote)}>
-        This one exists to test a primitive rather than to add a chart. <code>RingBuffer</code> shipped
-        with the log viewer and had exactly one consumer, which means it was shaped entirely by log
-        lines — and a primitive with one caller may just be that caller’s internals in another file.
-        Building a second, independent consumer found the gap immediately: a log line is history the
-        moment it is written, but a candlestick’s newest bar is <em>open</em>, and every tick revises
-        its high, low, close and volume. That is <code>RingBuffer.overwrite</code>, which now exists.
+        This chart is a stress test for <code>RingBuffer</code> as much as it is a chart.{' '}
+        <code>RingBuffer</code> shipped with the log viewer and had exactly one consumer, which means
+        it was shaped entirely by log lines — and a primitive with one caller is just that caller’s
+        internals in another file. A second, independent consumer found the gap immediately: a log
+        line is history the moment it is written, but a candlestick’s newest bar is <em>open</em>,
+        and every tick revises its high, low, close and volume. That is{' '}
+        <code>RingBuffer.overwrite</code>, which now exists.
         Start the ticks and almost every one of them rewrites a single 24-byte record in place. The
         strip along the bottom is the whole-history envelope — min, max and volume across all{' '}
         {fmtInt(source.bars.length)} bars, reduced on the GPU, not the few hundred on screen.

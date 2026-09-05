@@ -185,8 +185,8 @@ function Stage() {
           <div {...stylex.props(s.overlayMsg)}>
             <strong {...stylex.props(s.strong)}>WebGPU is unavailable in this browser.</strong>
             <br />
-            There is no Canvas2D fallback yet — PLAN.md §22 stages 3–5 are unbuilt, and this page
-            says so rather than showing you an empty canvas and letting you guess.
+            There is no Canvas2D fallback yet — it is still unbuilt, and this page says so rather
+            than showing you an empty canvas and letting you guess.
           </div>
         )}
         {status === 'ready' && box.width > 1 && (
@@ -240,7 +240,7 @@ function Stage() {
             )}
           </Readout>
           <p {...stylex.props(s.note)}>
-            Hover and click are an exact CPU binary search (§9.5), not GPU picking — no frame of
+            Hover and click are an exact CPU binary search, not GPU picking — no frame of
             latency. The brush highlight is a GPU bitset: selecting 100k spans is one dispatch, not
             a JS loop.
           </p>
@@ -256,8 +256,8 @@ function Stage() {
 
       <p {...stylex.props(s.footnote)}>
         Zoom far enough out on the larger datasets and the component switches from drawing every
-        span to a GPU-binned density field (§12.2&apos;s two-mode frame). The switch is deliberately
-        invisible — if you can spot the moment it happens, that is a bug worth reporting.
+        span to a GPU-binned density field. The switch is deliberately invisible: if you can spot
+        the moment it happens, it is not working.
       </p>
     </div>
   )

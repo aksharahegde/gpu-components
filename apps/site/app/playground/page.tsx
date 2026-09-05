@@ -33,7 +33,7 @@ const COMPONENTS = [
     slug: 'scatter',
     name: 'GPUScatter',
     blurb: '250,000 points, one draw call. Zoom, filter and brush are all uniform writes.',
-    note: 'The clearest demo here — and it disproved a claim in the project’s own plan.',
+    note: 'The clearest demo here: 250,000 points, one draw call, and exact hover with no picking pass.',
   },
   {
     slug: 'graph',
@@ -45,7 +45,7 @@ const COMPONENTS = [
     slug: 'imagediff',
     name: 'GPUImageDiff',
     blurb: 'Split, onion-skin, difference and heat comparison of two images, with a GPU pixel count.',
-    note: 'The only one that uses real textures — and it filled a hole in the plan’s own contract.',
+    note: 'The only one built on sampled textures rather than a storage buffer.',
   },
   {
     slug: 'logviewer',
@@ -57,7 +57,7 @@ const COMPONENTS = [
     slug: 'candlestick',
     name: 'GPUCandlestick',
     blurb: '200,000 OHLC bars, revised tick by tick, with a whole-history envelope along the bottom.',
-    note: 'Built to test RingBuffer rather than to add a chart. It found the gap it went looking for.',
+    note: 'A second, independent consumer for the streaming ring buffer the log viewer introduced.',
   },
   {
     slug: 'densitymap',
@@ -81,7 +81,7 @@ const COMPONENTS = [
     slug: 'networktopology',
     name: 'GPUNetworkTopology',
     blurb: 'Force-laid service mesh with status, link health, and traffic pulse.',
-    note: 'Playground-only until the shared force-layout animation defect is fixed.',
+    note: 'Demo-only for now: the layout animation can still stutter in some browsers.',
   },
   {
     slug: 'annotationcanvas',
@@ -93,25 +93,25 @@ const COMPONENTS = [
     slug: 'spreadsheet',
     name: 'GPUSpreadsheet',
     blurb: 'Editable cells, a dependency-graph formula engine, selection, clipboard, and pivot tables.',
-    note: 'The lowest-feasibility candidate in the plan’s own scoring — formulas stay on the CPU.',
+    note: 'Formulas stay on the CPU: a dependency graph and topological recalculation, never a shader.',
   },
   {
     slug: 'nodeeditor',
     name: 'GPUNodeEditor',
     blurb: 'Drag nodes, drag-to-connect ports, multi-select and delete — all CPU-owned, GPU-drawn.',
-    note: 'The weakest GPU-necessity score in the plan’s own matrix — earns its place at scale, not here.',
+    note: 'CPU owns the graph, the GPU only draws it — the honest split until node counts get large.',
   },
   {
     slug: 'whiteboard',
     name: 'GPUWhiteboard',
     blurb: 'A procedural dot-grid canvas with instanced shapes and ink, forked from GPUAnnotationCanvas.',
-    note: 'Phase 1 only — pan, zoom, hover. Draw tools and multi-select are still to come.',
+    note: 'Pan, zoom and hover today. Drawing tools and multi-select are next.',
   },
   {
     slug: 'pdfviewer',
     name: 'GPUPdfViewer',
     blurb: 'A small resident-texture pool composites host-rasterized pages, virtualized and zoomable.',
-    note: 'The worst feasibility score in the plan’s own matrix — it wraps a renderer it deliberately isn’t.',
+    note: 'A compositor, not a PDF renderer: pages arrive already rasterized and only a few ever hold a texture.',
   },
 ] as const
 
@@ -120,7 +120,7 @@ export default function PlaygroundIndex() {
     <>
       <PageHead
         eyebrow="Playground"
-        title="Grab the components"
+        title="Check the claim yourself"
         lead="Everything else on this site argues that the runtime works. These pages let you check — seventeen components, one page each, each running live in your browser on your GPU."
       />
 
@@ -159,9 +159,9 @@ export default function PlaygroundIndex() {
             The claim that one device serves <em>many</em> components on a page is measured rather than
             demonstrated by decoration: the benchmark harness drives up to 24 components through one
             runtime and compares the GPU time against the same work split across independent devices.
-            The shared runtime costs meaningfully less from eight components upward. That measurement,
-            including the round where the methodology turned out to be wrong, is written up in the
-            repository’s decision record.
+            The shared runtime costs meaningfully less from eight components upward. That measurement
+            included one round where the methodology itself turned out to be wrong, which is the
+            only reason the second one is worth trusting.
           </Body>
         </Stack>
       </Section>

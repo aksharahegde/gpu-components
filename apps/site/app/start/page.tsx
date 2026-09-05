@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 const REQUIREMENTS: Array<[string, string]> = [
   [
     'A WebGPU browser, or not',
-    'WebGPU reached Baseline in January 2026. The realistic fallback population is ~5–10%: Linux Firefox, older iOS devices, locked-down enterprise browsers. The Canvas2D fallback covers them at reduced capacity and says so out loud.',
+    'WebGPU reached Baseline in January 2026, per the Baseline browser-support data. The fallback population is realistically under ten per cent — Linux Firefox, older iOS devices, locked-down enterprise browsers — though we have not measured that ourselves. The Canvas2D fallback covers them at reduced capacity and says so out loud.',
   ],
   [
     'A bundler with the vgpu WGSL loader',
@@ -43,16 +43,16 @@ function Start() {
     <>
       <PageHead
         eyebrow="Get started"
-        title="Nothing is published yet."
-        lead="This page documents the intended surface so it can be argued with before it is built. Every command below will fail today, on purpose."
+        title="The runtime works. The install does not exist yet."
+        lead="Seventeen components run live in the playground today. What is missing is distribution: nothing is on npm, and the commands below are the intended surface, published early so it can be argued with while changing it is still cheap."
       />
 
       <Section flush>
         <Notice variant="amber">
-          <B>Status: pre-implementation.</B> No package has been published and no component exists.
-          The plan is public specifically so the API can be criticised while changing it is still
-          cheap. If something here looks wrong, that is the most useful thing you can tell us right
-          now.
+          <B>Status: unpublished.</B> The runtime and seventeen components exist and run in the
+          playground, but no package is on npm yet, so every command below will fail today. The
+          install surface is documented here so it can be criticised while changing it is still
+          cheap.
         </Notice>
       </Section>
 

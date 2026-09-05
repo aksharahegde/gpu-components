@@ -15,7 +15,7 @@ export default function GPUPdfViewerPage() {
         eyebrow="GPUPdfViewer"
         title="Document viewer"
         lead={
-          'Virtualized multi-page document compositor: a small resident-texture pool, continuous zoom/scroll, and CPU page hit-testing over host-rasterized page bitmaps. Not a PDF renderer — see the note below.'
+          'Scroll through the 24 pages and watch the page counter track your position, then keep scrolling to see earlier pages evicted from the small resident-texture pool as new ones load in.'
         }
       />
       <Section>

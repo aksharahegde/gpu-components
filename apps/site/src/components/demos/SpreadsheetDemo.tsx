@@ -87,8 +87,8 @@ function SpreadsheetStage() {
       </div>
       <p {...stylex.props(s.footnote)}>
         Formulas are CPU-only — a dependency graph and topological recalculation, never the GPU
-        (PLAN.md §5.2 bans exactly the string handling and branchy small-N work a formula engine
-        is). The GPU draws cell chrome, the selection rectangle, and a brief flash on cells the
+        (string handling and branchy small-N work are exactly what this project keeps off the GPU).
+        The GPU draws cell chrome, the selection rectangle, and a brief flash on cells the
         engine just recalculated; text is the same measured Canvas2D layer{' '}
         <code>GPUDataGrid</code> uses. Try typing <code>=D2+1</code> into <code>D3</code> then{' '}
         <code>=D3+1</code> into <code>D2</code> — the engine catches the cycle instead of hanging.
