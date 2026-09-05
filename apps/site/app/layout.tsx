@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { ThemeProvider } from '../src/theme'
 import { ThemeScope } from '../src/theme-scope'
 import { Footer, Nav, SkipLink } from '../src/components/Chrome'
+import { DevCssRefresh } from '../src/components/DevCssRefresh'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
+        <DevCssRefresh />
         <ThemeProvider>
           <ThemeScope>
             <SkipLink />
