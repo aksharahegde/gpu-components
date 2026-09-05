@@ -685,6 +685,45 @@
           "hash": "3e6a82c32372d9b33e214b8165cf4dba7ef1004483a7fb3c4496176f5894b21c"
         }
       ]
+    },
+    {
+      "name": "pdfviewer",
+      "type": "registry:component",
+      "title": "GPUPdfViewer",
+      "description": "Virtualized multi-page document compositor — not a PDF renderer. Takes host-rasterized page bitmaps (e.g. from pdf.js) and composites a small resident-texture pool as one positioned quad per page, with continuous zoom/scroll and CPU page hit-testing.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUPdfViewer.tsx",
+          "type": "registry:component",
+          "hash": "545d351f7942d625e56046ab6cc9d03d78e6dc0da9e3247a4d512bc78740b841"
+        },
+        {
+          "path": "PdfViewerComponent.ts",
+          "type": "registry:component",
+          "hash": "302be414e2fe583e8c6069c09f6b50a32ec6400ea2d1df332f5601fe34ae28a5"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "467d48a34b99ce6eee6c849c6824ae40951f1434f0ad5effae1c8ba31bb64331"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "34db2406b7bdefad5b3fa3647fc895c5c4a8a5a1ea58025df90fb96474553d67"
+        },
+        {
+          "path": "page.wgsl.ts",
+          "type": "registry:component",
+          "hash": "c4802a1a574ad5f3ce48dc5459108c418037fbf61f66a38a99e8ae954a216a79"
+        }
+      ]
     }
   ]
 }
