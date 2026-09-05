@@ -72,6 +72,11 @@ const ITEMS = {
     description:
       "Editable spreadsheet. GPU cell chrome, selection rectangle and dirty-cell flash; a CPU dependency-graph formula engine, cell editing, clipboard, and pivot tables — formulas never touch the GPU.",
   },
+  nodeeditor: {
+    title: "GPUNodeEditor",
+    description:
+      "Freeform node-flow canvas. Drag nodes, drag-to-connect ports, multi-select (shift-click/marquee) and delete — all exact CPU hit-testing over caller-owned positions, with GPU-baked selection/port flags and a DOM label overlay for titles.",
+  },
   // GPUGraph is deliberately absent: its layout does not animate in the browser (a known open
   // defect), and a copy-source registry must not ship a component that is broken where it runs.
 };

@@ -59,6 +59,7 @@ export function GPUSpreadsheet(props: GPUSpreadsheetProps): JSX.Element {
   const columns = useMemo(() => props.columns ?? defaultColumns(12), [props.columns]);
   const { status } = useGpu();
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const textCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -271,6 +272,11 @@ export function GPUSpreadsheet(props: GPUSpreadsheetProps): JSX.Element {
       const cell = cellAt(state.x, state.y);
       if (!cell) return;
       if (edit) commitCurrentEdit();
+      // A click lands on the canvas, a sibling of the div that owns `onKeyDown` — the browser
+      // never moves focus there on its own, so without this, arrow keys and typing do nothing
+      // until the user Tabs in first. For an editable grid (unlike the read-only `GPUDataGrid`,
+      // where click-then-type isn't a workflow at all) that's not an acceptable gap.
+      containerRef.current?.focus();
       draggingRef.current = true;
       setActiveCell(cell);
       setAnchorCell(cell);
@@ -297,8 +303,11 @@ export function GPUSpreadsheet(props: GPUSpreadsheetProps): JSX.Element {
     };
 
     const onDoubleClick = (e: MouseEvent) => {
+      // `el` is the raster canvas, already positioned `top: HEADER_HEIGHT` below the header band —
+      // its own bounding rect starts at the body, so this needs no further header adjustment (the
+      // pointer-controller callbacks above get the same already-body-relative coordinates).
       const rect = el.getBoundingClientRect();
-      const cell = cellAt(e.clientX - rect.left, e.clientY - rect.top - HEADER_HEIGHT);
+      const cell = cellAt(e.clientX - rect.left, e.clientY - rect.top);
       if (cell) beginEdit(cell);
     };
 
@@ -315,13 +324,17 @@ export function GPUSpreadsheet(props: GPUSpreadsheetProps): JSX.Element {
     };
   }, [canvas, anchorCell, edit, commitCurrentEdit, beginEdit, bounds, maxScrollX, rowCount]);
 
+  // Depends on `edit?.cell`, not `edit` — `updateDraft` reuses the same `cell` reference for every
+  // keystroke within one session, so this only re-fires when a *new* edit session starts. Keying it
+  // on the whole `edit` object would re-select on every keystroke (a new object each time draft
+  // changes), which replaces whatever was just typed with itself on the next character.
   useEffect(() => {
     const el = inputRef.current;
     if (edit && el) {
       el.focus();
       el.select();
     }
-  }, [edit]);
+  }, [edit?.cell]);
 
   const onCopy = useCallback(
     (e: React.ClipboardEvent) => {
@@ -411,6 +424,7 @@ export function GPUSpreadsheet(props: GPUSpreadsheetProps): JSX.Element {
   return (
     <div
       {...a11y.rootProps}
+      ref={containerRef}
       onKeyDown={onKeyDown}
       onCopy={onCopy}
       onPaste={onPaste}

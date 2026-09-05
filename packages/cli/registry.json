@@ -539,7 +539,7 @@
         {
           "path": "GPUSpreadsheet.tsx",
           "type": "registry:component",
-          "hash": "6cd256a89bc3cbc9e7fe4dec74742478ab25e5f2108b5f9636c7b36261bf2e53"
+          "hash": "5362a7d9f5bdeadeee7ae4921f2045d40c2443f431c98149b965f797cbbe3375"
         },
         {
           "path": "SpreadsheetComponent.ts",
@@ -590,6 +590,50 @@
           "path": "textLayer.ts",
           "type": "registry:component",
           "hash": "33ce36fdcdf2990dad36e777690cfe6aab0d719679354bce7b2847a5ad6cdaac"
+        }
+      ]
+    },
+    {
+      "name": "nodeeditor",
+      "type": "registry:component",
+      "title": "GPUNodeEditor",
+      "description": "Freeform node-flow canvas. Drag nodes, drag-to-connect ports, multi-select (shift-click/marquee) and delete — all exact CPU hit-testing over caller-owned positions, with GPU-baked selection/port flags and a DOM label overlay for titles.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUNodeEditor.tsx",
+          "type": "registry:component",
+          "hash": "42b64df854bb9bae11d17b5a721179e7cf7ffb6391fde10c116dbc5219112a52"
+        },
+        {
+          "path": "NodeEditorComponent.ts",
+          "type": "registry:component",
+          "hash": "624ea68d6e16351ffe28f2dba3c1d87bf94892c6855c15540cfa8194801f9bcf"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "25c38101f27e86e7b5839d1c05908d5cdb8e1e402a75334d811900f2f665ba41"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "8fa44ad522f23e7eba11dbad82cad8dc186063854263ab759d44f435cdaa865a"
+        },
+        {
+          "path": "nodeeditor.wgsl.ts",
+          "type": "registry:component",
+          "hash": "796f1cb280800ba2aea00cfa648a06e0d57dc383293d9caac3ca3b278a429b5c"
+        },
+        {
+          "path": "ports.wgsl.ts",
+          "type": "registry:component",
+          "hash": "16db8b1bfb90079684da8e6ed769b688f2c21b1e1cf207e4975098a4d49eafe8"
         }
       ]
     }

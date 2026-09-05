@@ -33,6 +33,18 @@
         ],
         "createdAt": "2026-09-04T19:11:18.149Z",
         "reason": "registry/spreadsheet is a GPU-component package outside apps/site's DESIGN.md token system; mirrors the pre-existing #fff overlay-text literal in registry/grid/GPUDataGrid.tsx"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(255,255,255,0.8)",
+        "createdAt": "2026-09-05T05:39:32.560Z",
+        "reason": "registry/nodeeditor is a GPU-component package outside apps/site's DESIGN.md token system; matches the pre-existing identical marquee/brush overlay color in registry/scatter/GPUScatter.tsx"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(255,255,255,0.12)",
+        "createdAt": "2026-09-05T05:39:32.588Z",
+        "reason": "registry/nodeeditor is a GPU-component package outside apps/site's DESIGN.md token system; matches the pre-existing identical marquee/brush overlay color in registry/scatter/GPUScatter.tsx"
       }
     ]
   }
