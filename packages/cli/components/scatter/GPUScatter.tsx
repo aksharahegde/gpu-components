@@ -84,6 +84,24 @@ export function GPUScatter(props: GPUScatterProps): JSX.Element {
   const setViewportRef = useRef(setViewport);
   setViewportRef.current = setViewport;
 
+  /**
+   * Read through refs inside the pointer effect below, rather than named in its dependency array.
+   * `useGpuA11y()` returns a brand-new wrapper object every render (only the functions inside it —
+   * `announce`, individually — are stable), and a brush drag calls `setBrush(...)` on every
+   * `pointermove`, re-rendering this component on every single drag step. A dependency array
+   * naming `a11y` itself would tear the effect down and reattach it mid-drag, resetting the
+   * closured `dragFrom` variable to `null` before the next `pointermove` arrives — which
+   * reproduces, empirically, as a brush drag that never accumulates past its first pixel and
+   * instead falls through to the plain-hover branch for the rest of the gesture. Refs sidestep
+   * this without requiring every consumer to memoize `onHover`/`onBrushSelection`.
+   */
+  const onHoverRef = useRef(onHover);
+  onHoverRef.current = onHover;
+  const onBrushSelectionRef = useRef(onBrushSelection);
+  onBrushSelectionRef.current = onBrushSelection;
+  const announceRef = useRef(a11y.announce);
+  announceRef.current = a11y.announce;
+
   const componentRef = useRef<ScatterComponent | null>(null);
   const factory = useCallback(() => {
     const component = new ScatterComponent(data.count);
@@ -122,14 +140,14 @@ export function GPUScatter(props: GPUScatterProps): JSX.Element {
         // A drag brushes rather than pans: with both axes zoomable by wheel, selection is the more
         // useful default gesture for a point cloud.
         setBrush({ x0: dragFrom.x, y0: dragFrom.y, x1: state.x, y1: state.y });
-        onHover?.(null);
+        onHoverRef.current?.(null);
         return;
       }
       const hit = componentRef.current?.hitTest(state.x, state.y) ?? null;
-      onHover?.(hit ? Number(hit.id) : null);
+      onHoverRef.current?.(hit ? Number(hit.id) : null);
     });
 
-    const unsubLeave = pointer.onLeave(() => onHover?.(null));
+    const unsubLeave = pointer.onLeave(() => onHoverRef.current?.(null));
 
     const unsubUp = pointer.onUp((state) => {
       const start = dragFrom;
@@ -141,7 +159,7 @@ export function GPUScatter(props: GPUScatterProps): JSX.Element {
       const moved = Math.hypot(state.x - start.x, state.y - start.y);
       if (moved < DRAG_THRESHOLD_PX) {
         const hit = component.hitTest(state.x, state.y);
-        if (hit) a11y.announce(describePoint(data, Number(hit.id)));
+        if (hit) announceRef.current(describePoint(data, Number(hit.id)));
         return;
       }
 
@@ -159,8 +177,8 @@ export function GPUScatter(props: GPUScatterProps): JSX.Element {
       const ys = [toDataY(start.y), toDataY(state.y)].sort((a, b) => a - b);
       const found = pointsInRect(index, data, xs[0]!, ys[0]!, xs[1]!, ys[1]!);
       component.setSelection(found);
-      onBrushSelection?.(found);
-      a11y.announce(`${found.length} points selected`);
+      onBrushSelectionRef.current?.(found);
+      announceRef.current(`${found.length} points selected`);
     });
 
     const onWheel = (e: WheelEvent) => {
@@ -184,7 +202,7 @@ export function GPUScatter(props: GPUScatterProps): JSX.Element {
       detach();
       el.removeEventListener("wheel", onWheel);
     };
-  }, [canvas, data, onHover, onBrushSelection, a11y]);
+  }, [canvas, data]);
 
   return (
     <div

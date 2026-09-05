@@ -88,8 +88,7 @@ function describeNode(data: NodeEditorData, index: number): string {
  * (`GPUSpreadsheet`'s extend-selection modifier).
  */
 export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
-  const { data, onViewportChange, onHoverNode, onSelectionChange, onNodeMove, onConnect, onDelete, style, className } =
-    props;
+  const { data, onViewportChange, onSelectionChange, onDelete, style, className } = props;
   const { status } = useGpu();
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [internalViewport, setInternalViewport] = useState(props.viewport);
@@ -146,6 +145,27 @@ export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
   );
   const applySelectionRef = useRef(applySelection);
   applySelectionRef.current = applySelection;
+
+  /**
+   * `onHoverNode`/`onNodeMove`/`onConnect` and `a11y.announce` are read through refs inside the
+   * pointer effect below rather than named in its dependency array, and deliberately so: calling
+   * any of them mid-gesture (`applySelectionRef` on pointerdown, `bumpLabelTick` on every
+   * pointermove) triggers a re-render of *this* component, and `useGpuA11y()` returns a brand-new
+   * wrapper object every render (only the functions inside it — `announce`, individually — are
+   * stable). A dependency array naming that whole object, or an inline callback prop a consumer
+   * might pass, would tear the effect down and reattach it mid-drag, resetting the closured `drag`
+   * variable to `null` before the next `pointermove` arrives — which reproduces, empirically, as a
+   * drag or a pan that moves exactly one pixel and then appears to freeze. Refs sidestep this
+   * without asking every consumer to memoize their callbacks.
+   */
+  const onHoverNodeRef = useRef(props.onHoverNode);
+  onHoverNodeRef.current = props.onHoverNode;
+  const onNodeMoveRef = useRef(props.onNodeMove);
+  onNodeMoveRef.current = props.onNodeMove;
+  const onConnectRef = useRef(props.onConnect);
+  onConnectRef.current = props.onConnect;
+  const announceRef = useRef(a11y.announce);
+  announceRef.current = a11y.announce;
 
   /** Tracked outside `core`'s DOM-agnostic pointer model (which deliberately carries no modifier
    * keys) the same way the wheel listener below already reaches past it for a browser-only
@@ -243,7 +263,7 @@ export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
         controller.panByPixels(-(state.x - drag.startPx), -(state.y - drag.startPy));
         drag = { kind: "pan", startPx: state.x, startPy: state.y };
         setViewportRef.current(controller.getState());
-        onHoverNode?.(null);
+        onHoverNodeRef.current?.(null);
         return;
       }
       if (drag?.kind === "node" && state.dragging) {
@@ -251,7 +271,7 @@ export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
         const dx = pixelXToTime(v, state.x) - pixelXToTime(v, drag.startPx);
         const dy = pixelYToTrack(v, state.y) - pixelYToTrack(v, drag.startPy);
         componentRef.current?.moveNode(drag.id, drag.startX + dx, drag.startY + dy);
-        onHoverNode?.(null);
+        onHoverNodeRef.current?.(null);
         bumpLabelTick();
         return;
       }
@@ -270,19 +290,19 @@ export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
         const valid =
           candidate && candidate.node !== drag.from.node && candidate.kind !== drag.from.kind ? candidate : null;
         componentRef.current?.setHoveredPort(valid);
-        onHoverNode?.(null);
+        onHoverNodeRef.current?.(null);
         return;
       }
       if (drag?.kind === "marquee" && state.dragging) {
         setMarquee({ x0: drag.startPx, y0: drag.startPy, x1: state.x, y1: state.y });
-        onHoverNode?.(null);
+        onHoverNodeRef.current?.(null);
         return;
       }
       const hit = componentRef.current?.hitTest(state.x, state.y) ?? null;
-      onHoverNode?.(hit ? Number(hit.id) : null);
+      onHoverNodeRef.current?.(hit ? Number(hit.id) : null);
     });
 
-    const unsubLeave = pointer.onLeave(() => onHoverNode?.(null));
+    const unsubLeave = pointer.onLeave(() => onHoverNodeRef.current?.(null));
 
     const unsubUp = pointer.onUp((state) => {
       const finished = drag;
@@ -292,10 +312,10 @@ export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
 
       if (finished.kind === "node") {
         if (moved < DRAG_THRESHOLD_PX) {
-          a11y.announce(describeNode(data, finished.id));
+          announceRef.current(describeNode(data, finished.id));
         } else {
-          onNodeMove?.(finished.id, data.x[finished.id]!, data.y[finished.id]!);
-          a11y.announce(
+          onNodeMoveRef.current?.(finished.id, data.x[finished.id]!, data.y[finished.id]!);
+          announceRef.current(
             `Moved ${data.labels[finished.id] ?? finished.id} to ` +
               `${data.x[finished.id]!.toFixed(2)}, ${data.y[finished.id]!.toFixed(2)}`,
           );
@@ -312,8 +332,8 @@ export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
           const inPort = finished.from.kind === "out" ? drop : finished.from;
           const ok = componentRef.current?.addEdge(outPort.node, inPort.node) ?? false;
           if (ok) {
-            onConnect?.(outPort.node, inPort.node);
-            a11y.announce(
+            onConnectRef.current?.(outPort.node, inPort.node);
+            announceRef.current(
               `Connected ${data.labels[outPort.node] ?? outPort.node} to ${data.labels[inPort.node] ?? inPort.node}`,
             );
           }
@@ -338,7 +358,7 @@ export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
         const nextNodes = shiftRef.current ? new Set([...selectedNodesRef.current, ...found]) : found;
         const nextEdges = shiftRef.current ? selectedEdgesRef.current : EMPTY_SET;
         applySelectionRef.current(nextNodes, nextEdges);
-        a11y.announce(`${found.size} node${found.size === 1 ? "" : "s"} selected`);
+        announceRef.current(`${found.size} node${found.size === 1 ? "" : "s"} selected`);
         return;
       }
 
@@ -366,7 +386,7 @@ export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
       detach();
       el.removeEventListener("wheel", onWheel);
     };
-  }, [canvas, data, onHoverNode, onNodeMove, onConnect, a11y]);
+  }, [canvas, data]);
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
