@@ -134,4 +134,52 @@ describe("FormulaEngine", () => {
     assert.equal(e.getValue(ref("A1")), null);
     assert.equal(e.getDisplayText(ref("A1")), "");
   });
+
+  it("degrades an oversized range to #NAME? instead of throwing (DoS regression)", () => {
+    const e = new FormulaEngine();
+    assert.doesNotThrow(() => e.setCell(ref("A1"), "=SUM(A1:ZZ99999)"));
+    assert.equal(e.getError(ref("A1")), "#NAME?");
+  });
+
+  it("degrades a row-only oversized range to #NAME? without throwing or hanging", () => {
+    const e = new FormulaEngine();
+    const start = Date.now();
+    assert.doesNotThrow(() => e.setCell(ref("A1"), "=SUM(A1:A2000000)"));
+    assert.ok(Date.now() - start < 500, "should reject quickly, not expand the range");
+    assert.equal(e.getError(ref("A1")), "#NAME?");
+  });
+
+  it("still evaluates a large-but-legal range correctly", () => {
+    const e = new FormulaEngine();
+    e.setCell(ref("A1"), "1");
+    e.setCell(ref("B1"), "=SUM(A1:A100000)");
+    assert.equal(e.getValue(ref("B1")), 1);
+    assert.equal(e.getError(ref("B1")), null);
+  });
+
+  it("recovers cleanly after a rejected oversized-range edit: cell shows an error, a later normal edit works and recalculates dependents", () => {
+    const e = new FormulaEngine();
+    e.setCell(ref("A1"), "1");
+    e.setCell(ref("B1"), "=A1+1");
+
+    // Overwrite A1 with an oversized-range formula — this must not corrupt the engine's state.
+    e.setCell(ref("A1"), "=SUM(A1:ZZ99999)");
+    assert.equal(e.getError(ref("A1")), "#NAME?");
+
+    // A normal edit to the same cell afterwards must work and propagate to dependents, proving the
+    // engine's dependency graph wasn't left half-updated by the rejected edit.
+    const touched = e.setCell(ref("A1"), "10");
+    assert.equal(e.getError(ref("A1")), null);
+    assert.equal(e.getValue(ref("A1")), 10);
+    assert.equal(e.getValue(ref("B1")), 11);
+    assert.ok(touched.includes("1,0")); // B1 recalculated
+  });
+
+  it("does not dispatch into Object.prototype via an unknown function name", () => {
+    const e = new FormulaEngine();
+    e.setCell(ref("A1"), "=CONSTRUCTOR()");
+    assert.equal(e.getError(ref("A1")), "#NAME?");
+    e.setCell(ref("A2"), "=HASOWNPROPERTY()");
+    assert.equal(e.getError(ref("A2")), "#NAME?");
+  });
 });

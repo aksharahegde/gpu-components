@@ -145,11 +145,18 @@ export function add(registry: Registry, componentsRoot: string, name: string, io
 export function missingDependencies(cwd: string, item: RegistryItem): string[] {
   const manifestPath = path.join(cwd, "package.json");
   if (!existsSync(manifestPath)) return [...item.dependencies];
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+  let manifest: {
     dependencies?: Record<string, string>;
     devDependencies?: Record<string, string>;
     peerDependencies?: Record<string, string>;
   };
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  } catch {
+    // A malformed manifest can't tell us anything is declared — treat it like a missing one so
+    // `doctor`/`add` still report something actionable instead of crashing.
+    return [...item.dependencies];
+  }
   const declared = new Set([
     ...Object.keys(manifest.dependencies ?? {}),
     ...Object.keys(manifest.devDependencies ?? {}),
@@ -243,13 +250,21 @@ export function doctorChecks(cwd: string, registry: Registry): DoctorCheck[] {
   const checks: DoctorCheck[] = [];
 
   const manifestPath = path.join(cwd, "package.json");
-  const manifest = existsSync(manifestPath)
-    ? (JSON.parse(readFileSync(manifestPath, "utf8")) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> })
-    : null;
+  let manifest: { dependencies?: Record<string, string>; devDependencies?: Record<string, string> } | null = null;
+  let manifestError: string | null = null;
+  if (existsSync(manifestPath)) {
+    try {
+      manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    } catch {
+      manifestError = `package.json is not valid JSON`;
+    }
+  }
   checks.push({
     name: "project",
     ok: manifest !== null,
-    detail: manifest ? `found package.json` : `no package.json in ${cwd} — run this inside your project`,
+    detail: manifest
+      ? `found package.json`
+      : manifestError ?? `no package.json in ${cwd} — run this inside your project`,
   });
 
   const declared = { ...manifest?.dependencies, ...manifest?.devDependencies };

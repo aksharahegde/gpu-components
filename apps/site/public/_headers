@@ -1,0 +1,60 @@
+# Cloudflare `_headers` — security headers for the static export.
+#
+# Files in `public/` are copied to the export root by `next build`, so this
+# ships as `out/_headers`, which is where Cloudflare Pages (and Workers static
+# assets) expect it. Nothing in the app reads this file; it is edge config.
+#
+# Verified against a real build of this site: 25 HTML pages, 35 script chunks,
+# zero inline <style> blocks, no web fonts, no images, no fetch/XHR/WebSocket,
+# no workers. The only external references are <a href> links to vgpu.sh, which
+# are navigations and need no CSP allowance.
+
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: accelerometer=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+
+# Next fingerprints everything under /_next/static/, so it is safe to cache
+# permanently. Cloudflare will not infer this on its own for a static export.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# ---------------------------------------------------------------------------
+# Why script-src carries 'unsafe-inline'
+#
+# Next's App Router emits two inline <script> blocks per page carrying the RSC
+# flight payload (`self.__next_f.push(...)`). Their content differs per page and
+# changes on every build, so hashing them is not maintainable by hand. The
+# standard fix is a per-request nonce, which requires a server — and this site
+# sets `output: 'export'`, so there is no request to hang a nonce off.
+#
+# This is a real weakening, recorded rather than hidden. It is acceptable here
+# because the site is fully static: no auth, no cookies, no forms, no user
+# input, and nothing in localStorage but a theme preference. The realistic
+# impact of script injection is defacement, not account or data compromise.
+# Every other directive stays locked down, including style-src, which needs no
+# 'unsafe-inline' because StyleX extracts all CSS to files at build time.
+#
+# TRAP — do not "improve" this by adding a hash alongside 'unsafe-inline'.
+# Under CSP2+, the presence of any hash or nonce makes browsers IGNORE
+# 'unsafe-inline' for that directive, so adding the theme-bootstrap hash below
+# would silently break all 50 flight-data scripts and blank every page.
+#
+#   theme bootstrap (identical on all 25 pages):
+#   'sha256-Mtmu/iCN5bY/V+BTx63tyOR7/hcEYzzDRzw2SLtaFrU='
+#
+# Two ways to go strict later, in increasing order of effort:
+#   1. A post-build script that hashes every inline script per page and emits a
+#      per-route _headers block. Mechanical, but regenerates on each build and
+#      pushes against Cloudflare's _headers rule limits at 25+ routes.
+#   2. Serve through a Cloudflare Worker that injects a per-request nonce and
+#      rewrites the CSP. Correct, and the only option that scales — but it means
+#      giving up pure static hosting.
+#
+# HSTS is deliberately absent: set it in the Cloudflare dashboard under
+# SSL/TLS -> Edge Certificates -> HSTS, where it belongs as a zone-wide policy.
+# Be deliberate about `preload` — it is submitted to a browser-baked list and is
+# slow and painful to reverse.

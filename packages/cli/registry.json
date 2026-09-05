@@ -539,7 +539,7 @@
         {
           "path": "GPUSpreadsheet.tsx",
           "type": "registry:component",
-          "hash": "5362a7d9f5bdeadeee7ae4921f2045d40c2443f431c98149b965f797cbbe3375"
+          "hash": "d3dd53e9ba9c0b031a9a933e0f9239c10a8862200669333f5e52bb17b1e003e8"
         },
         {
           "path": "SpreadsheetComponent.ts",
@@ -549,17 +549,17 @@
         {
           "path": "cellRef.ts",
           "type": "registry:component",
-          "hash": "31ff6aae6b02b3350eb000cbc2bf8da50b539aad6707d1befab1acda0bf2d229"
+          "hash": "480ed00395ef5f61997ec5ecbe16471226e7998a30cad6d5bf4c97917dc26c2f"
         },
         {
           "path": "editing.ts",
           "type": "registry:component",
-          "hash": "2c039f00156030b2e818ab8f04c7a5d4425170e7ce90c3ccdd2075c448b2f3a5"
+          "hash": "79d203dab9dcffb662d0b5d83f8e8ed5d769e70a4b683ba8f037bd6f85451914"
         },
         {
           "path": "formulaEngine.ts",
           "type": "registry:component",
-          "hash": "1a1de7a405da9d3a3a9810d1811f4452d5d48d28db6d5fd0d1b7fe3c50bdb004"
+          "hash": "007a83983534a53cf6363cf6c1d9408f4f55788041bcb89eab18db6156d73767"
         },
         {
           "path": "formulaParser.ts",
