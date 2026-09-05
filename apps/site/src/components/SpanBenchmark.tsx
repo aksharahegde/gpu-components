@@ -457,7 +457,7 @@ export function SpanBenchmark() {
         />
       </div>
 
-      <div {...stylex.props(s.readout)}>
+      <div {...stylex.props(s.readout)} aria-live="polite" aria-atomic="false">
         <Stat label="Frames / sec" value={stats.fps ? stats.fps.toFixed(0) : '—'} tone={fpsTone} />
         <Stat label="p50 frame" value={stats.p50 ? `${stats.p50.toFixed(1)}ms` : '—'} />
         <Stat label="p95 frame" value={stats.p95 ? `${stats.p95.toFixed(1)}ms` : '—'} />

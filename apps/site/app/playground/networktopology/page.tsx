@@ -4,7 +4,7 @@ import { NetworkTopologyDemo } from '../../../src/components/demos/NetworkTopolo
 
 export const metadata: Metadata = {
   title: 'GPUNetworkTopology — gpu-components',
-  description: 'Force-laid service mesh with status, link health, and traffic pulse. Playground-only until the shared force-layout animation defect is fixed.',
+  description: 'Force-laid service mesh with status, link health, and traffic pulse. Demo-only for now — the layout animation can still stutter in some browsers.',
 }
 
 export default function GPUNetworkTopologyPage() {
@@ -13,7 +13,7 @@ export default function GPUNetworkTopologyPage() {
       <PageHead
         eyebrow="GPUNetworkTopology"
         title="Service mesh, force-laid"
-        lead={'Force-laid service mesh with status, link health, and traffic pulse. Playground-only until the shared force-layout animation defect is fixed.'}
+        lead={'Switch between the region/AZ/service schematic and the flat 4,000-host stress mesh, and watch the hot links pulse along their length on a clock independent of the layout. Hover is not wired up here, for the same reason as the force-directed graph: positions live only on the GPU.'}
       />
       <Section>
         <NetworkTopologyDemo />

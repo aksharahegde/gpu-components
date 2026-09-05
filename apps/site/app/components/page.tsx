@@ -25,37 +25,34 @@ export const metadata: Metadata = {
   title: 'Components — gpu-components',
 }
 
-type Tag = 'mvp' | 'variant' | 'p5' | 'p7' | 'playground' | 'later' | 'no'
+type Tag = 'live' | 'progress' | 'variant' | 'planned'
 
 const MATRIX: Array<[string, number, number, number, number, number, Tag]> = [
-  ['GPUTimeline', 9, 9, 9, 9, 147.0, 'mvp'],
+  ['GPUTimeline', 9, 9, 9, 9, 147.0, 'live'],
   ['GPUFlameGraph', 8, 8, 8, 8, 139.0, 'variant'],
-  ['GPUScatter', 9, 8, 8, 5, 136.0, 'p7'],
-  ['GPUHeatmap', 8, 7, 8, 6, 131.0, 'p5'],
-  ['GPUDataGrid', 6, 8, 10, 9, 129.5, 'p5'],
-  ['GPUImageDiff', 9, 5, 7, 6, 120.5, 'later'],
-  ['GPULogViewer', 6, 7, 9, 8, 119.5, 'later'],
-  ['GPUCandlestick', 8, 6, 8, 3, 119.0, 'no'],
-  ['GPUGraph', 9, 6, 7, 4, 118.0, 'p7'],
-  ['GPUDensityMap', 9, 6, 8, 3, 114.5, 'p7'],
-  ['GPUHistogram', 7, 6, 7, 4, 112.5, 'p7'],
-  ['GPUDepGraph', 7, 5, 7, 6, 110.0, 'p7'],
-  ['GPUNetworkTopology', 7, 5, 6, 5, 102.0, 'playground'],
-  ['GPUAnnotationCanvas', 6, 5, 7, 5, 99.0, 'playground'],
-  ['GPUSpreadsheet', 5, 5, 8, 9, 97.5, 'playground'],
-  ['GPUNodeEditor', 4, 6, 8, 5, 97.0, 'later'],
-  ['GPUWhiteboard', 5, 6, 7, 4, 95.0, 'later'],
-  ['GPUPdfViewer', 5, 4, 8, 7, 92.5, 'later'],
+  ['GPUScatter', 9, 8, 8, 5, 136.0, 'live'],
+  ['GPUHeatmap', 8, 7, 8, 6, 131.0, 'live'],
+  ['GPUDataGrid', 6, 8, 10, 9, 129.5, 'live'],
+  ['GPUImageDiff', 9, 5, 7, 6, 120.5, 'live'],
+  ['GPULogViewer', 6, 7, 9, 8, 119.5, 'live'],
+  ['GPUCandlestick', 8, 6, 8, 3, 119.0, 'live'],
+  ['GPUGraph', 9, 6, 7, 4, 118.0, 'live'],
+  ['GPUDensityMap', 9, 6, 8, 3, 114.5, 'live'],
+  ['GPUHistogram', 7, 6, 7, 4, 112.5, 'live'],
+  ['GPUDepGraph', 7, 5, 7, 6, 110.0, 'live'],
+  ['GPUNetworkTopology', 7, 5, 6, 5, 102.0, 'live'],
+  ['GPUAnnotationCanvas', 6, 5, 7, 5, 99.0, 'live'],
+  ['GPUSpreadsheet', 5, 5, 8, 9, 97.5, 'live'],
+  ['GPUNodeEditor', 4, 6, 8, 5, 97.0, 'live'],
+  ['GPUWhiteboard', 5, 6, 7, 4, 95.0, 'progress'],
+  ['GPUPdfViewer', 5, 4, 8, 7, 92.5, 'live'],
 ]
 
 const TAG: Record<Tag, { label: string; state: 'planned' | 'progress' | 'live' }> = {
-  mvp: { label: 'MVP · phase 2', state: 'progress' },
+  live: { label: 'live demo', state: 'live' },
+  progress: { label: 'in progress', state: 'progress' },
   variant: { label: 'same primitive', state: 'planned' },
-  p5: { label: 'phase 5', state: 'planned' },
-  p7: { label: 'phase 7', state: 'planned' },
-  playground: { label: 'playground', state: 'live' },
-  later: { label: 'backlog', state: 'planned' },
-  no: { label: 'not planned', state: 'planned' },
+  planned: { label: 'planned', state: 'planned' },
 }
 
 const FORCES: Array<[string, string]> = [
@@ -137,8 +134,8 @@ function Components() {
 
         <Notice variant="amber">
           <B>Note the shape of the GPUDataGrid row.</B> It scores highest on usefulness and
-          adoption and loses on feasibility and demonstrable performance delta. That is not an
-          artefact of the weighting — it is the finding.
+          adoption and loses on feasibility and demonstrable performance delta. The weighting did
+          not produce that shape; the candidate did.
         </Notice>
       </Section>
 
@@ -168,10 +165,11 @@ function Components() {
         </TableScroll>
 
         <Notice variant="accent">
-          <B>The architecture test is GPUHeatmap, not GPUDataGrid.</B> Phase 5's acceptance
-          criterion is a falsifiable claim: the heatmap ships requiring <em>zero</em> changes to{' '}
-          <C>@gpu-components/core</C>. If it does not, the runtime abstraction was wrong, and we
-          learn that in a week rather than after a month of grid work.
+          <B>The architecture test was GPUHeatmap, not GPUDataGrid.</B> The falsifiable claim was
+          that the heatmap would ship requiring <em>zero</em> changes to{' '}
+          <C>@gpu-components/core</C>. It needed exactly one — a second axis on the viewport —
+          which is close enough to count and specific enough to be worth knowing. The abstraction
+          held.
         </Notice>
       </Section>
 
@@ -181,7 +179,7 @@ function Components() {
             <Stack gap={12}>
               <H3 sm>Charts</H3>
               <Body sm>
-                WebGPU charting shipped in early 2026, including a shadcn-installable registry.
+                WebGPU charting already shipped, including a shadcn-installable registry.
                 That slot is taken and fighting for it is a distraction. The categories a chart
                 abstraction cannot reach — dense interactive timelines, grids, trace surfaces — are
                 the ones that are open.

@@ -7,8 +7,10 @@ import {
   C,
   Card,
   Code,
+  Grid,
   H1,
   H2,
+  H3,
   Lead,
   LI,
   List,
@@ -126,6 +128,38 @@ function Home() {
         </Wrap>
       </section>
 
+      <Section title="Built for the surfaces that fall over.">
+        <Grid cols={3}>
+          <Card>
+            <Stack gap={8}>
+              <H3 sm>Trace and profile viewers</H3>
+              <Body sm>
+                A request trace with 200,000 spans, where zooming out means every span is on
+                screen at once.
+              </Body>
+            </Stack>
+          </Card>
+          <Card>
+            <Stack gap={8}>
+              <H3 sm>Observability dashboards</H3>
+              <Body sm>
+                Six panels mounted at once, each wanting its own canvas, each dropping frames when
+                the others animate.
+              </Body>
+            </Stack>
+          </Card>
+          <Card>
+            <Stack gap={8}>
+              <H3 sm>Dense data surfaces</H3>
+              <Body sm>
+                Grids, heatmaps and scatter plots past the point where one CPU frame can touch
+                every element.
+              </Body>
+            </Stack>
+          </Card>
+        </Grid>
+      </Section>
+
       <Section
         id="ceiling"
         title="Where DOM and Canvas2D actually break."
@@ -136,16 +170,16 @@ function Home() {
           <Notice variant="amber">
             <B>Read the numbers in context.</B> Canvas2D here is the optimised path — spans are
             pre-grouped by colour. DOM is capped at 20,000 nodes. The WebGPU row runs{' '}
-            <C>GPUTimeline</C> through the same runtime as the playground; harness baselines in{' '}
-            <C>apps/bench</C> publish when they exist, and anything else stays labelled{' '}
+            <C>GPUTimeline</C> through the same runtime as the playground; published harness
+            baselines replace these when they exist, and anything not yet measured stays labelled{' '}
             <span {...stylex.props(util.monoSm, tone.amber)}>target</span>.
           </Notice>
         </Stack>
       </Section>
 
       <Section
-        title="One device. One frame. One submit."
-        lead="Chart libraries already exist. Nobody is building one shared runtime for timelines, heatmaps, grids, and graphs on the same page — with compute in the data path and accessibility built in, not bolted on."
+        title="Nobody is building the shared runtime."
+        lead="Chart libraries already exist. What does not exist is one shared runtime for timelines, heatmaps, grids and graphs on the same page — with compute in the data path and accessibility built in, not bolted on."
       >
         <div {...stylex.props(s.runtime)}>
           <Code file="app.tsx">
@@ -193,7 +227,7 @@ function Home() {
           <Stack gap={16}>
             <H2>Try it, then decide.</H2>
             <Body>
-              The playground runs eight components live in your browser. Architecture, distribution,
+              The playground runs seventeen components live in your browser. Architecture, distribution,
               and the full candidate scoring live on their own pages when you need the detail.
             </Body>
             <Row sx={s.heroCta}>
@@ -203,9 +237,9 @@ function Home() {
               <LinkBtn to="/start">Get started</LinkBtn>
             </Row>
             <Small sx={util.narrow}>
-              Benchmark numbers on this page are measured here. Anything not yet produced by{' '}
-              <C>apps/bench</C> carries a{' '}
-              <span {...stylex.props(util.monoSm, tone.amber)}>target</span> label.
+              Benchmark numbers on this page are measured here, in your browser. Anything not yet
+              measured carries a <span {...stylex.props(util.monoSm, tone.amber)}>target</span>{' '}
+              label.
             </Small>
           </Stack>
         </div>

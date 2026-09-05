@@ -15,7 +15,7 @@ export default function GPUDepGraphPage() {
         eyebrow="GPUDepGraph"
         title="Dependency graph"
         lead={
-          'Sugiyama layered dependency graph: CPU layout at ingest, orthogonal edges, GPU draw only.'
+          'Hover a package to see its name, click to select it, and follow the back-edges styled where a cycle was broken. The layered layout runs once at ingest — panning and zooming are just viewport uniforms.'
         }
       />
       <Section>

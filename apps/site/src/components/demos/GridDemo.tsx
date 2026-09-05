@@ -89,11 +89,11 @@ function GridStage() {
         A hybrid, and the split is measured rather than assumed. The GPU draws zebra striping and
         the per-cell conditional formatting — every numeric cell tinted by where its value sits in
         that column&apos;s full range, evaluated in the fragment shader. The text is a Canvas2D
-        layer, because <code>spikes/grid-text-budget.md</code> measured 2,400 cells of it at 2.9ms
-        per frame with zero dropped frames, against a glyph atlas that PLAN.md ranked as the largest
-        schedule risk in the phase. The DOM draws nothing per cell: it dropped every frame past
-        ~1,200 nodes. Read-only in v1 — editing, copy/paste and column resize are the grid semantics
-        §8.1 warns will consume a schedule.
+        layer: measured at 2,400 cells of it rendering in 2.9ms per frame with zero dropped frames,
+        against a glyph atlas that would have been the larger, more schedule-consuming alternative.
+        The DOM draws nothing per cell: it dropped every frame past ~1,200 nodes. Read-only in v1 —
+        editing, copy/paste and column resize are grid semantics substantial enough to warrant their
+        own pass.
       </p>
     </div>
   )

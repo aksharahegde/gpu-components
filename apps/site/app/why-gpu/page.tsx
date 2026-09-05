@@ -84,7 +84,7 @@ const CPU_WORK = [
 const UNCOMFORTABLE: Array<[string, string]> = [
   [
     'WebGL2 instancing is also fast',
-    'For raw quad throughput, WebGPU’s advantage over a competent WebGL2 instanced renderer may be modest. This is the biggest technical risk in the project, it gets measured in week 1 before any runtime code exists, and the comparison gets published even when it is close. The durable WebGPU advantages are compute in the data path, indirect draws and dispatches, and storage-buffer-driven vertex work — not fill rate.',
+    'For raw quad throughput, WebGPU’s advantage over a competent WebGL2 instanced renderer may be modest. This was the biggest technical risk in the project. It was measured before any runtime code was written, and the comparison is published whether or not it flatters us. The durable WebGPU advantages are compute in the data path, indirect draws and dispatches, and storage-buffer-driven vertex work — not fill rate.',
   ],
   [
     'Canvas2D is better than people assume',

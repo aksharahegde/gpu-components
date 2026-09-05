@@ -5,7 +5,7 @@ import { WhiteboardDemo } from '../../../src/components/demos/WhiteboardDemo'
 export const metadata: Metadata = {
   title: 'GPUWhiteboard — gpu-components',
   description:
-    'Freeform infinite canvas: a procedural dot-grid background, instanced shapes, and ink, with exact CPU hit-testing. Phase 1 — pan and zoom only.',
+    'Freeform infinite canvas: a procedural dot-grid background, instanced shapes, and ink, with exact CPU hit-testing. Pan and zoom today; drawing tools are next.',
 }
 
 export default function GPUWhiteboardPage() {
@@ -15,7 +15,7 @@ export default function GPUWhiteboardPage() {
         eyebrow="GPUWhiteboard"
         title="Whiteboard"
         lead={
-          'Freeform infinite canvas: a procedural dot-grid background, instanced shapes, and ink, with exact CPU hit-testing. Phase 1 — pan and zoom only.'
+          'Pan and zoom over a board with no geometry behind it — the dot grid is generated in the fragment shader, so there is nothing to redraw when you move.'
         }
       />
       <Section>

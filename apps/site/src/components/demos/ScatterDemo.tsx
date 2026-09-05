@@ -84,9 +84,9 @@ function ScatterStage() {
       <p {...stylex.props(s.footnote)}>
         The purest form of the argument on this page: 250,000 points, one instanced draw call, and
         the CPU touches none of them after upload. Zooming is a 64-byte uniform write. Hover is an
-        exact same-frame lookup through a uniform grid built once — which is worth noting because
-        PLAN.md §9.5 routes a dense scatter to <em>asynchronous GPU picking</em> on the grounds that
-        it has no cheap CPU index. It has one, and the plan now says so.
+        exact same-frame lookup through a uniform grid built once. Dense scatter plots usually give
+        up on same-frame hit-testing and fall back to GPU picking, which costs a frame of latency. A
+        uniform grid built once at ingest makes that unnecessary here.
       </p>
     </div>
   )

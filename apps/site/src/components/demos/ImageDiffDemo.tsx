@@ -150,9 +150,10 @@ function ImageDiffStage() {
 
       <p {...stylex.props(s.footnote)}>
         The component that finally uses <em>textures</em>. Every other one here reads a storage
-        buffer — the right call each time, but it left the whole sampled-texture path unexercised
-        and left a hole in the plan’s §9.2 contract, which assigns “images to textures” to neither
-        vgpu nor this project. Zoom in with smooth sampling off and you are looking at hardware
+        buffer — the right call each time, but it left the whole sampled-texture path unexercised,
+        and nothing in the stack owned the “images to textures” step — neither vgpu nor this
+        project — until this component forced it. Zoom in with smooth sampling off and you are
+        looking at hardware
         nearest-neighbour filtering; the percentage above is counted by a compute pass over all{' '}
         {fmtInt(SIZE * SIZE)} pixels, run once per image pair rather than once per frame, which is
         why panning and switching modes costs nothing.
