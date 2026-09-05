@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { add, diff, doctorChecks, list, missingDependencies, targetDir, type Io } from "./cli.ts";
-import { rewriteImportExtensions, stampHeader, stripHeader, sha256, type Registry } from "./registry.ts";
+import { isValidItemName, rewriteImportExtensions, stampHeader, stripHeader, sha256, type Registry } from "./registry.ts";
 
 const cliRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const registry = JSON.parse(readFileSync(path.join(cliRoot, "registry.json"), "utf8")) as Registry;
@@ -169,6 +169,14 @@ describe("missing dependencies", () => {
     const item = registry.items.find((i) => i.name === "heatmap")!;
     assert.deepEqual(missingDependencies(cwd, item), [...item.dependencies]);
   });
+
+  it("treats a malformed package.json as missing everything, instead of throwing", () => {
+    const { cwd } = scratch();
+    writeFileSync(path.join(cwd, "package.json"), "{ not valid json");
+    const item = registry.items.find((i) => i.name === "heatmap")!;
+    assert.doesNotThrow(() => missingDependencies(cwd, item));
+    assert.deepEqual(missingDependencies(cwd, item), [...item.dependencies]);
+  });
 });
 
 describe("diff", () => {
@@ -244,6 +252,18 @@ describe("doctor", () => {
       }),
     );
     assert.deepEqual(doctorChecks(cwd, registry).filter((c) => !c.ok), []);
+  });
+
+  it("reports a malformed package.json as a failed check, instead of throwing", () => {
+    const { cwd } = scratch();
+    writeFileSync(path.join(cwd, "package.json"), "{ not valid json");
+    let checks: ReturnType<typeof doctorChecks> = [];
+    assert.doesNotThrow(() => {
+      checks = doctorChecks(cwd, registry);
+    });
+    const project = checks.find((c) => c.name === "project")!;
+    assert.equal(project.ok, false);
+    assert.match(project.detail, /not valid JSON/);
   });
 
   it("reports the tsconfig situation rather than demanding a change", () => {
@@ -329,6 +349,55 @@ describe("registry path containment (§24.1 supply chain)", () => {
       () => add(tamperedRegistry("shaders/foo.ts"), componentsRoot, "scatter", io),
       /registry file missing from the package/,
       "should fail on the missing file, not on containment",
+    );
+  });
+});
+
+describe("item name validation (§24.1 supply chain — the name itself is attacker-controlled data)", () => {
+  /** A registry whose item's own `name` field is what a tampered package would ship. */
+  function withTamperedName(name: string): Registry {
+    const scatter = registry.items.find((i) => i.name === "scatter")!;
+    return { ...registry, items: [{ ...scatter, name }] };
+  }
+
+  it("accepts ordinary slugs", () => {
+    assert.ok(isValidItemName("scatter"));
+    assert.ok(isValidItemName("dep-graph"));
+    assert.ok(isValidItemName("a1"));
+  });
+
+  it("rejects a traversal sequence", () => {
+    assert.equal(isValidItemName("../../../../tmp/x"), false);
+  });
+
+  it("rejects an absolute path", () => {
+    assert.equal(isValidItemName("/tmp/evil"), false);
+  });
+
+  it("rejects uppercase and other non-slug characters", () => {
+    assert.equal(isValidItemName("Scatter"), false);
+    assert.equal(isValidItemName("scatter_bad"), false);
+    assert.equal(isValidItemName(""), false);
+  });
+
+  it("refuses to add a component whose registry name is a traversal sequence, and writes nothing outside the target", () => {
+    const evilName = "../../../../tmp/gpu-components-escape";
+    const { io, cwd } = scratch();
+    assert.throws(
+      () => add(withTamperedName(evilName), componentsRoot, evilName, io),
+      /not a valid component name/,
+    );
+    // Nothing should have been written anywhere, inside or outside the project.
+    assert.equal(existsSync(path.join(cwd, "components")), false);
+    assert.equal(existsSync(path.resolve(cwd, evilName)), false);
+  });
+
+  it("refuses to diff a component whose registry name is a traversal sequence", () => {
+    const evilName = "../../../../tmp/gpu-components-escape";
+    const { io } = scratch();
+    assert.throws(
+      () => diff(withTamperedName(evilName), componentsRoot, evilName, io),
+      /not a valid component name/,
     );
   });
 });

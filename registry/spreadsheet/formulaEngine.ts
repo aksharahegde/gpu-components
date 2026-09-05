@@ -169,30 +169,38 @@ export class FormulaEngine {
     const key = cellKey(ref);
     const trimmed = raw.trim();
     const record = this.record(key);
-    record.raw = raw;
 
-    this.clearDeps(key);
-    record.parseError = null;
+    // Compute every fallible thing — parsing and ref-collection — *before* touching `record` or the
+    // dependency graph. `collectRefs`/`rangeRefs` can throw (an oversized range should already be
+    // impossible after `parseRange`'s bound, but this is the invariant that matters: nothing here
+    // mutates state until we know we can commit cleanly). That guarantees `setCell` never leaves the
+    // engine with deps cleared but no replacement, or a half-updated record.
+    let nextFormula: FormulaNode | null = null;
+    let nextLiteral: CellValue = null;
+    let nextParseError: CellErrorCode | null = null;
+    let nextRefs: Set<string> | null = null;
 
     if (trimmed.startsWith("=")) {
-      let node: FormulaNode;
       try {
-        node = parseFormula(trimmed.slice(1));
+        const node = parseFormula(trimmed.slice(1));
+        const refs = new Set<string>();
+        collectRefs(node, refs);
+        nextFormula = node;
+        nextRefs = refs;
       } catch {
-        record.formula = null;
-        record.literal = null;
-        record.parseError = "#NAME?";
-        return this.recalculate(key);
+        nextParseError = "#NAME?";
       }
-      record.formula = node;
-      record.literal = null;
-      const refs = new Set<string>();
-      collectRefs(node, refs);
-      this.setDeps(key, refs);
     } else {
-      record.formula = null;
-      record.literal = literalFromInput(trimmed);
+      nextLiteral = literalFromInput(trimmed);
     }
+
+    // Every fallible step succeeded (or degraded to a parse error) — now commit atomically.
+    record.raw = raw;
+    record.parseError = nextParseError;
+    record.formula = nextFormula;
+    record.literal = nextLiteral;
+    this.clearDeps(key);
+    if (nextRefs) this.setDeps(key, nextRefs);
 
     // No need to special-case the cycle here: `recalculate`'s topological sort below leaves every
     // cycle member (this edit's cell included, if it created one) unordered and marks it
@@ -358,8 +366,13 @@ export class FormulaEngine {
   }
 
   private evaluateCall(name: string, argNodes: readonly FormulaNode[]): CellValue {
+    // `Object.hasOwn` guards against dispatching into `Object.prototype` (e.g. `CONSTRUCTOR`,
+    // `HASOWNPROPERTY`) — safe today only by accident, since `formulaParser.ts` uppercases every
+    // identifier and `functions` is a plain object a consumer can supply via the constructor.
+    if (!Object.hasOwn(this.functions, name)) {
+      throw new FormulaEngineError("#NAME?", `Unknown function "${name}"`);
+    }
     const fn = this.functions[name];
-    if (!fn) throw new FormulaEngineError("#NAME?", `Unknown function "${name}"`);
     const args = argNodes.map((arg) => this.argValues(arg));
     return fn(args);
   }

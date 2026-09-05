@@ -26,7 +26,15 @@ export function updateDraft(session: EditSession, draft: string): EditSession {
 /** Commits a session's draft into the engine. Returns the recalculated cell keys, same contract as
  * `FormulaEngine.setCell`. */
 export function commitEdit(engine: FormulaEngine, session: EditSession): readonly string[] {
-  return engine.setCell(session.cell, session.draft);
+  // `engine.setCell` is designed to never throw, but this is a user-facing commit path (Enter/Tab/
+  // blur) with no error boundary above it — a single bad edit must not blow up the input overlay.
+  // On an unexpected throw, leave the cell's previous content alone rather than risk a further
+  // mutation while the engine is in an unknown state.
+  try {
+    return engine.setCell(session.cell, session.draft);
+  } catch {
+    return [];
+  }
 }
 
 /** §31 open question 4's default: TSV in, TSV out — matches every real spreadsheet app's clipboard
@@ -65,8 +73,14 @@ export function pasteGrid(engine: FormulaEngine, topLeft: CellRef, grid: readonl
   const touched = new Set<string>();
   grid.forEach((row, r) => {
     row.forEach((value, c) => {
-      const keys = engine.setCell({ row: topLeft.row + r, col: topLeft.col + c }, value);
-      for (const k of keys) touched.add(k);
+      // Clipboard content is external input (another app, another document) — one malformed cell
+      // in a pasted block must not abort the whole paste or throw out of the paste handler.
+      try {
+        const keys = engine.setCell({ row: topLeft.row + r, col: topLeft.col + c }, value);
+        for (const k of keys) touched.add(k);
+      } catch {
+        // Skip this cell; the rest of the pasted grid should still land.
+      }
     });
   });
   return [...touched];

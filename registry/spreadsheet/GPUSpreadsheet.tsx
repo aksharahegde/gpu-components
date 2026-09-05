@@ -77,9 +77,18 @@ export function GPUSpreadsheet(props: GPUSpreadsheetProps): JSX.Element {
 
   useEffect(() => {
     if (!props.initialCells) return;
+    // `initialCells` is external input — a document someone else authored, passed across a public
+    // prop boundary. `engine.setCell` is designed to never throw, but this loop runs inside an
+    // effect with no error boundary above it: one bad entry throwing here would unmount the whole
+    // React root (blank page, no user interaction required), so it gets its own belt-and-braces
+    // guard. A cell that can't be set is skipped, not fatal to the rest of the seed.
     for (const [a1, raw] of Object.entries(props.initialCells)) {
-      const ref = a1ToRef(a1);
-      if (ref) engine.setCell(ref, raw);
+      try {
+        const ref = a1ToRef(a1);
+        if (ref) engine.setCell(ref, raw);
+      } catch {
+        // Skip this cell; the rest of `initialCells` should still seed.
+      }
     }
     setDataVersion((v) => v + 1);
     // Seed once on mount only — this is not a controlled-value sync (see the props doc above).

@@ -46,8 +46,27 @@ export function sha256(content: string): string {
   return createHash("sha256").update(content, "utf8").digest("hex");
 }
 
+/**
+ * Component names become directory segments (`cli.ts`'s `targetDir` and `resolveWithin`), so they
+ * are held to the same containment standard as file paths — see `resolveWithin`'s doc comment.
+ * Registry entries are unsigned data; a tampered `registry.json` naming an item `../../../.npmrc`
+ * would otherwise be trusted as a base directory for every file it ships.
+ */
+const ITEM_NAME_RE = /^[a-z][a-z0-9-]*$/;
+
+export function isValidItemName(name: string): boolean {
+  return ITEM_NAME_RE.test(name);
+}
+
 export function findItem(registry: Registry, name: string): RegistryItem | undefined {
-  return registry.items.find((item) => item.name === name);
+  const item = registry.items.find((item) => item.name === name);
+  if (item && !isValidItemName(item.name)) {
+    throw new Error(
+      `gpu-components: registry entry "${item.name}" is not a valid component name. ` +
+        `Refusing to continue — this package may be corrupted or tampered with.`,
+    );
+  }
+  return item;
 }
 
 /**
