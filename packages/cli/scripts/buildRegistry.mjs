@@ -77,6 +77,11 @@ const ITEMS = {
     description:
       "Freeform node-flow canvas. Drag nodes, drag-to-connect ports, multi-select (shift-click/marquee) and delete — all exact CPU hit-testing over caller-owned positions, with GPU-baked selection/port flags and a DOM label overlay for titles.",
   },
+  whiteboard: {
+    title: "GPUWhiteboard",
+    description:
+      "Freeform infinite canvas. A procedural dot-grid background, instanced rect/ellipse/point shapes plus ruler/polygon/freehand ink, and exact CPU hit-testing — pan and zoom only in v1, draw tools and multi-select land in later phases.",
+  },
   // GPUGraph is deliberately absent: its layout does not animate in the browser (a known open
   // defect), and a copy-source registry must not ship a component that is broken where it runs.
 };
