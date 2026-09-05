@@ -21,3 +21,27 @@ blob-report/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Agent / tool local state.
+# These were previously ignored only via `.git/info/exclude` and a machine-level
+# global gitignore, neither of which travels with a clone — so every collaborator
+# saw them as untracked noise. Listed here so the rule is shared.
+# Note the entries are per-file rather than `.impeccable/` wholesale: the tracked
+# `.impeccable/config.json` and `.impeccable/design.json` are real project config.
+.claude/settings.local.json
+.impeccable/hook.cache.json
+.impeccable/hook.pending.json
+.impeccable/config.local.json
+.impeccable/live/server.json
+.impeccable/live/roots.json
+.impeccable/live/app-root.json
+.impeccable/live/inject-journal.json
+.impeccable/live/sessions/
+.impeccable/live/previews/
+.impeccable/live/annotations/
+.impeccable/live/artifacts/
+.impeccable/live/accept-receipts/
+.impeccable/live/locks/
+.impeccable/live/cache/
+.impeccable-live.json
+.impeccable-live/
