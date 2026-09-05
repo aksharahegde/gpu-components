@@ -6,5 +6,5 @@
     "types": ["@webgpu/types", "node"],
     "noEmit": true
   },
-  "include": ["timeline", "spreadsheet", "nodeeditor"]
+  "include": ["timeline", "spreadsheet", "nodeeditor", "depgraph", "scatter"]
 }

@@ -82,6 +82,24 @@ export function GPUDepGraph(props: GPUDepGraphProps): JSX.Element {
   const setViewportRef = useRef(setViewport);
   setViewportRef.current = setViewport;
 
+  /**
+   * Read through refs inside the pointer effect below, rather than named in its dependency array.
+   * `useGpuA11y()` returns a brand-new wrapper object every render (only the functions inside it —
+   * `announce`, individually — are stable), and panning calls `setViewportRef.current(...)` on
+   * every `pointermove`, which (when `onViewportChange` is wired to a host's state, as every demo
+   * does) re-renders this component on every single drag step. A dependency array naming `a11y`
+   * itself would tear the effect down and reattach it mid-drag, resetting the closured `dragFrom`
+   * variable to `null` before the next `pointermove` arrives — which reproduces, empirically, as a
+   * pan that moves exactly one pixel and then freezes. Refs sidestep this without requiring every
+   * consumer to memoize `onHoverNode`/`onSelectNode`.
+   */
+  const onHoverNodeRef = useRef(onHoverNode);
+  onHoverNodeRef.current = onHoverNode;
+  const onSelectNodeRef = useRef(onSelectNode);
+  onSelectNodeRef.current = onSelectNode;
+  const announceRef = useRef(a11y.announce);
+  announceRef.current = a11y.announce;
+
   const componentRef = useRef<DepGraphComponent | null>(null);
   const factory = useCallback(() => {
     const component = new DepGraphComponent();
@@ -122,14 +140,14 @@ export function GPUDepGraph(props: GPUDepGraphProps): JSX.Element {
         controller.panByPixels(-(state.x - dragFrom.x), -(state.y - dragFrom.y));
         dragFrom = { x: state.x, y: state.y };
         setViewportRef.current(controller.getState());
-        onHoverNode?.(null);
+        onHoverNodeRef.current?.(null);
         return;
       }
       const hit = componentRef.current?.hitTest(state.x, state.y) ?? null;
-      onHoverNode?.(hit ? Number(hit.id) : null);
+      onHoverNodeRef.current?.(hit ? Number(hit.id) : null);
     });
 
-    const unsubLeave = pointer.onLeave(() => onHoverNode?.(null));
+    const unsubLeave = pointer.onLeave(() => onHoverNodeRef.current?.(null));
 
     const unsubUp = pointer.onUp((state) => {
       const start = dragFrom;
@@ -137,8 +155,8 @@ export function GPUDepGraph(props: GPUDepGraphProps): JSX.Element {
       if (start && Math.abs(state.x - start.x) < 3 && Math.abs(state.y - start.y) < 3) {
         const hit = componentRef.current?.hitTest(state.x, state.y);
         const id = hit ? Number(hit.id) : null;
-        onSelectNode?.(id);
-        if (id != null) a11y.announce(describeNode(data, id));
+        onSelectNodeRef.current?.(id);
+        if (id != null) announceRef.current(describeNode(data, id));
       }
     });
 
@@ -162,7 +180,7 @@ export function GPUDepGraph(props: GPUDepGraphProps): JSX.Element {
       detach();
       el.removeEventListener("wheel", onWheel);
     };
-  }, [canvas, data, onHoverNode, onSelectNode, a11y]);
+  }, [canvas, data]);
 
   const labels: PositionedLabel[] = useMemo(() => {
     const out: PositionedLabel[] = [];

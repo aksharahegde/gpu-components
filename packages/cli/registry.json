@@ -196,7 +196,7 @@
         {
           "path": "GPUScatter.tsx",
           "type": "registry:component",
-          "hash": "0344785367cda4494340cb23f7d0f965d883225c8f9a639eb37a04564cbe1bbe"
+          "hash": "1a6d69a739ea262fb28d09813d5108dfdec9ff5327c543832f82e59f3dbef753"
         },
         {
           "path": "ScatterComponent.ts",
@@ -500,7 +500,7 @@
         {
           "path": "GPUDepGraph.tsx",
           "type": "registry:component",
-          "hash": "e4e4f64bf076b985f02fbd4ca2d0d2b1265df381528a89aa7f356599740c16ee"
+          "hash": "201b804b271c879192e07fff9ee1839de501cdfcbb5d56c21e2049e00825a03a"
         },
         {
           "path": "index.ts",
@@ -608,7 +608,7 @@
         {
           "path": "GPUNodeEditor.tsx",
           "type": "registry:component",
-          "hash": "42b64df854bb9bae11d17b5a721179e7cf7ffb6391fde10c116dbc5219112a52"
+          "hash": "027a970e1e96ddfa7e397a36b712228081f8d4fc0477ccf8ab9a33d492349ce8"
         },
         {
           "path": "NodeEditorComponent.ts",
