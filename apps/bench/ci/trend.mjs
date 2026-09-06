@@ -64,8 +64,38 @@ function percentile(sorted, p) {
   return sorted[i];
 }
 
+/**
+ * Dawn needs a real adapter, and a runner without a GPU does not have one — `nodeInit()` throws
+ * `VGPU-NODE-NO-ADAPTER` there. That is not a regression to fail the build over, it is an absent
+ * measurement, so this exits cleanly and says so.
+ *
+ * vgpu's own error suggests `npx vgpu install-software-renderer`, and that is deliberately not
+ * taken. This script's whole purpose is catching WebGPU-path *perf* regressions, and it appends to
+ * `trend.jsonl`. Feeding CPU-rendered timings into a GPU trend line would not merely be noise, it
+ * would be indistinguishable from hardware data after the fact — a worse outcome than a gap. The
+ * same reasoning keeps SwiftShader out of the Playwright matrix.
+ */
+async function initOrSkip() {
+  if (process.env.BENCH_SKIP_WEBGPU) {
+    console.log("trend: skipped — BENCH_SKIP_WEBGPU is set, so this machine has no GPU to trend.");
+    return null;
+  }
+  try {
+    return await nodeInit();
+  } catch (err) {
+    const code = err && typeof err === "object" && "code" in err ? err.code : null;
+    if (code === "VGPU-NODE-NO-ADAPTER") {
+      console.log("trend: skipped — no WebGPU adapter (Dawn found no GPU on this machine).");
+      console.log("trend: nothing written to trend.jsonl; a GPU runner is what restores this data.");
+      return null;
+    }
+    throw err;
+  }
+}
+
 async function main() {
-  const gpu = await nodeInit();
+  const gpu = await initOrSkip();
+  if (!gpu) return;
   const canvas = createMockCanvas(gpu, [800, 300]);
   const runtime = GpuRuntime.createWithGpu(gpu, CAPS);
 

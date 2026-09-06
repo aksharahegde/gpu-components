@@ -50,7 +50,12 @@ jobs:
         env:
           BENCH_SKIP_WEBGPU: "1"
         run: npm run bench --workspace=apps/bench
+      # Also gated: the trend script needs a real Dawn adapter and appends to trend.jsonl. Without
+      # a GPU it now exits cleanly and writes nothing, rather than failing the build or - worse -
+      # recording CPU timings that later read as hardware ones.
       - name: Run vgpu/node trend script (headless WebGPU)
+        env:
+          BENCH_SKIP_WEBGPU: "1"
         run: npm run trend --workspace=apps/bench
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
