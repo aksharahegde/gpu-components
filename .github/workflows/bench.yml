@@ -32,11 +32,23 @@ jobs:
       # Push/PR: the quick subset (fast feedback, catches a broken harness). The full 6-size ×
       # 3-shape matrix is slow (5M/10M-span cells alone can take minutes) — reserved for the
       # nightly schedule so it doesn't block every PR.
+      # GitHub's hosted runners have no GPU. Reaching for a WebGPU adapter there does not fail
+      # gracefully, it kills the GPU process, so the WebGPU scenarios are skipped rather than
+      # attempted — see apps/bench/tests/webgpuAvailable.ts. They print what they skipped.
+      #
+      # This is deliberately not solved with SwiftShader: that would make the job green and the
+      # numbers meaningless, and PRODUCT.md forbids publishing a figure the harness did not
+      # honestly produce. Restoring WebGPU coverage here means a runner with a real GPU — at which
+      # point delete this variable, and nothing else needs to change.
       - name: Run benchmark matrix (quick subset)
         if: github.event_name != 'schedule'
+        env:
+          BENCH_SKIP_WEBGPU: "1"
         run: npm run bench:quick --workspace=apps/bench
       - name: Run benchmark matrix (full, nightly)
         if: github.event_name == 'schedule'
+        env:
+          BENCH_SKIP_WEBGPU: "1"
         run: npm run bench --workspace=apps/bench
       - name: Run vgpu/node trend script (headless WebGPU)
         run: npm run trend --workspace=apps/bench

@@ -8,7 +8,11 @@ import type { LogTextResult } from "../src/harness/logTextScenario.ts";
  * matrix — run it deliberately.
  */
 test("log text scenario measures all three strategies", async ({ page }) => {
-  test.setTimeout(300_000);
+  // 300s was tuned on a developer machine and left almost no margin on CI hardware: this spec
+  // measured 4.3m against its 5m cap on one run and exceeded it on the next, without the spec
+  // itself changing. Raised rather than left to flake — Playwright's own per-test cap in
+  // playwright.config.ts is 15m, so this stays well inside it.
+  test.setTimeout(600_000);
   await page.goto("/index.html");
   await page.waitForFunction(() => "__bench" in window);
   const result: LogTextResult = await page.evaluate(() => window.__bench.runLogText());
