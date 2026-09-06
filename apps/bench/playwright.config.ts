@@ -24,7 +24,24 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         // Headless Chromium needs an explicit GPU backend for WebGPU — without this, `navigator.gpu`
         // resolves but `requestAdapter()` fails silently in headless mode.
-        launchOptions: { args: ["--enable-unsafe-webgpu", "--use-angle=metal", "--use-gl=angle"] },
+        //
+        // The backend is platform-specific and picking the wrong one is worse than picking none:
+        // `--use-angle=metal` was hard-coded here (written on a Mac, and this config's own comment
+        // below admits only this environment was ever verified). On Linux CI that flag does not
+        // fail over to something workable — it takes the GPU process down, and Playwright surfaces
+        // that as "Resulting promise was garbage collected" from whatever `page.evaluate` was in
+        // flight. Every WebGPU cell in the matrix crashed that way on the first real CI run while
+        // DOM, Canvas2D and WebGL2 all reported numbers.
+        //
+        // Elsewhere, let Chromium choose its own backend. On a machine with a GPU that resolves to
+        // a real adapter; on a GPU-less runner `requestAdapter()` returns null and the WebGPU
+        // scenarios skip themselves (see `tests/webgpuAvailable.ts`) rather than crashing.
+        launchOptions: {
+          args: [
+            "--enable-unsafe-webgpu",
+            ...(process.platform === "darwin" ? ["--use-angle=metal", "--use-gl=angle"] : []),
+          ],
+        },
       },
     },
     // Firefox/WebKit: PLAN.md §20.1 wants all three, but this dev environment only has Chromium

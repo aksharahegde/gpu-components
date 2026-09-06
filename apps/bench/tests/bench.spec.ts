@@ -3,6 +3,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderMarkdown } from "../src/harness/report.ts";
+import { NO_WEBGPU_REASON, webgpuAvailable } from "./webgpuAvailable.ts";
 import type { BenchReport, RendererId, RunResult, Shape } from "../src/types.ts";
 import { RENDERERS, SHAPES, SIZES } from "../src/types.ts";
 import type { RunOptions } from "../src/harness/runner.ts";
@@ -110,14 +111,26 @@ test("benchmark matrix", async ({ page }) => {
     }
   }
 
+  // The two tails below are WebGPU-only, and unlike the per-cell matrix above they were not inside
+  // any guard — so on a machine without an adapter they took the whole matrix run down with them,
+  // discarding the DOM/Canvas2D/WebGL2 numbers that had just been collected successfully. The
+  // matrix already knows how to record "skipped"; these calls now do the same.
   await gotoWithRetry(page, "/index.html");
-  await page.waitForFunction(() => "__bench" in window);
-  const sharedContext: SharedContextResult = await page.evaluate(() => window.__bench.runSharedContext());
-  writeResults(sharedContext, null);
+  const hasWebgpu = await webgpuAvailable(page);
+  if (!hasWebgpu) console.log(`  shared-context + gpu-timing: skipped (${NO_WEBGPU_REASON})`);
 
-  await gotoWithRetry(page, "/index.html");
-  await page.waitForFunction(() => "__bench" in window);
-  const gpuTiming: GpuTimingResult = await page.evaluate(() => window.__bench.runGpuTiming());
+  let sharedContext: SharedContextResult | null = null;
+  let gpuTiming: GpuTimingResult | null = null;
+
+  if (hasWebgpu) {
+    await page.waitForFunction(() => "__bench" in window);
+    sharedContext = await page.evaluate(() => window.__bench.runSharedContext());
+    writeResults(sharedContext, null);
+
+    await gotoWithRetry(page, "/index.html");
+    await page.waitForFunction(() => "__bench" in window);
+    gpuTiming = await page.evaluate(() => window.__bench.runGpuTiming());
+  }
   writeResults(sharedContext, gpuTiming);
 
   expect(results.length).toBeGreaterThan(0);
