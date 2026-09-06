@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUHistogram, ingestValues } from '../../../../../registry/histogram'
-import { Hint, fmtInt, mulberry32, s, useMeasuredStage } from './chrome'
+import { fmtInt, Hint, mulberry32, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 function HistogramStage() {
   const { status } = useGpu()
@@ -78,8 +78,6 @@ function HistogramStage() {
     </div>
   )
 }
-
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function HistogramDemo() {
   return (

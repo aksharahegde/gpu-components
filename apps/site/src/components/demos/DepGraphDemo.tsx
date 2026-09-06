@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUDepGraph, ingestDepGraph } from '../../../../../registry/depgraph'
-import { Hint, fmtInt, mulberry32, s, useMeasuredStage } from './chrome'
+import { fmtInt, Hint, mulberry32, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 const SCOPES = ['app', 'core', 'ui', 'api', 'db', 'auth', 'util', 'cli', 'web', 'worker'] as const
 const KINDS = ['pkg', 'lib', 'mod', 'svc'] as const
@@ -132,8 +132,6 @@ function DepGraphStage() {
     </div>
   )
 }
-
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function DepGraphDemo() {
   return (

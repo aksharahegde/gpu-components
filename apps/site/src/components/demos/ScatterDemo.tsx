@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUScatter, ingestColumns } from '../../../../../registry/scatter'
-import { Hint, fmtInt, mulberry32, s, useMeasuredStage } from './chrome'
+import { fmtInt, Hint, mulberry32, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 const CLUSTERS = [
   { cx: 0.25, cy: 0.7, spread: 0.09, category: 0 },
@@ -92,9 +92,6 @@ function ScatterStage() {
   )
 }
 
-
-/** Stable identity: a fresh object each render trips GPUProvider's "options changed" warning. */
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function ScatterDemo() {
   return (

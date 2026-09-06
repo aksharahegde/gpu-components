@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUNodeEditor, ingestNodeEditor } from '../../../../../registry/nodeeditor'
-import { Hint, fmtInt, s, useMeasuredStage } from './chrome'
+import { fmtInt, Hint, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 function buildPipeline() {
   return ingestNodeEditor({
@@ -106,8 +106,6 @@ function NodeEditorStage() {
     </div>
   )
 }
-
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function NodeEditorDemo() {
   return (

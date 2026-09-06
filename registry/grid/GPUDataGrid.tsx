@@ -266,7 +266,7 @@ export function GPUDataGrid(props: GPUDataGridProps): JSX.Element {
             display: "flex",
             alignItems: "center",
             font: "12px ui-monospace, monospace",
-            color: "#fff",
+            color: "#1f2430",
             pointerEvents: "none",
             overflow: "hidden",
           }}

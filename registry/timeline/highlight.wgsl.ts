@@ -65,8 +65,9 @@ fn vs_main(
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
   if (in.kind == 1u) {
-    return vec4f(1.0, 0.85, 0.2, 0.55); // selected: amber wash
+    return vec4f(0.663, 0.400, 0.047, 0.45); // selected: amber wash
   }
-  return vec4f(1.0, 1.0, 1.0, 0.35); // hover: white wash
+  // Hover: an ink wash. A white wash is the dark-surface idiom and is invisible here.
+  return vec4f(0.051, 0.059, 0.078, 0.16);
 }
 `;

@@ -111,16 +111,20 @@ const text = stylex.create({
     fontSize: 'clamp(34px, 5.4vw, 58px)',
     lineHeight: 1.08,
     letterSpacing: '-0.035em',
-    fontWeight: 620,
+    // 660 rather than the 620 the dark palette used. Dark-on-light renders optically thinner than
+    // light-on-dark at the same weight, so the display sizes gain weight on the way over.
+    fontWeight: 660,
     color: color.text,
+    textWrap: 'balance',
   },
   h1Page: { fontSize: 'clamp(30px, 4vw, 44px)' },
   h2: {
     fontSize: 'clamp(24px, 3vw, 32px)',
     lineHeight: 1.15,
     letterSpacing: '-0.028em',
-    fontWeight: 620,
+    fontWeight: 660,
     color: color.text,
+    textWrap: 'balance',
   },
   h3: {
     fontSize: 18,
@@ -530,7 +534,7 @@ const table = stylex.create({
     whiteSpace: 'nowrap',
   },
   last: { borderBottomWidth: 0 },
-  mono: { fontFamily: font.mono, fontSize: 13 },
+  mono: { fontFamily: font.mono, fontSize: 13, fontVariantNumeric: 'tabular-nums' },
 })
 
 export function TableScroll({ children }: { children: ReactNode }) {

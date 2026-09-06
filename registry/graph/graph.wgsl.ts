@@ -25,12 +25,12 @@ struct GraphParams {
 }
 
 const PALETTE = array<vec3f, 6>(
-  vec3f(0.545, 0.616, 1.0),
-  vec3f(0.357, 0.914, 0.725),
-  vec3f(0.941, 0.690, 0.447),
-  vec3f(0.941, 0.541, 0.541),
-  vec3f(0.498, 0.847, 0.941),
-  vec3f(0.718, 0.643, 1.0),
+  vec3f(0.239, 0.310, 0.839),
+  vec3f(0.055, 0.486, 0.345),
+  vec3f(0.663, 0.400, 0.047),
+  vec3f(0.753, 0.169, 0.169),
+  vec3f(0.059, 0.455, 0.565),
+  vec3f(0.427, 0.157, 0.851),
 );
 
 fn toClip(p: vec2f, viewport: Viewport) -> vec2f {
@@ -79,7 +79,7 @@ fn vs_main(
 
 @fragment
 fn fs_main() -> @location(0) vec4f {
-  return vec4f(0.35, 0.39, 0.5, 0.5);
+  return vec4f(0.42, 0.46, 0.56, 0.55); // edge: grey-blue, sits between the light clear and the node fills
 }
 `;
 
@@ -128,8 +128,10 @@ fn vs_main(
   let word = category[instanceIndex / 4u];
   let value = (word >> ((instanceIndex % 4u) * 8u)) & 255u;
   var tint = PALETTE[value % 6u];
-  if (selected) { tint = mix(tint, vec3f(1.0), 0.4); }
-  if (hovered) { tint = vec3f(1.0); }
+  // Toward ink, not toward white: on a light surface white is the *background* direction, so the
+  // dark-surface idiom would erase the very node it is meant to emphasise.
+  if (selected) { tint = mix(tint, vec3f(0.051, 0.059, 0.078), 0.4); }
+  if (hovered) { tint = vec3f(0.051, 0.059, 0.078); }
   out.tint = tint;
   return out;
 }

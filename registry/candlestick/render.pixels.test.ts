@@ -46,8 +46,11 @@ const VIEWPORT: ViewportState = {
 };
 
 /** Body colours from the shader. */
-const UP: [number, number, number] = [33, 184, 128];
-const DOWN: [number, number, number] = [240, 84, 97];
+// 8-bit forms of `UP_COLOR` / `DOWN_COLOR` in `candlestick.wgsl.ts`. These must be updated
+// together: the assertions below check that a rising bar is drawn in the *up* colour, so a stale
+// literal here reports a palette change as a rendering bug.
+const UP: [number, number, number] = [14, 124, 88];
+const DOWN: [number, number, number] = [192, 43, 43];
 
 const src = (bars: readonly Bar[], version = 1, openBar = false): BarSource => ({ bars, version, openBar });
 

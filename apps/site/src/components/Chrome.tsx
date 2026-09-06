@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as stylex from '@stylexjs/stylex'
 import { usePathname } from 'next/navigation'
 import { Link, useIsCurrent } from '../link'
-import { useTheme } from '../theme'
-import { color, font, radius, size } from '../tokens.stylex'
+import { color, font, radius, shadow, size } from '../tokens.stylex'
 import { Btn, Small, Stack, Wrap, typo, util } from '../ui'
 
 const ROUTES: Array<{ to: string; label: string; section?: boolean }> = [
@@ -29,7 +28,11 @@ const s = stylex.create({
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: color.border,
+    transitionProperty: 'box-shadow',
+    transitionDuration: '160ms',
+    transitionTimingFunction: 'ease',
   },
+  headerStuck: { boxShadow: shadow.sm },
   inner: { display: 'flex', alignItems: 'center', gap: 28, height: size.navHeight },
   brand: {
     display: 'flex',
@@ -99,20 +102,6 @@ const s = stylex.create({
     fontFamily: font.mono,
     backgroundColor: { default: 'transparent', ':hover': color.surface },
     borderColor: { default: 'transparent', ':hover': color.borderHover },
-    borderRadius: radius.md,
-  },
-  themeToggle: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 'none',
-    marginInlineStart: 14,
-    width: { default: 32, [NAV]: 40 },
-    height: { default: 32, [NAV]: 40 },
-    padding: 0,
-    color: { default: color.textDim, ':hover': color.text },
-    backgroundColor: { default: 'transparent', ':hover': color.surface },
-    borderColor: 'transparent',
     borderRadius: radius.md,
   },
   footer: {
@@ -201,6 +190,8 @@ function NavLink({
 
 export function Nav() {
   const [open, setOpen] = useState(false)
+  const [stuck, setStuck] = useState(false)
+  const sentinel = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -211,81 +202,63 @@ export function Nav() {
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
 
+  /*
+   * The sticky header gains a shadow once the page has scrolled under it — on a white page the
+   * hairline border alone does not separate it from the content sliding beneath.
+   *
+   * Watched through a zero-height sentinel sitting above the header rather than a scroll handler:
+   * an IntersectionObserver fires twice per crossing instead of once per scroll event, so this
+   * costs nothing while the user is actually scrolling.
+   */
+  useEffect(() => {
+    const el = sentinel.current
+    if (!el) return
+    const io = new IntersectionObserver(([entry]) => setStuck(!entry!.isIntersecting))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
   return (
-    <header {...stylex.props(s.header)}>
-      <Wrap sx={s.inner}>
-        <Link to="/" sx={s.brand} onClick={() => setOpen(false)}>
-          <Mark />
-          gpu-components
-        </Link>
-        <Btn
-          sx={s.toggle}
-          aria-expanded={open}
-          aria-controls="site-nav"
-          onClick={() => setOpen((o) => !o)}
-        >
-          {open ? 'Close' : 'Menu'}
-        </Btn>
-        <nav id="site-nav" {...stylex.props(s.links, open && s.linksOpen)} aria-label="Main">
-          {ROUTES.map((r) => (
-            <NavLink
-              key={r.to}
-              to={r.to}
-              label={r.label}
-              section={r.section}
-              onNavigate={() => setOpen(false)}
-            />
-          ))}
-          <a
-            href="https://vgpu.sh"
-            target="_blank"
-            rel="noreferrer noopener"
-            {...stylex.props(s.link)}
+    <>
+      <div ref={sentinel} aria-hidden="true" />
+      <header {...stylex.props(s.header, stuck && s.headerStuck)}>
+        <Wrap sx={s.inner}>
+          <Link to="/" sx={s.brand} onClick={() => setOpen(false)}>
+            <Mark />
+            gpu-components
+          </Link>
+          <Btn
+            sx={s.toggle}
+            aria-expanded={open}
+            aria-controls="site-nav"
+            onClick={() => setOpen((o) => !o)}
           >
-            vgpu
-            <span {...stylex.props(util.srOnly)}> (opens in a new tab)</span>
-            <ExternalIcon />
-          </a>
-        </nav>
-        <ThemeToggle />
-      </Wrap>
-    </header>
-  )
-}
-
-function ThemeToggle() {
-  const { theme, toggle } = useTheme()
-  const isLight = theme === 'light'
-  return (
-    <Btn sx={s.themeToggle} title={isLight ? 'Switch to dark theme' : 'Switch to light theme'} onClick={toggle}>
-      <span {...stylex.props(util.srOnly)}>{isLight ? 'Switch to dark theme' : 'Switch to light theme'}</span>
-      {isLight ? <MoonIcon /> : <SunIcon />}
-    </Btn>
-  )
-}
-
-function SunIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"
-      />
-    </svg>
-  )
-}
-
-function MoonIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1Z"
-      />
-    </svg>
+            {open ? 'Close' : 'Menu'}
+          </Btn>
+          <nav id="site-nav" {...stylex.props(s.links, open && s.linksOpen)} aria-label="Main">
+            {ROUTES.map((r) => (
+              <NavLink
+                key={r.to}
+                to={r.to}
+                label={r.label}
+                section={r.section}
+                onNavigate={() => setOpen(false)}
+              />
+            ))}
+            <a
+              href="https://vgpu.sh"
+              target="_blank"
+              rel="noreferrer noopener"
+              {...stylex.props(s.link)}
+            >
+              vgpu
+              <span {...stylex.props(util.srOnly)}> (opens in a new tab)</span>
+              <ExternalIcon />
+            </a>
+          </nav>
+        </Wrap>
+      </header>
+    </>
   )
 }
 

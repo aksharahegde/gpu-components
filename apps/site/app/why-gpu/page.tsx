@@ -157,6 +157,7 @@ function WhyGpu() {
       </Section>
 
       <Section
+        id="ceiling"
         eyebrow="Measured in your browser"
         title="The ceiling, live."
         lead="Every span in the dataset is on screen, so every span is drawn every frame. This is the case a GPU instanced draw collapses into a single call."

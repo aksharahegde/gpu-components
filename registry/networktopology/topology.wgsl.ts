@@ -19,11 +19,11 @@ struct TopologyParams {
 }
 
 const KIND_PALETTE = array<vec3f, 5>(
-  vec3f(0.545, 0.616, 1.0),
-  vec3f(0.357, 0.914, 0.725),
-  vec3f(0.941, 0.690, 0.447),
-  vec3f(0.941, 0.541, 0.541),
-  vec3f(0.498, 0.847, 0.941),
+  vec3f(0.239, 0.310, 0.839),
+  vec3f(0.055, 0.486, 0.345),
+  vec3f(0.663, 0.400, 0.047),
+  vec3f(0.753, 0.169, 0.169),
+  vec3f(0.059, 0.455, 0.565),
 );
 
 fn toClip(p: vec2f, viewport: Viewport) -> vec2f {
@@ -85,9 +85,9 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: EdgeVertexOut) -> @location(0) vec4f {
-  let healthy = vec3f(0.35, 0.75, 0.45);
-  let mid = vec3f(0.90, 0.70, 0.30);
-  let sick = vec3f(0.90, 0.35, 0.30);
+  let healthy = vec3f(0.055, 0.486, 0.345);
+  let mid = vec3f(0.663, 0.400, 0.047);
+  let sick = vec3f(0.753, 0.169, 0.169);
   var color = mix(sick, mid, smoothstep(0.0, 0.5, in.health));
   color = mix(color, healthy, smoothstep(0.5, 1.0, in.health));
   let pulse = fract(in.along + params.time * params.pulseSpeed * max(in.traffic, 0.05));
@@ -95,7 +95,7 @@ fn fs_main(in: EdgeVertexOut) -> @location(0) vec4f {
   if (in.health < 0.15) {
     glow = 0.0;
   }
-  color = mix(color, vec3f(1.0), glow * 0.45);
+  color = mix(color, vec3f(0.051, 0.059, 0.078), glow * 0.45);
   let alpha = 0.35 + 0.45 * in.traffic;
   return vec4f(color, alpha);
 }
@@ -155,13 +155,13 @@ fn vs_main(
   var tint = KIND_PALETTE[kindValue % 5u];
   var opacity = 1.0;
   if (statusValue == 1u) {
-    tint = mix(tint, vec3f(0.90, 0.70, 0.30), 0.55);
+    tint = mix(tint, vec3f(0.663, 0.400, 0.047), 0.55);
   } else if (statusValue == 2u) {
-    tint = mix(tint, vec3f(0.90, 0.35, 0.30), 0.75);
+    tint = mix(tint, vec3f(0.753, 0.169, 0.169), 0.75);
     opacity = 0.55;
   }
   if (selected) {
-    tint = mix(tint, vec3f(1.0), 0.4);
+    tint = mix(tint, vec3f(0.051, 0.059, 0.078), 0.4);
   }
 
   var out: NodeVertexOut;

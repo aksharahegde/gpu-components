@@ -12,7 +12,7 @@ import {
   type FieldData,
   type ToolName,
 } from '../../../../../registry/annotationcanvas'
-import { Btn, Dim, Field, Hint, Panel, Readout, Segmented, s, useMeasuredStage } from './chrome'
+import { Btn, Dim, Field, Hint, Panel, PROVIDER_OPTIONS, Readout, s, Segmented, useMeasuredStage } from './chrome'
 
 /** 512, not the spec's upper bound of 1024 — plenty of pixels for a colormap demo, and it keeps
  * the ingest + first paint snappy on the page load path. */
@@ -203,8 +203,6 @@ function AnnotationCanvasStage() {
     </div>
   )
 }
-
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function AnnotationCanvasDemo() {
   return (

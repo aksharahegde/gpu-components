@@ -16,11 +16,11 @@ import { join } from 'node:path'
 const OUT_DIR = join(import.meta.dirname, '..', 'out')
 
 const ROUTES = [
-  ['/', 'index.html', ['GPU components that', 'Where DOM and Canvas2D actually break', 'gpu-components']],
+  ['/', 'index.html', ['Your interface has a ceiling', 'six GPU devices', 'runs live in your browser']],
   ['/why-gpu', 'why-gpu/index.html', ['Do not use the GPU merely because it is possible', 'Main thread']],
   ['/architecture', 'architecture/index.html', ['One device, a scheduler', 'RenderPass', 'InstancedQuadLayer']],
   ['/components', 'components/index.html', ['GPUTimeline', 'GPUDataGrid', '147.0']],
-  ['/start', 'start/index.html', ['Nothing is published yet', 'gpu-components add timeline']],
+  ['/start', 'start/index.html', ['Nothing is on npm yet', 'gpu-components add timeline']],
   ['/nope', '404.html', ['No such page']],
 ]
 
@@ -78,7 +78,10 @@ for (const [route, file, expectations] of ROUTES) {
     const cssPath = join(OUT_DIR, cssFiles[0].slice(1))
     const css = readFileSync(cssPath, 'utf8')
     const hasAtomicRules = /background-color:\s*var\(--x[a-z0-9]+\)/.test(css)
-    const hasTokenDefaults = css.includes('--xrfyece:#08090b') || css.includes('--xrfyece: #08090b')
+    // `--xrfyece` is `color.bg` from `tokens.stylex.ts`. Asserting the declaration exists rather
+    // than a specific colour: the point of the check is that `globals.css`'s pasted `:root` block
+    // survived the build (see its comment), not what the palette happens to be this month.
+    const hasTokenDefaults = /--xrfyece:\s*#[0-9a-f]{6}/i.test(css)
     if (css.length < 8000 || !hasAtomicRules || !hasTokenDefaults) {
       console.error(
         `✗ stylex css — bundle looks incomplete (${css.length} bytes; atomic=${hasAtomicRules}; tokens=${hasTokenDefaults})`,

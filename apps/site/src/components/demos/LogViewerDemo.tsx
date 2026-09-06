@@ -6,7 +6,7 @@ import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPULogViewer, generateLogLines } from '../../../../../registry/logviewer'
 import type { LogLine, LogSource } from '../../../../../registry/logviewer'
-import { Btn, Dim, Field, Hint, fmtInt, s, useMeasuredStage } from './chrome'
+import { Btn, Dim, Field, fmtInt, Hint, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 /** Backlog size. A million lines is the claim; this is what actually goes in the ring. */
 const BACKLOG = 500_000
@@ -129,9 +129,6 @@ function LogViewerStage() {
     </div>
   )
 }
-
-/** Stable identity: a fresh object each render trips GPUProvider's "options changed" warning. */
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function LogViewerDemo() {
   return (

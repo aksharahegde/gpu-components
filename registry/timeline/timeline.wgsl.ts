@@ -78,22 +78,28 @@ fn vs_main(
   return out;
 }
 
+/** Categorical fills for a light surface: mid-dark and saturated, so a span reads against a
+ * near-white clear rather than washing into it. The previous set was the pastel inverse, chosen
+ * when the site was dark. Hues track the site palette (indigo, mint, amber, rose) plus a cyan and
+ * a violet to reach six mutually distinguishable categories. */
 const PALETTE = array<vec4f, 6>(
-  vec4f(0.545, 0.616, 1.0, 1.0),
-  vec4f(0.357, 0.914, 0.725, 1.0),
-  vec4f(0.941, 0.690, 0.447, 1.0),
-  vec4f(0.941, 0.541, 0.541, 1.0),
-  vec4f(0.498, 0.847, 0.941, 1.0),
-  vec4f(0.718, 0.643, 1.0, 1.0),
+  vec4f(0.239, 0.310, 0.839, 1.0),
+  vec4f(0.055, 0.486, 0.345, 1.0),
+  vec4f(0.663, 0.400, 0.047, 1.0),
+  vec4f(0.753, 0.169, 0.169, 1.0),
+  vec4f(0.059, 0.455, 0.565, 1.0),
+  vec4f(0.427, 0.157, 0.851, 1.0),
 );
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
   var color = PALETTE[in.colorIndex % 6u];
   if (isSelected(in.spanIndex)) {
-    // Brighten toward white — visually distinct from the separate hover/click highlight
-    // (highlight.wgsl.ts), which outlines rather than tints.
-    color = mix(color, vec4f(1.0, 1.0, 1.0, 1.0), 0.4);
+    // Darken toward ink. On a light surface this is the direction that *adds* contrast — mixing
+    // toward white, which is what a dark surface wants, would fade a selected span into the
+    // background instead of picking it out. Still visually distinct from the separate hover/click
+    // highlight (highlight.wgsl.ts), which outlines rather than tints.
+    color = mix(color, vec4f(0.051, 0.059, 0.078, 1.0), 0.4);
   }
   return color;
 }
