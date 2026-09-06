@@ -68,9 +68,32 @@ test("benchmark matrix", async ({ page }) => {
     writeFileSync(path.join(RESULTS_DIR, "BASELINES.md"), renderMarkdown(report, sharedContext, shapes, gpuTiming));
   }
 
+  // Resolved once: the probe is cheap when it short-circuits on the environment variable, but on a
+  // machine that does have to ask, asking 60+ times would be neither cheap nor more accurate.
+  await gotoWithRetry(page, "/index.html");
+  const webgpuEnabled = await webgpuAvailable(page);
+
   for (const shape of shapes as readonly Shape[]) {
     for (const size of sizes) {
       for (const renderer of RENDERERS as readonly RendererId[]) {
+        // A WebGPU cell on a machine with no adapter does not merely fail, it takes the GPU
+        // process with it — the try/catch below records that as a skipped cell, but only after
+        // paying for the crash and the page reload, roughly six minutes across the quick subset.
+        // When the environment has already told us there is no GPU, do not start.
+        if (renderer === "webgpu" && !webgpuEnabled) {
+          results.push({
+            renderer,
+            shape,
+            size,
+            stats: null,
+            skippedReason: NO_WEBGPU_REASON,
+            uploadMs: null,
+            runs: [],
+          });
+          console.log(`  ${shape}/${renderer}/${size.toLocaleString("en-US")}: skipped (${NO_WEBGPU_REASON})`);
+          continue;
+        }
+
         // Fresh page per cell: a long-lived tab accumulates GPU/DOM/canvas memory across 60+
         // cells, and a large-N Canvas2D/DOM cell alone can push it over the edge (observed:
         // Chromium's renderer process died mid-run with "Execution context was destroyed"). A
@@ -115,14 +138,12 @@ test("benchmark matrix", async ({ page }) => {
   // any guard — so on a machine without an adapter they took the whole matrix run down with them,
   // discarding the DOM/Canvas2D/WebGL2 numbers that had just been collected successfully. The
   // matrix already knows how to record "skipped"; these calls now do the same.
-  await gotoWithRetry(page, "/index.html");
-  const hasWebgpu = await webgpuAvailable(page);
-  if (!hasWebgpu) console.log(`  shared-context + gpu-timing: skipped (${NO_WEBGPU_REASON})`);
+  if (!webgpuEnabled) console.log(`  shared-context + gpu-timing: skipped (${NO_WEBGPU_REASON})`);
 
   let sharedContext: SharedContextResult | null = null;
   let gpuTiming: GpuTimingResult | null = null;
 
-  if (hasWebgpu) {
+  if (webgpuEnabled) {
     await page.waitForFunction(() => "__bench" in window);
     sharedContext = await page.evaluate(() => window.__bench.runSharedContext());
     writeResults(sharedContext, null);
