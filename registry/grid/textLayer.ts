@@ -33,9 +33,9 @@ export interface TextLayerTheme {
 export const DEFAULT_THEME: TextLayerTheme = {
   font: "12px ui-monospace, SFMono-Regular, Menlo, monospace",
   headerFont: "600 12px ui-sans-serif, system-ui, sans-serif",
-  color: "#d7dbe4",
-  headerColor: "#e7e9ee",
-  headerBackground: "#0d0f13",
+  color: "#1f2430",
+  headerColor: "#0d0f14",
+  headerBackground: "#f4f5f7",
   padding: 8,
 };
 

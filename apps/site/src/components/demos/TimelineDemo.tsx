@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { GPUProvider, GpuInspector, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUTimeline, ingestSpans, type RawSpan, type SpanBuffers } from '../../../../../registry/timeline'
-import { Field, Hint, Readout, fmtInt, fmtMs, mulberry32, s, useMeasuredStage } from './chrome'
+import { Field, fmtInt, fmtMs, Hint, mulberry32, PROVIDER_OPTIONS, Readout, s, useMeasuredStage } from './chrome'
 
 const SIZES = [1_000, 10_000, 100_000, 500_000] as const
 const SHAPES = ['bursty', 'shallow-wide', 'deep-nested'] as const
@@ -268,9 +268,6 @@ function Stage() {
  * the *ingested* (track, start)-sorted arrays, not into the raw input — `SpanBuffers` carries the
  * labels through that sort, so there is no mapping back to do.
  */
-
-/** Stable identity: a fresh object each render trips GPUProvider's "options changed" warning. */
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function TimelineDemo() {
   return (

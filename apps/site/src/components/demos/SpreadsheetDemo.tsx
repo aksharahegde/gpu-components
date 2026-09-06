@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUSpreadsheet } from '../../../../../registry/spreadsheet'
-import { Hint, s, useMeasuredStage } from './chrome'
+import { Hint, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 const ROWS = 60
 
@@ -96,8 +96,6 @@ function SpreadsheetStage() {
     </div>
   )
 }
-
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function SpreadsheetDemo() {
   return (

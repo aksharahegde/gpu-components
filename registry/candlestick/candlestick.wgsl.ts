@@ -66,8 +66,8 @@ fn pxToClip(p: Params, px: vec2f) -> vec4f {
   return vec4f((px.x / p.surfaceW) * 2.0 - 1.0, 1.0 - (px.y / p.surfaceH) * 2.0, 0.0, 1.0);
 }
 
-const UP_COLOR = vec3f(0.13, 0.72, 0.50);
-const DOWN_COLOR = vec3f(0.94, 0.33, 0.38);
+const UP_COLOR = vec3f(0.055, 0.486, 0.345);
+const DOWN_COLOR = vec3f(0.753, 0.169, 0.169);
 `;
 
 /**
@@ -144,7 +144,7 @@ fn vs_main(@builtin(vertex_index) vertexIndex: u32, @builtin(instance_index) ins
 fn fs_main(in: VsOut) -> @location(0) vec4f {
   var color = select(DOWN_COLOR, UP_COLOR, in.rising == 1u);
   if (in.hovered == 1u) {
-    color = mix(color, vec3f(1.0, 1.0, 1.0), 0.35);
+    color = mix(color, vec3f(0.051, 0.059, 0.078), 0.35);
   }
   return vec4f(color, 1.0);
 }
@@ -294,9 +294,9 @@ fn vs_main(@builtin(vertex_index) vertexIndex: u32, @builtin(instance_index) ins
 
 @fragment
 fn fs_main(in: VsOut) -> @location(0) vec4f {
-  var color = select(vec3f(0.34, 0.40, 0.52), vec3f(0.22, 0.26, 0.34), in.kind == 1u);
+  var color = select(vec3f(0.847, 0.863, 0.898), vec3f(0.741, 0.765, 0.816), in.kind == 1u);
   if (in.inWindow == 1u) {
-    color = mix(color, vec3f(0.45, 0.72, 1.0), 0.55);
+    color = mix(color, vec3f(0.239, 0.310, 0.839), 0.55);
   }
   return vec4f(color, 1.0);
 }

@@ -11,6 +11,7 @@ import {
   PageHead,
   Row,
   Section,
+  Small,
   Stack,
   c,
   fn,
@@ -18,6 +19,7 @@ import {
   str,
 } from '../../src/ui'
 import { LinkBtn } from '../../src/components/LinkBtn'
+import { InstallCommand } from '../../src/components/InstallCommand'
 
 export const metadata: Metadata = {
   title: 'Get started — gpu-components',
@@ -44,40 +46,44 @@ function Start() {
       <PageHead
         eyebrow="Get started"
         title="The runtime works. The install does not exist yet."
-        lead="Seventeen components run live in the playground today. What is missing is distribution: nothing is on npm, and the commands below are the intended surface, published early so it can be argued with while changing it is still cheap."
+        lead="Everything on this page is the intended install surface, written down before it exists so it can be argued with while changing it is still cheap. The runtime and seventeen components are real and run in the playground today; the distribution around them is not."
       />
 
       <Section flush>
         <Notice variant="amber">
-          <B>Status: unpublished.</B> The runtime and seventeen components exist and run in the
-          playground, but no package is on npm yet, so every command below will fail today. The
-          install surface is documented here so it can be criticised while changing it is still
-          cheap.
+          <B>Nothing is on npm yet, so every command on this page will fail today.</B> They are
+          published in this state deliberately: an install surface is easiest to change before
+          anyone depends on it, and hardest afterwards. If one of them is wrong, now is when that
+          is cheap to say.
         </Notice>
       </Section>
 
-      <Section eyebrow="Intended install" title="Two steps, and they do different things.">
+      <Section eyebrow="Intended install" title="Two steps, and a third that only checks.">
         <Grid cols={2} gap={24}>
-          <Stack gap={16}>
-            <Code file="terminal">
-              {c('# 1. the runtime — versioned, upgradeable, not yours to fork')}
-              {'\n'}
-              {fn('npm')} i @gpu-components/core @gpu-components/react
-              {'\n\n'}
-              {c('# 2. the component — copied into your repo, yours to edit')}
-              {'\n'}
-              {fn('npx')} gpu-components add timeline
-              {'\n\n'}
-              {c('# check bundler config, WGSL loader, WebGPU availability')}
-              {'\n'}
-              {fn('npx')} gpu-components doctor
-            </Code>
+          <Stack gap={20}>
+            <Stack gap={8}>
+              <InstallCommand
+                command="npm i @gpu-components/core @gpu-components/react"
+                label="the runtime install command"
+              />
+              <Small>The runtime — versioned, upgradeable, not yours to fork.</Small>
+            </Stack>
+            <Stack gap={8}>
+              <InstallCommand
+                command="npx gpu-components add timeline"
+                label="the component install command"
+              />
+              <Small>The component — copied into your repo, yours to edit.</Small>
+            </Stack>
+            <Stack gap={8}>
+              <InstallCommand command="npx gpu-components doctor" label="the doctor command" />
+              <Small>Checks bundler config, the WGSL loader, and WebGPU availability.</Small>
+            </Stack>
             <Body>
-              The split is the whole distribution thesis. The runtime is infrastructure nobody wants
-              to fork and everybody wants patched — device management, scheduling, leak fixes,
-              device-loss handling. The component is policy: colours, LOD thresholds, label rules,
-              interaction feel, shaders. That is exactly what teams need to change and what a props
-              API can never anticipate.
+              The split is the whole distribution thesis: the runtime is infrastructure you want
+              patched, the component is policy you want to change. <C>doctor</C> exists because the
+              WGSL loader is the one piece of setup that fails silently — a missing loader looks
+              like a broken component rather than a missing build step.
             </Body>
           </Stack>
 

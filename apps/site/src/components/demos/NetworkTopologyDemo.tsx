@@ -6,7 +6,7 @@ import { GPUProvider, GpuInspector, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUNetworkTopology, generateMesh } from '../../../../../registry/networktopology'
 import { color } from '../../tokens.stylex'
-import { Btn, Dim, Field, Hint, Panel, Readout, Segmented, fmtInt, s, useMeasuredStage } from './chrome'
+import { Btn, Dim, Field, fmtInt, Hint, Panel, PROVIDER_OPTIONS, Readout, s, Segmented, useMeasuredStage } from './chrome'
 
 const MODES = ['schematic', 'stress'] as const
 
@@ -144,8 +144,6 @@ const t = stylex.create({
   degraded: { backgroundColor: color.amber },
   down: { backgroundColor: color.rose },
 })
-
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function NetworkTopologyDemo() {
   return (

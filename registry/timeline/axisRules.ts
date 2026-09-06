@@ -29,8 +29,8 @@ const TIME_RULE_WIDTH_PX = 1;
 const TRACK_RULE_WIDTH_PX = 1;
 /** Low-alpha white, composited by the layer's `alpha` blend over whatever is underneath. Kept
  * dimmer than the track separators so the two families read as different information. */
-const TIME_RULE_COLOR = packRgba8(255, 255, 255, 26);
-const TRACK_RULE_COLOR = packRgba8(255, 255, 255, 38);
+const TIME_RULE_COLOR = packRgba8(13, 15, 20, 32);
+const TRACK_RULE_COLOR = packRgba8(13, 15, 20, 44);
 
 /**
  * A "nice" tick interval — 1, 2 or 5 times a power of ten — covering `span` in about `target`

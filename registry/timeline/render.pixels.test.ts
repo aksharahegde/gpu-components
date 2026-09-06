@@ -165,7 +165,7 @@ describe("GPUTimeline render correctness (real Dawn pixels)", () => {
 
     // …and it is drawn in the categorical palette's first colour (#8b9dff), which is what proves the
     // per-instance attributes made it into the shader rather than just the geometry.
-    assert.deepEqual(rgb(pixels, 50, 25), [139, 157, 255], "span a should be palette colour 0");
+    assert.deepEqual(rgb(pixels, 50, 25), [61, 79, 214], "span a should be palette colour 0");
   });
 
   it("leaves genuinely empty regions empty", async (t) => {

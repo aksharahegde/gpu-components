@@ -463,8 +463,8 @@ export function GPUNodeEditor(props: GPUNodeEditorProps): JSX.Element {
             top: Math.min(marquee.y0, marquee.y1),
             width: Math.abs(marquee.x1 - marquee.x0),
             height: Math.abs(marquee.y1 - marquee.y0),
-            border: "1px solid rgba(255,255,255,0.8)",
-            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(13,15,20,0.55)",
+            background: "rgba(13,15,20,0.10)",
             pointerEvents: "none",
             boxSizing: "border-box",
           }}

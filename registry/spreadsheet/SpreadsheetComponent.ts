@@ -55,7 +55,7 @@ interface SheetUniforms extends Record<string, unknown> {
 
 /** Cap on drawn row/column rules — same ceiling `registry/grid/grid.wgsl.ts`'s LineLayer uses. */
 const MAX_RULES = 256;
-const RULE_COLOR = packRgba8(255, 255, 255, 20);
+const RULE_COLOR = packRgba8(13, 15, 20, 26);
 const EMPTY_SELECTION: CellRange = { start: { row: -1, col: -1 }, end: { row: -1, col: -1 } };
 
 let nextId = 0;

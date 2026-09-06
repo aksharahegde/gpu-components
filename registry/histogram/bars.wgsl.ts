@@ -86,9 +86,9 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
-  var color = vec3f(0.545, 0.616, 1.0);
+  var color = vec3f(0.239, 0.310, 0.839);
   if ((in.flags & 1u) != 0u) {
-    color = mix(color, vec3f(1.0), 0.35);
+    color = mix(color, vec3f(0.051, 0.059, 0.078), 0.35);
   }
   return vec4f(color, params.opacity);
 }

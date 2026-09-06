@@ -2,7 +2,8 @@
 
 import * as stylex from '@stylexjs/stylex'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { color, font, radius } from '../../tokens.stylex'
+import type { GpuRuntimeOptions } from '@gpu-components/core'
+import { color, font, radius, shadow } from '../../tokens.stylex'
 
 /**
  * Shared chrome for the per-component demo pages.
@@ -11,6 +12,22 @@ import { color, font, radius } from '../../tokens.stylex'
  * control strip, readout panel and hint row would drift apart, and the differences between the demos
  * are supposed to be the *components*, not their frames.
  */
+
+/**
+ * Shared by every demo's `<GPUProvider options={...}>`. One frozen object, not one per demo: the
+ * provider warns if its `options` identity changes after its runtime exists, and `clearColor` is a
+ * page-wide decision rather than a per-component one.
+ *
+ * `clearColor` is vgpu's `[r, g, b, a]` in 0-1. It is `color.bgRaised` (#fbfbfc) — the same colour
+ * `s.stage` paints behind the canvas — so a GPU surface is indistinguishable from its container
+ * instead of clearing to vgpu's default opaque black. The channel values are raw sRGB because the
+ * preferred canvas format is non-`-srgb`, which is also the space the components' WGSL colour
+ * literals are written in.
+ */
+export const PROVIDER_OPTIONS = {
+  profiling: true,
+  clearColor: [251 / 255, 251 / 255, 252 / 255, 1],
+} as const satisfies GpuRuntimeOptions
 
 /** Deterministic PRNG, so every visitor sees the identical dataset. */
 export function mulberry32(seed: number) {
@@ -157,6 +174,9 @@ export const s = stylex.create({
     backgroundColor: color.bgRaised,
     border: `1px solid ${color.border}`,
     borderRadius: radius.md,
+    // The one place a demo page earns elevation: the stage is the thing being looked at, and on a
+    // flat white page a hairline alone does not lift it off the background.
+    boxShadow: shadow.sm,
   },
   stageShort: { height: 340, minHeight: 340 },
   overlayMsg: {
@@ -203,7 +223,15 @@ export const s = stylex.create({
   },
   readout: { display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12.5 },
   readoutLabel: { color: color.textFaint },
-  readoutValue: { fontFamily: font.mono, color: color.text, textAlign: 'right', wordBreak: 'break-word' },
+  // Tabular figures: these readouts update per frame (hovered index, selected count, frame times),
+  // and proportional digits make the value jitter horizontally as it changes.
+  readoutValue: {
+    fontFamily: font.mono,
+    fontVariantNumeric: 'tabular-nums',
+    color: color.text,
+    textAlign: 'right',
+    wordBreak: 'break-word',
+  },
   dim: { color: color.textFaint },
   note: { margin: '8px 0 0', fontSize: 11.5, lineHeight: 1.6, color: color.textFaint },
   inspector: { fontSize: 11, fontFamily: font.mono, color: color.textDim, overflowX: 'auto' },

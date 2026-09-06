@@ -18,7 +18,7 @@ function niceTickStep(span: number, target = 8): number {
   return step * magnitude;
 }
 const LINE_WIDTH_PX = 1;
-const COLOR = packRgba8(255, 255, 255, 28);
+const COLOR = packRgba8(13, 15, 20, 34);
 
 /**
  * Builds meridians and parallels covering the visible mercator viewport. Tick spacing follows

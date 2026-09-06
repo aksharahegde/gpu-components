@@ -47,12 +47,12 @@ struct VertexOut {
 }
 
 const PALETTE = array<vec3f, 6>(
-  vec3f(0.545, 0.616, 1.0),
-  vec3f(0.357, 0.914, 0.725),
-  vec3f(0.941, 0.690, 0.447),
-  vec3f(0.941, 0.541, 0.541),
-  vec3f(0.498, 0.847, 0.941),
-  vec3f(0.718, 0.643, 1.0),
+  vec3f(0.239, 0.310, 0.839),
+  vec3f(0.055, 0.486, 0.345),
+  vec3f(0.663, 0.400, 0.047),
+  vec3f(0.753, 0.169, 0.169),
+  vec3f(0.059, 0.455, 0.565),
+  vec3f(0.427, 0.157, 0.851),
 );
 
 fn isSelected(i: u32) -> bool {
@@ -115,8 +115,9 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
   }
 
   var color = PALETTE[in.category % 6u];
-  if ((in.flags & 1u) != 0u) { color = mix(color, vec3f(1.0), 0.45); }
-  if ((in.flags & 2u) != 0u) { color = vec3f(1.0); }
+  // Toward ink rather than white — see the equivalent note in graph.wgsl.ts.
+  if ((in.flags & 1u) != 0u) { color = mix(color, vec3f(0.051, 0.059, 0.078), 0.45); }
+  if ((in.flags & 2u) != 0u) { color = vec3f(0.051, 0.059, 0.078); }
 
   return vec4f(color, alpha * params.opacity);
 }

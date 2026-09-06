@@ -51,11 +51,11 @@ const VIEWPORT: ViewportState = {
 
 /** Level colours from the shader, as bytes, so a row's identity is readable from its stripe. */
 const LEVEL_RGB: Record<string, [number, number, number]> = {
-  trace: [107, 115, 128],
-  debug: [115, 140, 179],
-  info: [97, 166, 242],
-  warn: [250, 191, 51],
-  error: [247, 89, 89],
+  trace: [122, 130, 146],
+  debug: [82, 96, 122],
+  info: [29, 95, 177],
+  warn: [163, 103, 6],
+  error: [192, 43, 43],
 };
 
 function line(i: number, level: LogLine["level"]): LogLine {
