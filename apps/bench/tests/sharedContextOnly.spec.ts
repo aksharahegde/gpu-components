@@ -1,4 +1,5 @@
 import { test } from "@playwright/test";
+import { NO_WEBGPU_REASON, webgpuAvailable } from "./webgpuAvailable.ts";
 import type { SharedContextResult } from "../src/harness/sharedContextScenario.ts";
 
 /**
@@ -10,6 +11,7 @@ import type { SharedContextResult } from "../src/harness/sharedContextScenario.t
 test("shared context scenario runs and produces stats for both configurations", async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto("/index.html");
+  test.skip(!(await webgpuAvailable(page)), NO_WEBGPU_REASON);
   await page.waitForFunction(() => "__bench" in window);
   const result: SharedContextResult = await page.evaluate(() => window.__bench.runSharedContext());
   for (const run of result) {
