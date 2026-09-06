@@ -92,6 +92,31 @@ for (const [route, file, expectations] of ROUTES) {
     }
   }
 
+  /*
+   * No inline `style` attributes anywhere in the export.
+   *
+   * `public/_headers` sets `style-src 'self'` with no `'unsafe-inline'`, so the browser drops every
+   * inline style attribute — the markup keeps it, the page ignores it. That makes an inline style
+   * not merely useless but actively misleading: it is dead code that looks live in the HTML and in
+   * local development, where `out/` is served without headers.
+   *
+   * StyleX produces one whenever a style is *dynamic* (`foo: (n) => ({ gap: n })`). That is how 138
+   * gaps across six pages shipped collapsed. Checking the built markup catches it at build time
+   * instead, which is the only cheap place to catch it: rendering with the real CSP would need a
+   * browser, and by then it is already deployed.
+   */
+  const inlineStyled = Array.from(html.matchAll(/<[^>]+\sstyle="([^"]*)"/g)).map((m) => m[1])
+  if (inlineStyled.length) {
+    console.error(
+      `✗ inline styles — ${inlineStyled.length} element(s) carry a style attribute, which ` +
+        `style-src 'self' drops at runtime. First: ${JSON.stringify(inlineStyled[0])}. ` +
+        `A dynamic StyleX style is the usual cause; use a static scale instead.`,
+    )
+    failures++
+  } else {
+    console.log('✓ inline styles — none, so nothing depends on what the CSP drops')
+  }
+
   const hrefs = new Set(Array.from(html.matchAll(/href="([^"]*)"/g)).map((m) => m[1]))
   const required = ['/why-gpu/', '/architecture/', '/components/', '/playground/', '/start/']
   const dead = required.filter((r) => !hrefs.has(r))

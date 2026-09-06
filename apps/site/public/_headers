@@ -5,9 +5,11 @@
 # assets) expect it. Nothing in the app reads this file; it is edge config.
 #
 # Verified against a real build of this site: 25 HTML pages, 35 script chunks,
-# zero inline <style> blocks, no web fonts, no images, no fetch/XHR/WebSocket,
-# no workers. The only external references are <a href> links to vgpu.sh, which
-# are navigations and need no CSP allowance.
+# zero inline <style> blocks, two self-hosted woff2 faces (Geist, Geist Mono,
+# emitted by next/font under /_next/static/media/ and covered by font-src
+# 'self'), no images, no fetch/XHR/WebSocket, no workers. The only external
+# references are <a href> links to vgpu.sh, which are navigations and need no
+# CSP allowance.
 
 /*
   Content-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests
@@ -33,10 +35,26 @@
 #
 # This is a real weakening, recorded rather than hidden. It is acceptable here
 # because the site is fully static: no auth, no cookies, no forms, no user
-# input, and nothing in localStorage but a theme preference. The realistic
+# input, and nothing in localStorage at all since the site became light-only
+# and its theme toggle was removed. The realistic
 # impact of script injection is defacement, not account or data compromise.
-# Every other directive stays locked down, including style-src, which needs no
-# 'unsafe-inline' because StyleX extracts all CSS to files at build time.
+# Every other directive stays locked down, including style-src.
+#
+# TRAP — style-src has no 'unsafe-inline', and that holds only while every StyleX
+# style is static. StyleX compiles a *dynamic* style — `foo: (n) => ({ gap: n })`
+# — to an inline `style` attribute carrying a CSS custom property, and this
+# directive makes the browser drop that attribute. The declaration then resolves
+# to nothing and the property silently falls back to its initial value. Nothing
+# reports it: no console error, no failed request, and `npm run smoke` reads the
+# markup rather than rendering it, so the attribute is present and the test
+# passes. It is also invisible locally, where `out/` is served without headers.
+#
+# This was not hypothetical. `ui.tsx`'s gap helper was dynamic, and the first
+# deploy carrying these headers shipped 138 collapsed gaps across six pages -
+# most visibly a hero whose buttons sat flush against the command block below
+# them. The fix was a static gap scale, not 'unsafe-inline'. Keep it that way:
+# if a dynamic style is ever genuinely needed, it needs 'unsafe-inline' here and
+# that trade should be made deliberately, not discovered in production.
 #
 # TRAP — do not "improve" this by adding a hash alongside 'unsafe-inline'.
 # Under CSP2+, the presence of any hash or nonce makes browsers IGNORE

@@ -30,7 +30,6 @@ const layout = stylex.create({
   },
   stack: { display: 'flex', flexDirection: 'column' },
   row: { display: 'flex', flexDirection: 'row', flexWrap: 'wrap' },
-  gap: (n: number) => ({ gap: n }),
   grid: { display: 'grid', gap: 16 },
   cols2: {
     gridTemplateColumns: {
@@ -54,6 +53,37 @@ const layout = stylex.create({
   },
 })
 
+/**
+ * The gap scale, as static styles rather than one dynamic `(n) => ({ gap: n })`.
+ *
+ * StyleX compiles a dynamic style to an inline `style` attribute carrying a CSS custom property,
+ * and `public/_headers` sets `style-src 'self'` with no `'unsafe-inline'` — so the browser drops
+ * that attribute and every gap silently computes to `normal`. It is invisible in local development,
+ * where the export is served without the header, and invisible to `npm run smoke`, which reads the
+ * markup rather than rendering it. It reached production as a hero whose call-to-action row sat
+ * flush against the command below it, and 138 collapsed gaps across six pages.
+ *
+ * A static scale costs one class per step and keeps the CSP strict. `GapStep` is a union rather
+ * than `number` on purpose: an unlisted value should fail the typecheck, not fall back to nothing.
+ */
+const gaps = stylex.create({
+  0: { gap: 0 },
+  4: { gap: 4 },
+  6: { gap: 6 },
+  8: { gap: 8 },
+  10: { gap: 10 },
+  12: { gap: 12 },
+  14: { gap: 14 },
+  16: { gap: 16 },
+  20: { gap: 20 },
+  24: { gap: 24 },
+  28: { gap: 28 },
+  32: { gap: 32 },
+  40: { gap: 40 },
+})
+
+export type GapStep = 0 | 4 | 6 | 8 | 10 | 12 | 14 | 16 | 20 | 24 | 28 | 32 | 40
+
 export function Wrap({ children, sx }: { children: ReactNode; sx?: SX }) {
   return <div {...stylex.props(layout.wrap, sx)}>{children}</div>
 }
@@ -64,10 +94,10 @@ export function Stack({
   sx,
 }: {
   children: ReactNode
-  gap?: number
+  gap?: GapStep
   sx?: SX
 }) {
-  return <div {...stylex.props(layout.stack, layout.gap(gap), sx)}>{children}</div>
+  return <div {...stylex.props(layout.stack, gaps[gap], sx)}>{children}</div>
 }
 
 export function Row({
@@ -76,10 +106,10 @@ export function Row({
   sx,
 }: {
   children: ReactNode
-  gap?: number
+  gap?: GapStep
   sx?: SX
 }) {
-  return <div {...stylex.props(layout.row, layout.gap(gap), sx)}>{children}</div>
+  return <div {...stylex.props(layout.row, gaps[gap], sx)}>{children}</div>
 }
 
 export function Grid({
@@ -90,11 +120,11 @@ export function Grid({
 }: {
   children: ReactNode
   cols?: 2 | 3 | 4
-  gap?: number
+  gap?: GapStep
   sx?: SX
 }) {
   const colStyle = cols === 2 ? layout.cols2 : cols === 3 ? layout.cols3 : layout.cols4
-  return <div {...stylex.props(layout.grid, colStyle, layout.gap(gap), sx)}>{children}</div>
+  return <div {...stylex.props(layout.grid, colStyle, gaps[gap], sx)}>{children}</div>
 }
 
 /* ── typography ─────────────────────────────────────────────────────────── */
