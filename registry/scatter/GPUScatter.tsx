@@ -229,8 +229,8 @@ export function GPUScatter(props: GPUScatterProps): JSX.Element {
             top: Math.min(brush.y0, brush.y1),
             width: Math.abs(brush.x1 - brush.x0),
             height: Math.abs(brush.y1 - brush.y0),
-            border: "1px solid rgba(255,255,255,0.8)",
-            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(13,15,20,0.55)",
+            background: "rgba(13,15,20,0.10)",
             pointerEvents: "none",
             boxSizing: "border-box",
           }}

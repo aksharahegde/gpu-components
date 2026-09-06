@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUDataGrid, ingestRows, type GridColumn } from '../../../../../registry/grid'
-import { Hint, mulberry32, s, useMeasuredStage } from './chrome'
+import { Hint, mulberry32, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 const GRID_COLUMNS: GridColumn[] = [
   { key: 'id', label: 'ID', width: 70, numeric: true, align: 'right' },
@@ -99,9 +99,6 @@ function GridStage() {
   )
 }
 
-
-/** Stable identity: a fresh object each render trips GPUProvider's "options changed" warning. */
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function GridDemo() {
   return (

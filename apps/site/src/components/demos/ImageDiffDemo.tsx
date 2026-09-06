@@ -6,7 +6,7 @@ import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUImageDiff, DIFF_MODES, generateImage, ingestPair } from '../../../../../registry/imagediff'
 import type { DiffMode } from '../../../../../registry/imagediff'
-import { Btn, Dim, Field, Hint, Segmented, fmtInt, s, useMeasuredStage } from './chrome'
+import { Btn, Dim, Field, fmtInt, Hint, PROVIDER_OPTIONS, s, Segmented, useMeasuredStage } from './chrome'
 
 const SIZE = 512
 
@@ -161,9 +161,6 @@ function ImageDiffStage() {
     </div>
   )
 }
-
-/** Stable identity: a fresh object each render trips GPUProvider's "options changed" warning. */
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function ImageDiffDemo() {
   return (

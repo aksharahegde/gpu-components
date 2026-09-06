@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUDensityMap, ingestLonLat, lonLatToMercator } from '../../../../../registry/densitymap'
-import { Hint, fmtInt, mulberry32, s, useMeasuredStage } from './chrome'
+import { fmtInt, Hint, mulberry32, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 /** Western Europe hotspots — tight enough that screen-sized hexes light up densely. */
 const CLUSTERS = [
@@ -113,8 +113,6 @@ function DensityMapStage() {
     </div>
   )
 }
-
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function DensityMapDemo() {
   return (

@@ -115,6 +115,40 @@ describe("FrameScheduler", () => {
     gpu.dispose();
   });
 
+  /*
+   * The site's landing page shows a live component count read from `profiler.lastFrame` and calls
+   * it "N components, one GPUDevice, one submit per frame". That sentence is only true if the
+   * scheduler really does drive every mounted component from one tick on one gpu, so the claim
+   * gets an exact assertion rather than the `>= 1` the two-component case above settles for.
+   */
+  it("drives four components from one gpu and reports all four in a single frame", async () => {
+    const { gpu } = await createMockGpu();
+    const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
+    const scheduler = new FrameScheduler(gpu, globals);
+
+    const components = ["timeline", "scatter", "heatmap", "grid"].map((id) => {
+      const t = target(gpu, { size: [2, 2] });
+      const component = new RecordingComponent(id, t);
+      scheduler.mount(component, fakeSurface(t));
+      return component;
+    });
+    assert.equal(scheduler.mountedCount, 4);
+
+    await tick(60);
+
+    for (const component of components) {
+      assert.ok(component.planCalls >= 1, `${component.id} should have been planned`);
+      assert.equal(component.encodeCalls, component.planCalls, `${component.id} must encode every plan`);
+    }
+
+    const frame = scheduler.profiler.lastFrame;
+    assert.ok(frame, "expected a recorded frame");
+    assert.equal(frame!.componentCount, 4, "all four components belong to the same frame");
+
+    scheduler.stop();
+    gpu.dispose();
+  });
+
   it("skips a clean, non-animating component entirely", async () => {
     const { gpu } = await createMockGpu();
     const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });

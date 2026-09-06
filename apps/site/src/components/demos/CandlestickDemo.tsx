@@ -6,7 +6,7 @@ import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUCandlestick, aggregateTicks, generateBars } from '../../../../../registry/candlestick'
 import type { Bar, BarSource } from '../../../../../registry/candlestick'
-import { Btn, Dim, Field, Hint, fmtInt, s, useMeasuredStage } from './chrome'
+import { Btn, Dim, Field, fmtInt, Hint, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 const HISTORY = 200_000
 const INTERVAL_MS = 60_000
@@ -134,9 +134,6 @@ function CandlestickStage() {
     </div>
   )
 }
-
-/** Stable identity: a fresh object each render trips GPUProvider's "options changed" warning. */
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function CandlestickDemo() {
   return (

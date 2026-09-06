@@ -40,6 +40,9 @@ export type { SurfaceLike } from "./surface.ts";
 export type { Globals } from "./uniforms.ts";
 export { GpuRuntime } from "./runtime.ts";
 export type { GpuRuntimeOptions, MountHandle } from "./runtime.ts";
+/* Re-exported so hosts configuring `GpuRuntimeOptions.clearColor` do not have to reach past this
+ * package into `vgpu` for the type of one of our own options. */
+export type { ClearColor } from "vgpu";
 
 export {
   pixelXToTime,

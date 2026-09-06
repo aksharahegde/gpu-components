@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUWhiteboard, ingestWhiteboard, type WhiteboardShape } from '../../../../../registry/whiteboard'
-import { fmtInt, s, useMeasuredStage } from './chrome'
+import { fmtInt, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 function buildBoard() {
   const shapes: WhiteboardShape[] = [
@@ -89,8 +89,6 @@ function WhiteboardStage() {
     </div>
   )
 }
-
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function WhiteboardDemo() {
   return (

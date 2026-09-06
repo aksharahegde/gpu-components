@@ -118,9 +118,16 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
   let t = clamp(f32(count) / f32(peak), 0.0, 1.0);
   let entry = u32(round(t * f32(LUT_SIZE - 1u)));
   var color = lut[entry];
-  color.a = color.a * params.opacity;
+  // Fade alpha with density as well as stepping the hue. The published sequential ramps
+  // (viridis/magma/cividis) all start near-black by design, and a viewport-covering hex grid is
+  // mostly *sparse* rather than empty — \`count == 0u\` discards above, but a cell holding one
+  // point still maps to the bottom of the ramp. Painting those opaque turns the whole surface into
+  // a dark slab regardless of what is behind it. Compositing them instead lets the page show
+  // through where there is nothing much to show, which is also what makes this component work on a
+  // dark background and a light one without swapping the ramp.
+  color.a = color.a * params.opacity * (0.12 + 0.88 * sqrt(t));
   if ((in.flags & 1u) != 0u) {
-    color = vec4f(mix(color.rgb, vec3f(1.0), 0.35), 1.0);
+    color = vec4f(mix(color.rgb, vec3f(0.051, 0.059, 0.078), 0.35), 1.0);
   }
   return color;
 }

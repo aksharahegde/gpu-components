@@ -35,7 +35,7 @@ interface GridUniforms extends Record<string, unknown> {
 
 /** Cap on drawn rules, matching the axis-rule ceiling in `registry/timeline/axisRules.ts`. */
 const MAX_RULES = 256;
-const RULE_COLOR = packRgba8(255, 255, 255, 20);
+const RULE_COLOR = packRgba8(13, 15, 20, 26);
 
 let nextId = 0;
 

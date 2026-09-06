@@ -1,11 +1,16 @@
 'use client'
 
 import * as stylex from '@stylexjs/stylex'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
-import { GPUPdfViewer, ingestPdfDocument, type PdfPage } from '../../../../../registry/pdfviewer'
-import { fmtInt, s, useMeasuredStage } from './chrome'
+import {
+  GPUPdfViewer,
+  ingestPdfDocument,
+  type PdfDocumentData,
+  type PdfPage,
+} from '../../../../../registry/pdfviewer'
+import { fmtInt, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 const PAGE_COUNT = 24
 const PAGE_W = 320
@@ -58,11 +63,10 @@ function buildDocument() {
   return ingestPdfDocument(pages, { pageGap: 24 })
 }
 
-function PdfViewerStage() {
+function PdfViewerStage({ doc }: { doc: PdfDocumentData }) {
   const { status } = useGpu()
   const { ref: stageRef, box } = useMeasuredStage({ width: 960, height: 560 })
 
-  const doc = useMemo(() => buildDocument(), [])
   const [currentPage, setCurrentPage] = useState(1)
 
   // Fit the widest page's width to the stage, then keep the y axis at the same units-per-pixel
@@ -113,12 +117,28 @@ function PdfViewerStage() {
   )
 }
 
-const PROVIDER_OPTIONS = { profiling: true }
-
 export function PdfViewerDemo() {
+  /*
+   * `buildDocument()` rasterizes its mock pages with `document.createElement('canvas')`, so it
+   * cannot run during the static export's server prerender of this client component — doing it in
+   * a `useMemo` threw `ReferenceError: document is not defined` and failed the whole build. It is
+   * mount-only work by nature (the host rasterizes; see `registry/pdfviewer/ingest.ts`), so it
+   * belongs in an effect, and the stage waits for the result.
+   */
+  const [doc, setDoc] = useState<PdfDocumentData | null>(null)
+  useEffect(() => setDoc(buildDocument()), [])
+
   return (
     <GPUProvider options={PROVIDER_OPTIONS}>
-      <PdfViewerStage />
+      {doc ? (
+        <PdfViewerStage doc={doc} />
+      ) : (
+        <div {...stylex.props(s.root)}>
+          <div {...stylex.props(s.stage)}>
+            <p {...stylex.props(s.overlayMsg)}>Rasterizing pages…</p>
+          </div>
+        </div>
+      )}
     </GPUProvider>
   )
 }

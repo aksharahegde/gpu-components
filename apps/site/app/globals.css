@@ -15,14 +15,14 @@
 
 /*
  * Base `:root` declarations for every `stylex.defineVars` group in
- * `src/tokens.stylex.ts` (color, font, radius, size), pasted in verbatim
- * rather than left to the StyleX plugin.
+ * `src/tokens.stylex.ts` (color, font, shadow, radius, size), pasted in
+ * verbatim rather than left to the StyleX plugin.
  *
  * This is a workaround for the same upstream bug documented in
  * `src/ui.tsx`'s breakpoints comment and `README.md`: `@stylexjs/unplugin`'s
  * webpack integration collects every file's StyleX rules into one app-wide
  * batch before calling `@stylexjs/babel-plugin`'s `processStylexRules`, and
- * that batching silently drops these four rules (each file's own isolated
+ * that batching silently drops these rules (each file's own isolated
  * transform emits them correctly — verified directly against the babel
  * plugin). Every *usage* of a token (`var(--xtgewr7)`, etc.) still compiles
  * fine at each call site; only the declaration that gives those variables a
@@ -30,7 +30,7 @@
  * in the site — including this container's own `padding-inline` — silently
  * resolved to nothing.
  *
- * These four blocks are the *exact*, byte-for-byte output of running
+ * These five blocks are the *exact*, byte-for-byte output of running
  * `@stylexjs/babel-plugin` on `src/tokens.stylex.ts` in isolation (verified
  * deterministic — StyleX's hashes are content-based, not random). If
  * `tokens.stylex.ts` ever changes, regenerate this block the same way rather
@@ -59,36 +59,43 @@
  */
 :root,
 .x1eeoxsw {
-  --xrfyece: #08090b;
-  --x16pffse: #0d0f13;
-  --xtq9ih4: #101318;
-  --xsvann1: #151920;
-  --xyy0n55: #1d222b;
-  --x1jkkunk: #2a313d;
-  --x1a4ewbo: #384253;
-  --x1z0vvm0: #e7e9ee;
-  --x1v04jjr: #a2aab8;
-  --x1g57ce8: #6d7686;
-  --xtgewr7: #8b9dff;
-  --x1y0q9md: #9dabff;
-  --x12i8rqg: #5f70cc;
-  --xjqjyzz: #0a0c12;
-  --x4ocvu8: #5be9b9;
-  --xu1gviz: #f0b072;
-  --x1i1lgk3: #f08a8a;
-  --x34b9jb: #cfd6e4;
-  --x1wcxofe: #5f6b7f;
-  --xregme6: #b7a4ff;
-  --xkplwfs: #7fd8b0;
-  --x1vxicz5: #8fb7ff;
-  --xvcfp5u: #f0b072;
-  --xb6ui5n: #c8d1e2;
+  --xrfyece: #ffffff;
+  --x16pffse: #fbfbfc;
+  --xtq9ih4: #ffffff;
+  --xsvann1: #f4f5f7;
+  --xyy0n55: #e8e9ed;
+  --x1jkkunk: #d6d8de;
+  --x1a4ewbo: #b9bcc6;
+  --x1z0vvm0: #0d0f14;
+  --x1v04jjr: #5a6070;
+  --x1g57ce8: #6a7080;
+  --xtgewr7: #3d4fd6;
+  --x1y0q9md: #2f40c4;
+  --x12i8rqg: #a8b1f0;
+  --xjqjyzz: #ffffff;
+  --x4ocvu8: #0e7c58;
+  --xu1gviz: #92590a;
+  --x1i1lgk3: #c02b2b;
+  --x34b9jb: #1f2430;
+  --x1wcxofe: #6a7080;
+  --xregme6: #6d28d9;
+  --xkplwfs: #0f7a51;
+  --x1vxicz5: #1d4ed8;
+  --xvcfp5u: #92590a;
+  --xb6ui5n: #2b3140;
 }
 :root,
 .x1bj29z8 {
-  --x1eblfvp: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial,
-    sans-serif;
-  --xtl17kj: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --x1eblfvp: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  --xtl17kj: var(--font-geist-mono), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+}
+:root,
+.x1u7767i {
+  --xbohjis: 0 1px 2px rgba(13, 15, 20, 0.04);
+  --x1x2a50s: 0 4px 16px -4px rgba(13, 15, 20, 0.08);
+  --x1r2twdh: 0 12px 32px -8px rgba(13, 15, 20, 0.10);
 }
 :root,
 .x1uwf8c2 {
@@ -113,50 +120,37 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
-  background-color: #08090b;
-  color-scheme: dark;
-}
-
-html[data-theme='light'] {
-  background-color: #f7f8fa;
+  background-color: #ffffff;
   color-scheme: light;
 }
 
 /*
  * `body` sits outside the React root, so it cannot receive stylex.props().
- * The literals here must stay in sync with `color.bg` (tokens.stylex.ts) and
- * `lightColor`'s `bg` (theme.stylex.ts); they exist so the page paints the
- * right colour before hydration rather than flashing the wrong theme. The
- * inline script in `index.html` sets `data-theme` on `<html>` before paint.
+ * The literals here must stay in sync with `color.bg` / `color.text` in
+ * `tokens.stylex.ts`. The font stack mirrors `font.sans` — the
+ * `--font-geist-sans` variable is declared by `next/font` on `<html>` (see
+ * `app/layout.tsx`), so it resolves here on the child.
  */
 body {
   margin: 0;
-  background: #08090b;
-  color: #e7e9ee;
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial,
-    sans-serif;
+  min-height: 100vh;
+  background: #ffffff;
+  color: #0d0f14;
+  font-size: 16px;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: color-mix(in srgb, #8b9dff 32%, #101318);
-  color: #e7e9ee;
+  background: color-mix(in srgb, #3d4fd6 18%, #ffffff);
+  color: #0d0f14;
 }
 
 em {
   font-style: italic;
   color: inherit;
-}
-
-html[data-theme='light'] body {
-  background: #f7f8fa;
-  color: #12151b;
-}
-
-html[data-theme='light'] ::selection {
-  background: color-mix(in srgb, #4a5bd4 24%, #ffffff);
-  color: #12151b;
 }
 
 /* Element defaults the atomic classes then override (class beats element). */

@@ -142,13 +142,16 @@ describe("GPUDataGrid render correctness (real Dawn pixels)", () => {
     const scrolled = await render(gpu, 60);
 
     // The single interior rule sits at x=120 unscrolled, and at x=60 once scrolled by 60px.
+    // The rule is *darker* than the cell it separates: `RULE_COLOR` is a low-alpha ink over light
+    // rows. It used to be low-alpha white over dark rows, so this comparison ran the other way —
+    // the direction is the assertion, not an incidental detail.
     const ruleAt = (pixels: Uint8Array, x: number) => lum(rgb(pixels, x, 100));
     assert.ok(
-      ruleAt(unscrolled.pixels, 120) > ruleAt(unscrolled.pixels, 100),
+      ruleAt(unscrolled.pixels, 120) < ruleAt(unscrolled.pixels, 100),
       "an interior column rule should be visible at x=120",
     );
     assert.ok(
-      ruleAt(scrolled.pixels, 60) > ruleAt(scrolled.pixels, 40),
+      ruleAt(scrolled.pixels, 60) < ruleAt(scrolled.pixels, 40),
       "and should have moved to x=60 after scrolling",
     );
 

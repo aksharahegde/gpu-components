@@ -61,11 +61,11 @@ fn slotOf(p: Params, logical: u32) -> u32 {
 const LEVEL_COLORS = /* wgsl */ `
 fn levelColor(level: u32) -> vec3f {
   switch level {
-    case 0u: { return vec3f(0.42, 0.45, 0.50); }  // trace
-    case 1u: { return vec3f(0.45, 0.55, 0.70); }  // debug
-    case 2u: { return vec3f(0.38, 0.65, 0.95); }  // info
-    case 3u: { return vec3f(0.98, 0.75, 0.20); }  // warn
-    default: { return vec3f(0.97, 0.35, 0.35); }  // error
+    case 0u: { return vec3f(0.478, 0.510, 0.573); }  // trace
+    case 1u: { return vec3f(0.322, 0.376, 0.478); }  // debug
+    case 2u: { return vec3f(0.114, 0.373, 0.694); }  // info
+    case 3u: { return vec3f(0.639, 0.404, 0.024); }  // warn
+    default: { return vec3f(0.753, 0.169, 0.169); }  // error
   }
 }
 `;
@@ -147,14 +147,14 @@ fn fs_main(in: VsOut) -> @location(0) vec4f {
     return vec4f(levelColor(in.level) * dim, 1.0);
   }
 
-  var background = select(vec3f(0.055, 0.063, 0.078), vec3f(0.070, 0.078, 0.094), odd);
+  var background = select(vec3f(1.000, 1.000, 1.000), vec3f(0.957, 0.961, 0.969), odd);
   if (params.filtering != 0u && matched) {
     // Matched rows lift toward the level's hue rather than a fixed highlight colour, so severity
     // stays readable while filtering.
     background = mix(background, levelColor(in.level), 0.16);
   }
   if (selected) {
-    background = mix(background, vec3f(0.30, 0.45, 0.85), 0.45);
+    background = mix(background, vec3f(0.780, 0.827, 0.949), 0.75);
   }
   return vec4f(background, 1.0);
 }
@@ -261,23 +261,23 @@ fn vs_main(@builtin(vertex_index) vertexIndex: u32, @builtin(instance_index) ins
 
 @fragment
 fn fs_main(in: VsOut) -> @location(0) vec4f {
-  var color = vec3f(0.09, 0.10, 0.12);
+  var color = vec3f(0.925, 0.933, 0.945);
 
   let errorLoad = f32(in.errors) / f32(max(mm.peakErrors, 1u));
   if (in.errors > 0u) {
-    color = mix(color, vec3f(0.97, 0.35, 0.35), clamp(errorLoad, 0.25, 1.0));
+    color = mix(color, vec3f(0.753, 0.169, 0.169), clamp(errorLoad, 0.25, 1.0));
   }
   let matchLoad = f32(in.matched) / f32(max(mm.peakMatched, 1u));
   if (in.matched > 0u) {
     // Matches draw on the left half of the strip so a bucket can show both at once rather than one
     // hiding the other.
     if (in.cellUv.x < 0.5) {
-      color = mix(color, vec3f(0.25, 0.85, 0.60), clamp(matchLoad, 0.3, 1.0));
+      color = mix(color, vec3f(0.055, 0.486, 0.345), clamp(matchLoad, 0.3, 1.0));
     }
   }
 
   if (in.inWindow == 1u) {
-    color = mix(color, vec3f(1.0, 1.0, 1.0), 0.22);
+    color = mix(color, vec3f(0.051, 0.059, 0.078), 0.22);
   }
   return vec4f(color, 1.0);
 }

@@ -7,8 +7,8 @@ import { LINE_FLAG_CLIP_Y, packRgba8, type LineInstance, type ViewportState } fr
 const TARGET_TICKS = 8;
 const MAX_RULES = 64;
 const WIDTH_PX = 1;
-const COLOR = packRgba8(255, 255, 255, 28);
-const BASELINE_COLOR = packRgba8(255, 255, 255, 50);
+const COLOR = packRgba8(13, 15, 20, 34);
+const BASELINE_COLOR = packRgba8(13, 15, 20, 64);
 
 export function niceTickStep(span: number, target = TARGET_TICKS): number {
   if (!Number.isFinite(span) || span <= 0) return 1;

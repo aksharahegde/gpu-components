@@ -27,7 +27,10 @@ type Mode = 'dom' | 'canvas' | 'webgpu'
 
 const TRACKS = 8
 const DOM_CAP = 20_000
-const COLORS = ['#8b9dff', '#5be9b9', '#f0b072', '#f08a8a', '#7fd8f0', '#b7a4ff']
+/* The same six categorical hues the registry shaders use (see `registry/timeline/timeline.wgsl.ts`
+ * `PALETTE`), in hex. Both palettes exist because one is WGSL and one is Canvas2D/DOM, but a span
+ * has to look like a span whichever renderer drew it — that comparison is the whole point here. */
+const COLORS = ['#3d4fd6', '#0e7c58', '#a9660c', '#c02b2b', '#0f7490', '#6d28d9']
 
 /** Deterministic PRNG so every visitor benchmarks the identical dataset. */
 function mulberry32(seed: number) {
@@ -313,7 +316,7 @@ export function SpanBenchmark() {
             cv.height = ph
           }
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-          ctx.fillStyle = '#08090b'
+          ctx.fillStyle = '#fbfbfc'
           ctx.fillRect(0, 0, W, H)
 
           // Grouped by colour: the *optimised* Canvas2D approach, so the

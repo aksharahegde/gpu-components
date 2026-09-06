@@ -50,9 +50,9 @@ interface NodeUniforms extends Record<string, unknown> {
 }
 
 const EDGE_WIDTH_PX = 1.5;
-const EDGE_COLOR = packRgba8(140, 160, 190, 170);
-const EDGE_SELECTED_COLOR = packRgba8(255, 255, 255, 230);
-const PENDING_EDGE_COLOR = packRgba8(255, 255, 255, 140);
+const EDGE_COLOR = packRgba8(90, 102, 124, 170);
+const EDGE_SELECTED_COLOR = packRgba8(13, 15, 20, 230);
+const PENDING_EDGE_COLOR = packRgba8(13, 15, 20, 150);
 
 /** Screen-pixel hit radius for a port — bigger than its ~5px drawn radius, matching the standard
  * "grab target should be bigger than the visible glyph" affordance. */

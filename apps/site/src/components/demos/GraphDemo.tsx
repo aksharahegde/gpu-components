@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { GPUProvider, GpuInspector, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUGraph, generateClusteredGraph } from '../../../../../registry/graph'
-import { Btn, Dim, Field, Hint, Panel, Readout, Segmented, fmtInt, s, useMeasuredStage } from './chrome'
+import { Btn, Dim, Field, fmtInt, Hint, Panel, PROVIDER_OPTIONS, Readout, s, Segmented, useMeasuredStage } from './chrome'
 
 const CLUSTER_COUNTS = [2, 3, 5] as const
 const NODES_PER_CLUSTER = [10, 25, 60] as const
@@ -136,9 +136,6 @@ function GraphStage() {
     </div>
   )
 }
-
-/** Stable identity: a fresh object each render trips GPUProvider's "options changed" warning. */
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function GraphDemo() {
   return (

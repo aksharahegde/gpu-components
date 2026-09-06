@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUHeatmap, ingestMatrix, type HeatmapData } from '../../../../../registry/heatmap'
-import { Hint, s, useMeasuredStage } from './chrome'
+import { Hint, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
 function buildMatrix(rows: number, cols: number): HeatmapData {
   const values = new Float32Array(rows * cols)
@@ -84,9 +84,6 @@ function HeatmapStage() {
   )
 }
 
-
-/** Stable identity: a fresh object each render trips GPUProvider's "options changed" warning. */
-const PROVIDER_OPTIONS = { profiling: true }
 
 export function HeatmapDemo() {
   return (

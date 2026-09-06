@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import * as stylex from '@stylexjs/stylex'
-import { color } from '../src/tokens.stylex'
+import { color, font, radius } from '../src/tokens.stylex'
 import {
   B,
   Body,
@@ -14,7 +14,6 @@ import {
   Lead,
   LI,
   List,
-  Notice,
   Row,
   Section,
   Small,
@@ -28,14 +27,16 @@ import {
   tone,
   util,
 } from '../src/ui'
-import { A } from '../src/components/Chrome'
 import { LinkBtn } from '../src/components/LinkBtn'
-import { Layers } from '../src/components/Layers'
-import { SpanBenchmark } from '../src/components/SpanBenchmark'
+import { InstallCommand } from '../src/components/InstallCommand'
+import { Showcase } from '../src/components/Showcase'
+import { ComponentGallery } from '../src/components/ComponentGallery'
 import { heroMotion } from '../src/heroMotion.stylex'
 
 export const metadata: Metadata = {
-  title: 'gpu-components — GPU components that share one device',
+  title: 'gpu-components — data surfaces that do not fall over',
+  description:
+    'A WebGPU runtime and component registry for the data surfaces that break DOM and Canvas2D — timelines, grids, heatmaps, scatter plots. One device, one frame, one submit.',
 }
 
 /** Inlined rather than shared — see `src/ui.tsx`'s equivalent comment. */
@@ -50,110 +51,205 @@ const s = stylex.create({
     borderBottomStyle: 'solid',
     borderBottomColor: color.border,
   },
-  glow: {
+  /**
+   * The hero's ground. Two accent radial glows lived here when the site was dark; on white a glow
+   * has nothing to glow against and read as a smudge, so the depth comes from a drawn grid instead
+   * — which also happens to be the right motif for a library about canvases and data surfaces.
+   *
+   * Two 1px hairlines repeated on a 32px pitch, faded out with a radial mask so the field has no
+   * edge to it. `background-size` sets the pitch; `mask-image` does all the shaping.
+   */
+  grid: {
     position: 'absolute',
     insetInline: 0,
-    insetBlockStart: '-40%',
-    height: 620,
+    insetBlockStart: 0,
+    height: 560,
     pointerEvents: 'none',
     backgroundImage: [
-      `radial-gradient(ellipse 58% 48% at 50% 0%, color-mix(in srgb, ${color.accent} 20%, transparent), transparent 68%)`,
-      `radial-gradient(ellipse 42% 36% at 72% 18%, color-mix(in srgb, ${color.mint} 9%, transparent), transparent 72%)`,
+      `linear-gradient(to right, ${color.border} 1px, transparent 1px)`,
+      `linear-gradient(to bottom, ${color.border} 1px, transparent 1px)`,
     ].join(', '),
+    backgroundSize: '32px 32px',
+    maskImage: 'radial-gradient(ellipse 72% 62% at 50% 12%, #000 0%, transparent 72%)',
+    WebkitMaskImage: 'radial-gradient(ellipse 72% 62% at 50% 12%, #000 0%, transparent 72%)',
+    opacity: 0.85,
   },
-  heroInner: { position: 'relative' },
-  heroGrid: {
-    display: 'grid',
-    gridTemplateColumns: {
-      default: 'minmax(0, 1.05fr) minmax(0, 0.95fr)',
-      [HERO]: 'minmax(0, 1fr)',
-    },
-    gap: { default: 48, [HERO]: 36 },
-    alignItems: 'center',
-  },
+  heroInner: { position: 'relative', maxWidth: 780 },
   heroCta: { gap: 10 },
-  runtime: {
+  install: { maxWidth: 520 },
+  delay80: { animationDelay: '80ms' },
+  delay160: { animationDelay: '160ms' },
+  delay240: { animationDelay: '240ms' },
+  delay320: { animationDelay: '320ms' },
+  delay400: { animationDelay: '400ms' },
+
+  stats: {
+    display: 'grid',
+    gridTemplateColumns: { default: 'repeat(3, minmax(0, 1fr))', [HERO]: 'minmax(0, 1fr)' },
+    gap: 16,
+  },
+  stat: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    padding: '20px 22px',
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: color.border,
+    borderRadius: radius.lg,
+  },
+  statValue: {
+    fontFamily: font.mono,
+    fontSize: 'clamp(24px, 3vw, 30px)',
+    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: '-0.02em',
+    color: color.text,
+  },
+  statLabel: { fontSize: 14, lineHeight: 1.5, color: color.textDim },
+
+  kicker: {
+    fontSize: 'clamp(17px, 1.7vw, 20px)',
+    lineHeight: 1.5,
+    letterSpacing: '-0.015em',
+    color: color.text,
+    fontWeight: 560,
+    maxWidth: '60ch',
+  },
+
+  split: {
     display: 'grid',
     gridTemplateColumns: { default: 'minmax(0, 1fr) minmax(0, 1fr)', [HERO]: 'minmax(0, 1fr)' },
     gap: 24,
     alignItems: 'stretch',
   },
-  runtimeList: { display: 'flex', flexDirection: 'column', justifyContent: 'center' },
-  delay80: { animationDelay: '80ms' },
-  delay160: { animationDelay: '160ms' },
-  delay240: { animationDelay: '240ms' },
-  delay320: { animationDelay: '320ms' },
+  listCard: { display: 'flex', flexDirection: 'column', justifyContent: 'center' },
+
+  antiSell: {
+    padding: '30px 28px',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: `color-mix(in srgb, ${color.amber} 32%, ${color.border})`,
+    borderRadius: radius.lg,
+    backgroundColor: `color-mix(in srgb, ${color.amber} 6%, ${color.surface})`,
+  },
   ctaBand: {
-    padding: '28px 26px',
+    padding: '30px 28px',
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: `color-mix(in srgb, ${color.accent} 28%, ${color.border})`,
-    borderRadius: '10px',
+    borderRadius: radius.lg,
     backgroundColor: `color-mix(in srgb, ${color.accent} 5%, ${color.surface})`,
   },
 })
+
+/**
+ * Figures on this page trace to something that exists: both ceilings are the numbers `/why-gpu`
+ * already publishes, and the draw-call figure is what `GPUScatter` actually does. The crossover in
+ * the anti-sell section below is deliberately named without a number — it is still a hypothesis in
+ * `PLAN.md`, and `PRODUCT.md` forbids printing one the harness has not produced.
+ */
+const CEILINGS: Array<[string, string]> = [
+  ['~5,000', 'DOM nodes one frame can touch'],
+  ['~50,000', 'Canvas2D fillRects at 60fps'],
+  ['1', 'draw call, for 250,000 scatter points'],
+]
 
 function Home() {
   return (
     <>
       <section {...stylex.props(s.hero)}>
-        <div {...stylex.props(s.glow, heroMotion.glowIn)} aria-hidden="true" />
-        <Wrap sx={s.heroInner}>
-          <div {...stylex.props(s.heroGrid)}>
-            <Stack gap={24}>
-              <Row sx={[heroMotion.rise, s.delay80]}>
-                <Status state="live">Runtime & playground live · pre-1.0</Status>
-              </Row>
-              <H1 sx={[heroMotion.rise, s.delay160]}>
-                GPU components that
-                <br />
-                <span {...stylex.props(tone.accent)}>share one device.</span>
-              </H1>
-              <Lead sx={[heroMotion.rise, s.delay240]}>
-                A framework-independent WebGPU runtime for application components, built on{' '}
-                <A href="https://vgpu.sh">vgpu</A>.{' '}
-                <span {...stylex.props(tone.accent)}>One device, one frame, one submit</span> — across
-                every component on the page.
-              </Lead>
-              <Row sx={[s.heroCta, heroMotion.rise, s.delay320]}>
-                <LinkBtn to="/playground" primary>
-                  Try the playground
-                </LinkBtn>
-                <LinkBtn to="/architecture">Read the architecture</LinkBtn>
-              </Row>
+        <div {...stylex.props(s.grid, heroMotion.glowIn)} aria-hidden="true" />
+        <Wrap>
+          <Stack gap={24} sx={s.heroInner}>
+            <Row sx={[heroMotion.rise, s.delay80]}>
+              <Status state="live">Runtime and 17 components live · pre-1.0</Status>
+            </Row>
+            {/*
+              * No explicit <br/>: the hard break left "nodes." stranded on a line of its own at
+              * desktop width. `text-wrap: balance` on H1 distributes the two sentences evenly at
+              * whatever measure the viewport gives, which is what the break was trying to do by
+              * hand.
+              */}
+            <H1 sx={[heroMotion.rise, s.delay160]}>
+              Your interface has a ceiling.{' '}
+              <span {...stylex.props(tone.accent)}>It is about five thousand nodes.</span>
+            </H1>
+            <Lead sx={[heroMotion.rise, s.delay240]}>
+              gpu-components is a WebGPU runtime and a component registry for the surfaces that hit
+              it — timelines, grids, heatmaps, scatter plots, trace views. Copy the component source
+              into your repo. The runtime stays a versioned dependency.
+            </Lead>
+            <Row sx={[s.heroCta, heroMotion.rise, s.delay320]}>
+              <LinkBtn to="/playground" primary>
+                Try the playground
+              </LinkBtn>
+              <LinkBtn to="/start">Get started</LinkBtn>
+            </Row>
+            <Stack gap={8} sx={[s.install, heroMotion.rise, s.delay400]}>
+              <InstallCommand
+                command="npx gpu-components add timeline"
+                label="the install command"
+              />
+              <Small>
+                Nothing is on npm yet. The install surface is published early so it can be argued
+                with while changing it is cheap.
+              </Small>
             </Stack>
-
-            <Layers />
-          </div>
+          </Stack>
         </Wrap>
       </section>
 
-      <Section title="Built for the surfaces that fall over.">
+      <Section title="Every dense UI dies the same way.">
+        <Stack gap={28}>
+          <Body>
+            You ship it in DOM. It is fine at a thousand rows. At five thousand the frame budget is
+            gone — that is roughly the ceiling on primitives one JS frame can issue. So you rewrite
+            it in Canvas2D and buy an order of magnitude: about fifty thousand <C>fillRect</C>s at
+            60fps. Then the dataset grows again.
+          </Body>
+          <div {...stylex.props(s.stats)}>
+            {CEILINGS.map(([value, label]) => (
+              <div key={label} {...stylex.props(s.stat)}>
+                <span {...stylex.props(s.statValue)}>{value}</span>
+                <span {...stylex.props(s.statLabel)}>{label}</span>
+              </div>
+            ))}
+          </div>
+          <p {...stylex.props(s.kicker)}>
+            The third rewrite is the one nobody budgets for. That is the one this library is.
+          </p>
+        </Stack>
+      </Section>
+
+      <Section
+        title="Zoom is a uniform write, not a re-render."
+        lead="A CPU pipeline re-walks the whole dataset on every pan, zoom, filter and brush. A GPU pipeline uploads it once. After that, interaction changes a few dozen bytes of uniform and the frame redraws from data that never moved — the dataset stopped being in the interaction path."
+      >
         <Grid cols={3}>
           <Card>
             <Stack gap={8}>
-              <H3 sm>Trace and profile viewers</H3>
+              <H3 sm>Per-element work runs on the hardware built for it</H3>
               <Body sm>
-                A request trace with 200,000 spans, where zooming out means every span is on
-                screen at once.
+                Colour mapping, normalisation, thresholding, LOD binning, min/max reduction —
+                data-parallel work, run data-parallel.
               </Body>
             </Stack>
           </Card>
           <Card>
             <Stack gap={8}>
-              <H3 sm>Observability dashboards</H3>
+              <H3 sm>Selection is a bitset the shader branches on</H3>
               <Body sm>
-                Six panels mounted at once, each wanting its own canvas, each dropping frames when
-                the others animate.
+                Brushing a hundred thousand spans does not mean touching a hundred thousand objects.
               </Body>
             </Stack>
           </Card>
           <Card>
             <Stack gap={8}>
-              <H3 sm>Dense data surfaces</H3>
+              <H3 sm>Compute lives in the data path, not beside it</H3>
               <Body sm>
-                Grids, heatmaps and scatter plots past the point where one CPU frame can touch
-                every element.
+                Indirect dispatch and storage-buffer-driven vertex work are the durable WebGPU
+                advantages. Fill rate is not.
               </Body>
             </Stack>
           </Card>
@@ -161,86 +257,122 @@ function Home() {
       </Section>
 
       <Section
-        id="ceiling"
-        title="Where DOM and Canvas2D actually break."
-        lead="Drag the slider and switch renderers. These numbers come from your machine — not from us."
+        title="Six GPU panels on a page means six GPU devices. That is the bug we started from."
+        lead="Chart libraries already exist, and WebGPU charting already shipped. What does not exist is one shared runtime underneath heterogeneous components — a timeline, a heatmap, a grid and a scatter plot on the same page, through one device, one frame loop, one submit."
       >
-        <Stack gap={24}>
-          <SpanBenchmark />
-          <Notice variant="amber">
-            <B>Read the numbers in context.</B> Canvas2D here is the optimised path — spans are
-            pre-grouped by colour. DOM is capped at 20,000 nodes. The WebGPU row runs{' '}
-            <C>GPUTimeline</C> through the same runtime as the playground; published harness
-            baselines replace these when they exist, and anything not yet measured stays labelled{' '}
-            <span {...stylex.props(util.monoSm, tone.amber)}>target</span>.
-          </Notice>
+        <Stack gap={28}>
+          <Showcase />
+          <div {...stylex.props(s.split)}>
+            <Code file="app.tsx">
+              {k('import')} {'{ GPUProvider }'} {k('from')} {str("'@gpu-components/react'")}
+              {'\n'}
+              {k('import')} {'{ GPUTimeline }'} {k('from')} {str("'@/components/gpu/timeline'")}
+              {'\n\n'}
+              {c('// One init() → one Gpu → one GPUDevice, shared by every child.')}
+              {'\n'}
+              {'<'}
+              {fn('GPUProvider')}
+              {'>'}
+              {'\n  <'}
+              {fn('GPUTimeline')} spans={'{spans}'} tracks={'{tracks}'} {'/>'}
+              {'\n  <'}
+              {fn('GPUHeatmap')} data={'{matrix}'} {'/>'}
+              {'\n'}
+              {'</'}
+              {fn('GPUProvider')}
+              {'>'}
+            </Code>
+            <Card lg sx={s.listCard}>
+              <List>
+                <LI bulletTone="accent">
+                  <B>One command buffer per tick.</B> Every mounted component&rsquo;s passes land in
+                  a single <C>frame()</C>, compute before render.
+                </LI>
+                <LI bulletTone="mint">
+                  <B>Shared caches.</B> Pipelines, samplers, colormaps and transient uniforms exist
+                  once, not once per component.
+                </LI>
+                <LI bulletTone="amber">
+                  <B>React never owns GPU state.</B> Render state lives in refs and GPU buffers;
+                  React state is for semantics — selected ids, labels, the accessibility tree.
+                </LI>
+              </List>
+            </Card>
+          </div>
         </Stack>
       </Section>
 
       <Section
-        title="Nobody is building the shared runtime."
-        lead="Chart libraries already exist. What does not exist is one shared runtime for timelines, heatmaps, grids and graphs on the same page — with compute in the data path and accessibility built in, not bolted on."
+        title="You own the component. We own the plumbing."
+        lead="The runtime is infrastructure nobody wants to fork and everybody wants patched — device management, scheduling, leak fixes, device-loss handling. The component is policy: colours, LOD thresholds, label rules, interaction feel, shaders. That is exactly what teams need to change and what a props API can never anticipate."
       >
-        <div {...stylex.props(s.runtime)}>
-          <Code file="app.tsx">
-            {k('import')} {'{ GPUProvider }'} {k('from')} {str("'@gpu-components/react'")}
-            {'\n'}
-            {k('import')} {'{ GPUTimeline }'} {k('from')} {str("'@/components/gpu/timeline'")}
-            {'\n\n'}
-            {c('// One init() → one Gpu → one GPUDevice, shared by every child.')}
-            {'\n'}
-            {'<'}
-            {fn('GPUProvider')}
-            {'>'}
-            {'\n  <'}
-            {fn('GPUTimeline')} spans={'{spans}'} tracks={'{tracks}'} {'/>'}
-            {'\n  <'}
-            {fn('GPUHeatmap')} data={'{matrix}'} {'/>'}
-            {'\n'}
-            {'</'}
-            {fn('GPUProvider')}
-            {'>'}
-          </Code>
+        <Stack gap={20}>
+          <div {...stylex.props(s.split)}>
+            <Stack gap={10}>
+              <InstallCommand
+                command="npm i @gpu-components/core @gpu-components/react"
+                label="the runtime install command"
+              />
+              <Small>Versioned, upgradeable, not yours to fork.</Small>
+            </Stack>
+            <Stack gap={10}>
+              <InstallCommand
+                command="npx gpu-components add timeline"
+                label="the component install command"
+              />
+              <Small>Copied into your repo, yours to edit.</Small>
+            </Stack>
+          </div>
+          <p {...stylex.props(s.kicker)}>
+            No <C>shader</C> prop. No <C>renderer</C> prop. No <C>uniforms</C> prop. Extensibility
+            comes from owning the source, not from an escape hatch.
+          </p>
+        </Stack>
+      </Section>
 
-          <Card lg sx={s.runtimeList}>
-            <List>
-              <LI bulletTone="accent">
-                <B>One command buffer per tick.</B> Every mounted component’s passes land in a single{' '}
-                <C>frame()</C>, compute before render.
-              </LI>
-              <LI bulletTone="mint">
-                <B>Shared caches.</B> Pipelines, samplers, colormaps, and transient uniforms — not one
-                set per component.
-              </LI>
-              <LI bulletTone="amber">
-                <B>Honest fallbacks.</B> Every component documents when not to use GPU, with measured
-                crossover numbers. See <LinkBtn to="/why-gpu">Why GPU</LinkBtn> and the{' '}
-                <LinkBtn to="/components">component matrix</LinkBtn>.
-              </LI>
-            </List>
-          </Card>
+      <Section flush>
+        <div {...stylex.props(s.antiSell)}>
+          <Stack gap={16}>
+            <H2>Below the crossover, this library is slower than what you already have.</H2>
+            <Body>
+              Upload cost and pipeline overhead dominate at small N. Every component ships a section
+              titled &ldquo;When NOT to use this&rdquo;, with the measured crossover number and a
+              recommendation for what to use instead. Canvas2D is better than most people assume: a
+              canvas grid already scrolls millions of rows at 60fps today, and anyone selling you a
+              GPU grid on scroll performance is selling you something you already have.
+            </Body>
+            <Small sx={util.wide}>
+              We publish the comparison whether or not it flatters us. Anything not yet measured on
+              the harness carries a <span {...stylex.props(util.monoSm, tone.amber)}>target</span>{' '}
+              label, on every page.
+            </Small>
+            <Row sx={s.heroCta}>
+              <LinkBtn to="/why-gpu">Read the six-question gate</LinkBtn>
+              <LinkBtn to="/components">See the scoring</LinkBtn>
+            </Row>
+          </Stack>
         </div>
+      </Section>
+
+      <Section title="Seventeen components. Every one of them runs live in your browser.">
+        <ComponentGallery />
       </Section>
 
       <Section flush>
         <div {...stylex.props(s.ctaBand)}>
           <Stack gap={16}>
-            <H2>Try it, then decide.</H2>
+            <H2>Do not take the claim. Run it.</H2>
             <Body>
-              The playground runs seventeen components live in your browser. Architecture, distribution,
-              and the full candidate scoring live on their own pages when you need the detail.
+              The playground runs every component live, on your GPU, on your machine. Architecture,
+              the scoring matrix, and the full &ldquo;why not&rdquo; live on their own pages when you
+              want the detail.
             </Body>
             <Row sx={s.heroCta}>
               <LinkBtn to="/playground" primary>
                 Open the playground
               </LinkBtn>
-              <LinkBtn to="/start">Get started</LinkBtn>
+              <LinkBtn to="/architecture">Read the architecture</LinkBtn>
             </Row>
-            <Small sx={util.narrow}>
-              Benchmark numbers on this page are measured here, in your browser. Anything not yet
-              measured carries a <span {...stylex.props(util.monoSm, tone.amber)}>target</span>{' '}
-              label.
-            </Small>
           </Stack>
         </div>
       </Section>

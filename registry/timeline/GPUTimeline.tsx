@@ -470,8 +470,8 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
             top: trackToPixelY(viewport, brushRect.trackMin) - trackRowHeight(viewport) / 2,
             width: timeToPixelX(viewport, brushRect.timeEnd) - timeToPixelX(viewport, brushRect.timeStart),
             height: trackRowHeight(viewport) * (brushRect.trackMax - brushRect.trackMin + 1),
-            border: "1px solid rgba(255, 255, 255, 0.8)",
-            background: "rgba(255, 255, 255, 0.12)",
+            border: "1px solid rgba(13, 15, 20, 0.55)",
+            background: "rgba(13, 15, 20, 0.10)",
             pointerEvents: "none",
             boxSizing: "border-box",
           }}

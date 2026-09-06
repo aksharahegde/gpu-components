@@ -1,4 +1,4 @@
-import { init, initFromDevice, uniforms, type Gpu, type SharedUniforms, type SurfaceOptions } from "vgpu";
+import { init, initFromDevice, uniforms, type ClearColor, type Gpu, type SharedUniforms, type SurfaceOptions } from "vgpu";
 import { NO_WEBGPU_CAPABILITIES, probeCapabilities, supportedFeatures, type Capabilities } from "./capabilities.ts";
 import type { ComponentContext, GpuComponent, RuntimeHandle } from "./component.ts";
 import { createProfiler, DISABLED_PROFILER, type Profiler } from "./profiler.ts";
@@ -16,6 +16,15 @@ export interface GpuRuntimeOptions {
   /** Requests `timestamp-query` if the probed adapter actually supports it. Ignored when `adopt` is set. */
   readonly profiling?: boolean;
   readonly fps?: number;
+  /**
+   * Default clear color for every surface this runtime registers, as vgpu's `[r, g, b, a]` in the
+   * 0–1 range. A component's own `surfaceOpts.clearColor` still wins.
+   *
+   * Left unset, vgpu clears to opaque black — which is invisible against a dark page and a hard
+   * black slab against a light one. Since one runtime owns every canvas on the page, this is the
+   * one place a host can say "GPU surfaces are this colour" and have every component agree.
+   */
+  readonly clearColor?: ClearColor;
   readonly onDeviceLost?: (info: GPUDeviceLostInfo) => void;
   readonly onRecovered?: () => void;
   /** Test-only: overrides how `create()` gets its `Gpu` + `Capabilities`, bypassing the browser
@@ -236,7 +245,14 @@ export class GpuRuntime implements RuntimeHandle {
     }
     const existing = this.surfaces.get(canvas);
     if (existing) return existing;
-    const handle = new SurfaceHandle(this.gpuRef, canvas, opts);
+    // Runtime-wide default, overridable per surface. Coalesced rather than spread-ordered: an
+    // `opts` that carries an explicit `clearColor: undefined` key would clobber the default under
+    // `{ clearColor: default, ...opts }`, since spreading copies present-but-undefined keys.
+    const merged: SurfaceOptions | undefined =
+      this.options.clearColor === undefined
+        ? opts
+        : { ...opts, clearColor: opts?.clearColor ?? this.options.clearColor };
+    const handle = new SurfaceHandle(this.gpuRef, canvas, merged);
     this.surfaces.set(canvas, handle);
     return handle;
   }
@@ -269,6 +285,19 @@ export class GpuRuntime implements RuntimeHandle {
   /** PLAN.md §10.1/§10.7 — GPU timing + frame stats. `DISABLED_PROFILER` (not an error) when
    * `caps.webgpu` is false or transiently while recovering from device loss, matching `gpu`'s own
    * null-during-recovery contract. */
+  /**
+   * How many components are mounted on this runtime right now.
+   *
+   * Distinct from `profiler.lastFrame.componentCount`, which counts only the components that were
+   * *dirty or animating* on the last tick — a settled component is skipped entirely, and a tick
+   * with nothing to do returns before recording a frame at all. Callers that want "how many
+   * components does this one device serve" want this; callers that want "how much work did the
+   * last frame actually do" want the profiler.
+   */
+  get mountedCount(): number {
+    return this.scheduler?.mountedCount ?? 0;
+  }
+
   get profiler(): Profiler {
     return this.scheduler?.profiler ?? DISABLED_PROFILER;
   }
