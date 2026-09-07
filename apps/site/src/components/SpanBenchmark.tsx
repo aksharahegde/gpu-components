@@ -30,7 +30,7 @@ const DOM_CAP = 20_000
 /* The same six categorical hues the registry shaders use (see `registry/timeline/timeline.wgsl.ts`
  * `PALETTE`), in hex. Both palettes exist because one is WGSL and one is Canvas2D/DOM, but a span
  * has to look like a span whichever renderer drew it — that comparison is the whole point here. */
-const COLORS = ['#3d4fd6', '#0e7c58', '#a9660c', '#c02b2b', '#0f7490', '#6d28d9']
+const COLORS = ['#0077b6', '#0e7c58', '#a9660c', '#c02b2b', '#03045e', '#6d28d9']
 
 /** Deterministic PRNG so every visitor benchmarks the identical dataset. */
 function mulberry32(seed: number) {

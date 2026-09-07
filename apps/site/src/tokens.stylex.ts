@@ -24,22 +24,27 @@ export const color = stylex.defineVars({
   // Pure white page. Structure comes from hairline borders and type weight,
   // not from a grey wash — every grey added here is contrast taken away from
   // the GPU canvases, which are the reason anyone is on the page.
+  //
+  // The chromatic scale is the ocean-blue Coolors ramp
+  // (03045e → 023e8a → 0077b6 → … → caf0f8): #0077b6 is the accent (4.9:1 on
+  // white), the navy ends carry ink and hover, and the cyan tints cool the
+  // neutrals. No periwinkle/indigo anywhere.
   bg: '#ffffff',
-  bgRaised: '#fbfbfc',
+  bgRaised: '#f7fbfd',
   surface: '#ffffff',
-  surface2: '#f4f5f7',
-  border: '#e8e9ed',
-  borderStrong: '#d6d8de',
-  borderHover: '#b9bcc6',
+  surface2: '#e8f4f9',
+  border: '#d6e9f2',
+  borderStrong: '#b9d8e7',
+  borderHover: '#8fc0d8',
 
-  text: '#0d0f14',
-  textDim: '#5a6070',
-  textFaint: '#6a7080',
+  text: '#03045e',
+  textDim: '#37476b',
+  textFaint: '#4f6078',
 
-  accent: '#3d4fd6',
-  accentHover: '#2f40c4',
-  // Tints and status dots only — 2.3:1, never legal as text.
-  accentDim: '#a8b1f0',
+  accent: '#0077b6',
+  accentHover: '#023e8a',
+  // Tints and status dots only — 1.4:1, never legal as text.
+  accentDim: '#90e0ef',
   onAccent: '#ffffff',
 
   mint: '#0e7c58',
@@ -48,10 +53,10 @@ export const color = stylex.defineVars({
 
   // Code sample tokens.
   codeText: '#1f2430',
-  codeComment: '#6a7080',
+  codeComment: '#4f6078',
   codeKeyword: '#6d28d9',
   codeString: '#0f7a51',
-  codeFn: '#1d4ed8',
+  codeFn: '#0077b6',
   codeNum: '#92590a',
   codeInline: '#2b3140',
 })

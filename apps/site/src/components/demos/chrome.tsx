@@ -18,7 +18,7 @@ import { color, font, radius, shadow } from '../../tokens.stylex'
  * provider warns if its `options` identity changes after its runtime exists, and `clearColor` is a
  * page-wide decision rather than a per-component one.
  *
- * `clearColor` is vgpu's `[r, g, b, a]` in 0-1. It is `color.bgRaised` (#fbfbfc) — the same colour
+ * `clearColor` is vgpu's `[r, g, b, a]` in 0-1. It is `color.bgRaised` (#f7fbfd) — the same colour
  * `s.stage` paints behind the canvas — so a GPU surface is indistinguishable from its container
  * instead of clearing to vgpu's default opaque black. The channel values are raw sRGB because the
  * preferred canvas format is non-`-srgb`, which is also the space the components' WGSL colour
@@ -26,7 +26,7 @@ import { color, font, radius, shadow } from '../../tokens.stylex'
  */
 export const PROVIDER_OPTIONS = {
   profiling: true,
-  clearColor: [251 / 255, 251 / 255, 252 / 255, 1],
+  clearColor: [247 / 255, 251 / 255, 253 / 255, 1],
 } as const satisfies GpuRuntimeOptions
 
 /** Deterministic PRNG, so every visitor sees the identical dataset. */

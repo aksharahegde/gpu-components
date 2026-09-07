@@ -204,7 +204,7 @@ export function LabelOverlay(props: LabelOverlayProps): ReactElement {
             paddingLeft: 4,
             boxSizing: "border-box",
             pointerEvents: "none",
-            outline: label.focused ? "2px solid #8b9dff" : undefined,
+            outline: label.focused ? "2px solid #0077b6" : undefined,
             outlineOffset: label.focused ? 1 : undefined,
             ...props.style,
           } satisfies CSSProperties,

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     type: 'website',
   },
   icons: {
-    icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ffffff'/%3E%3Crect x='6' y='9' width='20' height='3' rx='1.5' fill='%233d4fd6'/%3E%3Crect x='6' y='14.5' width='13' height='3' rx='1.5' fill='%230e7c58'/%3E%3Crect x='6' y='20' width='17' height='3' rx='1.5' fill='%233d4fd6' opacity='.45'/%3E%3C/svg%3E",
+    icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ffffff'/%3E%3Crect x='6' y='9' width='20' height='3' rx='1.5' fill='%230077b6'/%3E%3Crect x='6' y='14.5' width='13' height='3' rx='1.5' fill='%230e7c58'/%3E%3Crect x='6' y='20' width='17' height='3' rx='1.5' fill='%230077b6' opacity='.45'/%3E%3C/svg%3E",
   },
 }
 
