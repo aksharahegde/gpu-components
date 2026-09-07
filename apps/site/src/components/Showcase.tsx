@@ -2,23 +2,25 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import * as stylex from '@stylexjs/stylex'
-import { GPUProvider, useGpu } from '@gpu-components/react'
+import { useGpu } from '@gpu-components/react'
 import type { ViewportState } from '@gpu-components/core'
 import { GPUTimeline, ingestSpans, type RawSpan } from '../../../../registry/timeline'
 import { GPUScatter, ingestColumns } from '../../../../registry/scatter'
 import { GPUHeatmap, ingestMatrix } from '../../../../registry/heatmap'
 import { GPUDataGrid, ingestRows, type GridColumn } from '../../../../registry/grid'
-import { PROVIDER_OPTIONS, mulberry32, useMeasuredStage } from './demos/chrome'
+import { mulberry32, useMeasuredStage } from './demos/chrome'
 import { color, font, radius, shadow } from '../tokens.stylex'
 
 /**
- * Four components, one `<GPUProvider>` — the landing page's central claim, rendered rather than
+ * Four components, one shared runtime — the landing page's central claim, rendered rather than
  * asserted.
  *
  * Two things make this different from a playground page. First, every demo under `demos/` wraps
  * its *own* provider, because one page there shows one component; mounting four of those here
  * would create four devices and demonstrate the opposite of the point. These stages are therefore
- * written against the registry components directly and share the single provider below.
+ * written against the registry components directly and share the landing page's single provider —
+ * `LandingGpu` in `HeroStage.tsx` — so the whole page is one `GPUDevice`. (That makes this
+ * component landing-page-only by construction: it assumes a `<GPUProvider>` above it.)
  *
  * Second, the caption is derived, not written, so the figure on screen cannot drift from the truth
  * the way a hard-coded "four components, one device" would. That mattered immediately: the first
@@ -28,11 +30,7 @@ import { color, font, radius, shadow } from '../tokens.stylex'
  * numbers and says which is which.
  */
 export function Showcase() {
-  return (
-    <GPUProvider options={PROVIDER_OPTIONS}>
-      <ShowcaseBody />
-    </GPUProvider>
-  )
+  return <ShowcaseBody />
 }
 
 function ShowcaseBody() {

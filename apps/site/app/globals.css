@@ -209,6 +209,17 @@ table {
   }
 }
 
+/* The one miniature that keeps moving — GPUGraph, "the only one that animates". A few pixels of
+ * slow drift on the sketch group; SVG transform, composited, no layout. */
+@keyframes hero-graph-drift {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(2.5px, -2px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

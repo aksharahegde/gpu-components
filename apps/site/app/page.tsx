@@ -31,6 +31,7 @@ import { LinkBtn } from '../src/components/LinkBtn'
 import { InstallCommand } from '../src/components/InstallCommand'
 import { Showcase } from '../src/components/Showcase'
 import { ComponentGallery } from '../src/components/ComponentGallery'
+import { HeroStage, LandingGpu } from '../src/components/HeroStage'
 import { heroMotion } from '../src/heroMotion.stylex'
 
 export const metadata: Metadata = {
@@ -43,45 +44,34 @@ export const metadata: Metadata = {
 const HERO = '@media (max-width: 940px)'
 
 const s = stylex.create({
+  /**
+   * `overflow: hidden` is load-bearing: the hero stage deliberately runs past the right viewport
+   * edge (see `HeroStage`'s stage comment), and this is what clips the overhang so the page never
+   * gains a horizontal scrollbar.
+   */
   hero: {
     position: 'relative',
-    paddingBlock: '92px 76px',
+    paddingBlock: '76px 64px',
     overflow: 'hidden',
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: color.border,
   },
   /**
-   * The hero's ground. Two accent radial glows lived here when the site was dark; on white a glow
-   * has nothing to glow against and read as a smudge, so the depth comes from a drawn grid instead
-   * — which also happens to be the right motif for a library about canvases and data surfaces.
-   *
-   * Two 1px hairlines repeated on a 32px pitch, faded out with a radial mask so the field has no
-   * edge to it. `background-size` sets the pitch; `mask-image` does all the shaping.
+   * The drawn-grid backdrop that lived here was decoration gesturing at "canvas"; the live render
+   * on the right is the canvas, so the backdrop went. Text left, GPU surface right — the surface
+   * column is slightly narrower because the headline is the argument and the render is the
+   * evidence, not the other way round.
    */
-  grid: {
-    position: 'absolute',
-    insetInline: 0,
-    insetBlockStart: 0,
-    height: 560,
-    pointerEvents: 'none',
-    backgroundImage: [
-      `linear-gradient(to right, ${color.border} 1px, transparent 1px)`,
-      `linear-gradient(to bottom, ${color.border} 1px, transparent 1px)`,
-    ].join(', '),
-    backgroundSize: '32px 32px',
-    maskImage: 'radial-gradient(ellipse 72% 62% at 50% 12%, #000 0%, transparent 72%)',
-    WebkitMaskImage: 'radial-gradient(ellipse 72% 62% at 50% 12%, #000 0%, transparent 72%)',
-    opacity: 0.85,
+  heroGrid: {
+    display: 'grid',
+    gridTemplateColumns: { default: 'minmax(0, 11fr) minmax(0, 9fr)', [HERO]: 'minmax(0, 1fr)' },
+    gap: { default: 48, [HERO]: 36 },
+    alignItems: 'center',
   },
-  heroInner: { position: 'relative', maxWidth: 780 },
+  heroText: { minWidth: 0 },
   heroCta: { gap: 10 },
   install: { maxWidth: 520 },
-  delay80: { animationDelay: '80ms' },
-  delay160: { animationDelay: '160ms' },
-  delay240: { animationDelay: '240ms' },
-  delay320: { animationDelay: '320ms' },
-  delay400: { animationDelay: '400ms' },
 
   stats: {
     display: 'grid',
@@ -157,46 +147,53 @@ const CEILINGS: Array<[string, string]> = [
 
 function Home() {
   return (
-    <>
+    <LandingGpu>
       <section {...stylex.props(s.hero)}>
-        <div {...stylex.props(s.grid, heroMotion.glowIn)} aria-hidden="true" />
         <Wrap>
-          <Stack gap={24} sx={s.heroInner}>
-            <Row sx={[heroMotion.rise, s.delay80]}>
-              <Status state="live">Runtime and 17 components live · pre-1.0</Status>
-            </Row>
+          <div {...stylex.props(s.heroGrid)}>
             {/*
-              * No explicit <br/>: the hard break left "nodes." stranded on a line of its own at
-              * desktop width. `text-wrap: balance` on H1 distributes the two sentences evenly at
-              * whatever measure the viewport gives, which is what the break was trying to do by
-              * hand.
+              * One rise for the whole text block, not five staggered ones: the second thing to
+              * appear should be the render resolving on the right, and a five-step cascade was
+              * spending the viewer's first second on choreography instead.
               */}
-            <H1 sx={[heroMotion.rise, s.delay160]}>
-              Your interface has a ceiling.{' '}
-              <span {...stylex.props(tone.accent)}>It is about five thousand nodes.</span>
-            </H1>
-            <Lead sx={[heroMotion.rise, s.delay240]}>
-              gpu-components is a WebGPU runtime and a component registry for the surfaces that hit
-              it — timelines, grids, heatmaps, scatter plots, trace views. Copy the component source
-              into your repo. The runtime stays a versioned dependency.
-            </Lead>
-            <Row sx={[s.heroCta, heroMotion.rise, s.delay320]}>
-              <LinkBtn to="/playground" primary>
-                Try the playground
-              </LinkBtn>
-              <LinkBtn to="/start">Get started</LinkBtn>
-            </Row>
-            <Stack gap={8} sx={[s.install, heroMotion.rise, s.delay400]}>
-              <InstallCommand
-                command="npx gpu-components add timeline"
-                label="the install command"
-              />
-              <Small>
-                Nothing is on npm yet. The install surface is published early so it can be argued
-                with while changing it is cheap.
-              </Small>
+            <Stack gap={24} sx={[s.heroText, heroMotion.rise]}>
+              <Row>
+                <Status state="live">Runtime and 17 components live · pre-1.0</Status>
+              </Row>
+              {/*
+                * No explicit <br/>: the hard break left "nodes." stranded on a line of its own at
+                * desktop width. `text-wrap: balance` on H1 distributes the two sentences evenly at
+                * whatever measure the viewport gives, which is what the break was trying to do by
+                * hand.
+                */}
+              <H1>
+                Your interface has a ceiling.{' '}
+                <span {...stylex.props(tone.accent)}>It is about five thousand nodes.</span>
+              </H1>
+              <Lead>
+                gpu-components is a WebGPU runtime and a component registry for the surfaces that
+                hit it — timelines, grids, heatmaps, scatter plots, trace views.
+              </Lead>
+              <Row sx={s.heroCta}>
+                <LinkBtn to="/playground" primary>
+                  Try the playground
+                </LinkBtn>
+                <LinkBtn to="/start">Get started</LinkBtn>
+              </Row>
+              <Stack gap={8} sx={s.install}>
+                <InstallCommand
+                  command="npx gpu-components add timeline"
+                  label="the install command"
+                />
+                <Small>
+                  The component is copied into your repo, yours to edit; the runtime stays a
+                  versioned dependency. Nothing is on npm yet — the install surface is published
+                  early so it can be argued with while changing it is cheap.
+                </Small>
+              </Stack>
             </Stack>
-          </Stack>
+            <HeroStage />
+          </div>
         </Wrap>
       </section>
 
@@ -376,7 +373,7 @@ function Home() {
           </Stack>
         </div>
       </Section>
-    </>
+    </LandingGpu>
   )
 }
 
