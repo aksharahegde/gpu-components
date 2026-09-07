@@ -12,6 +12,15 @@
 # references are <a href> links to vgpu.sh, which are navigations and need no
 # CSP allowance.
 
+# The Open Graph cards export as extensionless files (`/opengraph-image`,
+# `/<page>/opengraph-image`), which Pages would otherwise serve as
+# application/octet-stream — enough for og:image:type-reading crawlers, but
+# WhatsApp/Telegram-class scrapers refuse previews without a real image type.
+/opengraph-image
+  Content-Type: image/png
+/*/opengraph-image
+  Content-Type: image/png
+
 /*
   Content-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
