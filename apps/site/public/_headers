@@ -7,7 +7,8 @@
 # Verified against a real build of this site: 25 HTML pages, 35 script chunks,
 # zero inline <style> blocks, two self-hosted woff2 faces (Geist, Geist Mono,
 # emitted by next/font under /_next/static/media/ and covered by font-src
-# 'self'), no images, no fetch/XHR/WebSocket, no workers. The only external
+# 'self'), 23 Open Graph PNGs (fetched by link-preview crawlers, not by any
+# page, so no img-src change), no fetch/XHR/WebSocket, no workers. The only external
 # references are <a href> links to vgpu.sh, which are navigations and need no
 # CSP allowance.
 

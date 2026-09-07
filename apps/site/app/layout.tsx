@@ -7,6 +7,11 @@ import { DevCssRefresh } from '../src/components/DevCssRefresh'
 import './globals.css'
 
 export const metadata: Metadata = {
+  // Absolute base for og:image / twitter:image URLs — crawlers reject
+  // relative ones, and without this Next bakes localhost:3000 into the
+  // export. The default is the production custom domain on the Cloudflare
+  // Pages project `gpu-components`; NEXT_PUBLIC_SITE_URL overrides at build.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gpuc.akshara.dev'),
   title: 'gpu-components — GPU components that share one device',
   description:
     'A framework-independent WebGPU runtime for application components, built on vgpu. One device, one frame, one submit, across every component on the page.',
