@@ -45,3 +45,6 @@ yarn-error.log*
 .impeccable/live/cache/
 .impeccable-live.json
 .impeccable-live/
+
+# Hallmark design-hook working files
+.hallmark/
