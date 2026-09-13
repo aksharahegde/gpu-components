@@ -1,0 +1,14 @@
+{
+  "name": "@gpu-components/install-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "PLAN.md §32 'Developer experience' acceptance criterion: npm i + npx gpu-components add timeline -> a rendering <GPUTimeline /> in under 5 minutes, on real freshly-scaffolded Vite / Next.js (App Router) / React Router v7 apps. Scaffolds real apps in a temp dir, npm packs the three local packages into real tarballs, installs them exactly as a stranger's `npm i` would, runs the CLI from its own tarball install, and checks the result with real Chromium via Playwright.",
+  "scripts": {
+    "//": "Deliberately no `test`/`typecheck`/`build` script name here — this must NOT get swept into root `npm test`/`npm run typecheck`/`npm run build` (--workspaces --if-present). Run it by hand: npm run e2e --workspace=apps/install-e2e -- vite",
+    "e2e": "node run.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

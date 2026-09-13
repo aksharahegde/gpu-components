@@ -8,7 +8,11 @@
 import { readFileSync, readSync, writeSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { add, diff, doctor, list } from "../src/cli.ts";
+// Imports the built `dist/cli.js`, not `src/cli.ts` — a plain `node` (what a real `npx
+// gpu-components` invocation uses) can't type-strip files under `node_modules`
+// (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`), so this package must ship compiled JS. See
+// tsconfig.build.json.
+import { add, diff, doctor, list } from "../dist/cli.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const pkgRoot = path.resolve(here, "..");

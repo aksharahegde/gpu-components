@@ -9,11 +9,13 @@
   "scripts": {
     "typecheck": "tsc --noEmit --pretty",
     "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
-    "build": "node scripts/buildRegistry.mjs"
+    "build": "tsc -p tsconfig.build.json && node scripts/buildRegistry.mjs",
+    "prepublishOnly": "npm run build",
+    "prepare": "npm run build"
   },
   "files": [
     "bin",
-    "src",
+    "dist",
     "registry.json",
     "components"
   ],

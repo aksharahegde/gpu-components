@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // The publishable build — same fix as packages/core and packages/react. Without this, the
+    // package shipped raw `src/*.ts` and `bin/gpu-components.mjs` imported `../src/cli.ts`
+    // directly: that only ever worked inside this monorepo, where every invocation goes through
+    // `node --experimental-strip-types`. A real `npm i gpu-components` + `npx gpu-components add`
+    // runs `bin/gpu-components.mjs` with plain `node`, and Node refuses type-stripping for anything
+    // under `node_modules` outright (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`) — found by
+    // apps/install-e2e's real tarball-install run, not by anything that imports from source.
+    "noEmit": false,
+    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

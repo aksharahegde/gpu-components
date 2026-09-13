@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { LabelOverlay, useCanvasRef, useGpu, useGpuA11y, useGpuComponent } from "@gpu-components/react";
 import type { PositionedLabel } from "@gpu-components/react";
 import {
@@ -163,7 +172,11 @@ function revealSpan(
  * broader single-id → set selection model), a shader-pass focus ring (DOM outline only for now),
  * `toAccessibleTable()`, touch gestures, and true lasso/polygon selection.
  */
-export function GPUTimeline(props: GPUTimelineProps): JSX.Element | null {
+// `ReactElement`, not the bare global `JSX.Element` this used to say: @types/react 19 (what every
+// current framework scaffolder installs — found via apps/install-e2e's real Next.js run) dropped
+// the ambient global `JSX` namespace in favor of `React.JSX`, so `JSX.Element` no longer resolves
+// unqualified. `ReactElement` has meant the same thing under both @types/react 18 and 19.
+export function GPUTimeline(props: GPUTimelineProps): ReactElement | null {
   const { spans, onViewportChange, hoveredId, selectedId, onHover, onSelect, onBrushSelectionChange, style, className, onPerformance } =
     props;
   const fallback = props.fallback ?? "canvas2d";
