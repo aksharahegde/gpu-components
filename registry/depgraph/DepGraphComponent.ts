@@ -90,12 +90,12 @@ export class DepGraphComponent implements GpuComponent<DepGraphProps> {
       warnings: ctx.runtime.warnings,
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.nodeParams = uniforms(ctx.gpu, {
+    this.nodeParams = uniforms(ctx.gpu!, {
       nodeSizePx: DEFAULT_NODE_PX,
       hoveredNode: -1,
       selectedNode: -1,

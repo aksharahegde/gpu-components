@@ -123,13 +123,13 @@ export class HistogramComponent implements GpuComponent<HistogramProps> {
       warnings: ctx.runtime.warnings,
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.binParams = uniforms(ctx.gpu, { domainMin: 0, domainSpan: 1, binCount: 1, count: 0 });
-    this.barParams = uniforms(ctx.gpu, {
+    this.binParams = uniforms(ctx.gpu!, { domainMin: 0, domainSpan: 1, binCount: 1, count: 0 });
+    this.barParams = uniforms(ctx.gpu!, {
       domainMin: 0,
       binWidth: 1,
       binCount: 1,
@@ -139,11 +139,11 @@ export class HistogramComponent implements GpuComponent<HistogramProps> {
       _pad0: 0,
       _pad1: 0,
     });
-    this.reduceParams = uniforms(ctx.gpu, { binCount: 1 });
+    this.reduceParams = uniforms(ctx.gpu!, { binCount: 1 });
 
-    this.binPipeline = compute(ctx.gpu, BIN_WGSL);
-    this.reducePipeline = compute(ctx.gpu, REDUCE_MAX_WGSL);
-    this.maxCountBuffer = storage(ctx.gpu, 4, "read-write");
+    this.binPipeline = compute(ctx.gpu!, BIN_WGSL);
+    this.reducePipeline = compute(ctx.gpu!, REDUCE_MAX_WGSL);
+    this.maxCountBuffer = storage(ctx.gpu!, 4, "read-write");
 
     this.barLayer.bindViewport(this.viewportUniform);
     this.rulesLayer.bindViewport(this.viewportUniform);

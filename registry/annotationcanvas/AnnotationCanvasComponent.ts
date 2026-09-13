@@ -273,13 +273,13 @@ export class AnnotationCanvasComponent implements GpuComponent<AnnotationCanvasP
       warnings: ctx.runtime.warnings,
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.fieldUniform = uniforms(ctx.gpu, { width: 1, height: 1, windowMin: 0, windowMax: 1 });
-    this.annotationUniform = uniforms(ctx.gpu, {
+    this.fieldUniform = uniforms(ctx.gpu!, { width: 1, height: 1, windowMin: 0, windowMax: 1 });
+    this.annotationUniform = uniforms(ctx.gpu!, {
       strokeWidthPx: STROKE_WIDTH_PX,
       pointSizePx: POINT_SIZE_PX,
       fillOpacity: FILL_OPACITY,

@@ -151,12 +151,12 @@ export class DensityMapComponent implements GpuComponent<DensityMapProps> {
       warnings: ctx.runtime.warnings,
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.binParams = uniforms(ctx.gpu, {
+    this.binParams = uniforms(ctx.gpu!, {
       hexSize: 1,
       minCol: 0,
       minRow: 0,
@@ -166,7 +166,7 @@ export class DensityMapComponent implements GpuComponent<DensityMapProps> {
       _pad0: 0,
       _pad1: 0,
     });
-    this.drawParams = uniforms(ctx.gpu, {
+    this.drawParams = uniforms(ctx.gpu!, {
       hexSize: 1,
       minCol: 0,
       minRow: 0,
@@ -176,11 +176,11 @@ export class DensityMapComponent implements GpuComponent<DensityMapProps> {
       hoveredIndex: -1,
       opacity: 0.85,
     });
-    this.reduceParams = uniforms(ctx.gpu, { cellCount: 1 });
+    this.reduceParams = uniforms(ctx.gpu!, { cellCount: 1 });
 
-    this.hexbinPipeline = compute(ctx.gpu, HEXBIN_WGSL);
-    this.reducePipeline = compute(ctx.gpu, REDUCE_MAX_WGSL);
-    this.maxCountBuffer = storage(ctx.gpu, 4, "read-write");
+    this.hexbinPipeline = compute(ctx.gpu!, HEXBIN_WGSL);
+    this.reducePipeline = compute(ctx.gpu!, REDUCE_MAX_WGSL);
+    this.maxCountBuffer = storage(ctx.gpu!, 4, "read-write");
 
     this.acquireLut(this.currentColormap);
 

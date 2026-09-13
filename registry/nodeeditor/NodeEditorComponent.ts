@@ -131,12 +131,12 @@ export class NodeEditorComponent implements GpuComponent<NodeEditorProps> {
       warnings: ctx.runtime.warnings,
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.nodeParams = uniforms(ctx.gpu, {
+    this.nodeParams = uniforms(ctx.gpu!, {
       hoveredNode: -1,
       opacity: 1,
       _pad0: 0,

@@ -113,33 +113,33 @@ export class CandlestickComponent implements GpuComponent<CandlestickProps> {
 
   create(ctx: ComponentContext): void {
     this.runtime = ctx.runtime;
-    this.ring = new RingBuffer(ctx.gpu, {
+    this.ring = new RingBuffer(ctx.gpu!, {
       stride: BAR_STRIDE,
       capacity: this.capacity,
       label: `${this.id}-bars`,
       caps: ctx.caps,
     });
-    this.bucketBuffer = storage(ctx.gpu, OVERVIEW_BUCKETS * 3 * 4, "read-write");
+    this.bucketBuffer = storage(ctx.gpu!, OVERVIEW_BUCKETS * 3 * 4, "read-write");
 
-    this.params = uniforms(ctx.gpu, {
+    this.params = uniforms(ctx.gpu!, {
       head: 0, count: 0, capacity: this.capacity, firstVisible: 0, visibleCount: 0,
       priceMin: 0, priceMax: 1, surfaceW: 1, surfaceH: 1, chartH: 1,
       pitchPx: DEFAULT_PITCH, bodyPx: DEFAULT_PITCH * 0.7, scrollPx: 0,
       hovered: -1, _pad0: 0, _pad1: 0,
     });
-    this.overviewParams = uniforms(ctx.gpu, {
+    this.overviewParams = uniforms(ctx.gpu!, {
       bucketCount: OVERVIEW_BUCKETS, lowest: 0, highest: 1, peakVolume: 1,
       surfaceW: 1, surfaceH: 1, heightPx: DEFAULT_OVERVIEW_H,
       windowStart: 0, windowEnd: 1, ready: 0, _pad0: 0, _pad1: 0,
     });
 
-    this.candleDraw = draw(ctx.gpu, {
+    this.candleDraw = draw(ctx.gpu!, {
       shader: CANDLE_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-candles`,
     });
-    this.overviewDraw = draw(ctx.gpu, {
+    this.overviewDraw = draw(ctx.gpu!, {
       shader: OVERVIEW_DRAW_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-overview`,
     });
-    this.overviewCompute = compute(ctx.gpu, OVERVIEW_WGSL);
+    this.overviewCompute = compute(ctx.gpu!, OVERVIEW_WGSL);
 
     this.candleDraw.set({ params: this.params, bars: this.ring.buffer });
     this.overviewDraw.set({ ov: this.overviewParams, buckets: this.bucketBuffer });

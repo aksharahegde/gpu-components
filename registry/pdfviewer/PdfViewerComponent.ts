@@ -93,7 +93,7 @@ export class PdfViewerComponent implements GpuComponent<PdfViewerProps> {
     this.caps = ctx.caps;
     this.warnings = ctx.runtime.warnings;
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
@@ -101,9 +101,9 @@ export class PdfViewerComponent implements GpuComponent<PdfViewerProps> {
 
     const placeholder = placeholderBitmap();
     this.slots = Array.from({ length: POOL_SIZE }, (_, i) => {
-      const rectUniform = uniforms(ctx.gpu, { x: 0, y: 0, w: 0, h: 0 });
-      const drawable = draw(ctx.gpu, { shader: PAGE_WGSL, vertices: 6, label: `${this.id}-page-${i}` });
-      const texture = createImageTexture(ctx.gpu, placeholder, this.caps, { label: `${this.id}-tex-${i}` });
+      const rectUniform = uniforms(ctx.gpu!, { x: 0, y: 0, w: 0, h: 0 });
+      const drawable = draw(ctx.gpu!, { shader: PAGE_WGSL, vertices: 6, label: `${this.id}-page-${i}` });
+      const texture = createImageTexture(ctx.gpu!, placeholder, this.caps, { label: `${this.id}-tex-${i}` });
       drawable.set({
         viewport: this.viewportUniform,
         rect: rectUniform,

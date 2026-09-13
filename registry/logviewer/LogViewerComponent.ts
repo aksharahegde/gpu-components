@@ -133,30 +133,30 @@ export class LogViewerComponent implements GpuComponent<LogViewerProps> {
   }
 
   create(ctx: ComponentContext): void {
-    this.ring = new RingBuffer(ctx.gpu, {
+    this.ring = new RingBuffer(ctx.gpu!, {
       stride: LOG_RECORD_STRIDE,
       capacity: this.capacity,
       label: `${this.id}-lines`,
       caps: ctx.caps,
     });
-    this.matchBuffer = storage(ctx.gpu, this.capacity * 4, "read");
-    this.bucketBuffer = storage(ctx.gpu, MINIMAP_BUCKETS * 2 * 4, "read-write");
+    this.matchBuffer = storage(ctx.gpu!, this.capacity * 4, "read");
+    this.bucketBuffer = storage(ctx.gpu!, MINIMAP_BUCKETS * 2 * 4, "read-write");
 
-    this.params = uniforms(ctx.gpu, {
+    this.params = uniforms(ctx.gpu!, {
       head: 0, count: 0, capacity: this.capacity, firstVisible: 0,
       scrollPx: 0, lineHeightPx: DEFAULT_LINE_HEIGHT, surfaceW: 1, surfaceH: 1,
       stripeWidthPx: STRIPE_WIDTH_PX, selected: -1, filtering: 0, _pad: 0,
     });
-    this.minimapParams = uniforms(ctx.gpu, {
+    this.minimapParams = uniforms(ctx.gpu!, {
       bucketCount: MINIMAP_BUCKETS, peakMatched: 1, peakErrors: 1,
       widthPx: MINIMAP_WIDTH_PX, surfaceW: 1, surfaceH: 1, windowStart: 0, windowEnd: 1,
     });
 
-    this.rowDraw = draw(ctx.gpu, { shader: LOG_ROWS_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-rows` });
-    this.minimapDraw = draw(ctx.gpu, {
+    this.rowDraw = draw(ctx.gpu!, { shader: LOG_ROWS_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-rows` });
+    this.minimapDraw = draw(ctx.gpu!, {
       shader: MINIMAP_DRAW_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-minimap`,
     });
-    this.minimapCompute = compute(ctx.gpu, MINIMAP_WGSL);
+    this.minimapCompute = compute(ctx.gpu!, MINIMAP_WGSL);
 
     this.rowDraw.set({ params: this.params, lines: this.ring.buffer, matches: this.matchBuffer });
     this.minimapDraw.set({ mm: this.minimapParams, buckets: this.bucketBuffer });
