@@ -38,16 +38,11 @@ struct Camera {
 struct Scene {
   sceneT: f32,
   collapsedZ: f32,
-  /** Phase 5's dissolve handoff: a global alpha multiplier driven by journeyT approaching the
-   * journey's last waypoint (data.ts's journeyAlpha()), 1 = fully opaque, 0 = fully gone. Reuses
-   * the near-plane fade's multiply-into-fragment-alpha mechanism rather than adding a second fade
-   * path -- see the doc comment at the top of this file. */
+  // Dissolve alpha (data.ts journeyAlpha()) — reuses the fade's alpha-multiply path below.
   journeyAlpha: f32,
   cameraPos: vec3f,
 }
 
-/** How close (world units) a fragment can get to the camera before it's fully faded out — see the
- * near-plane fade doc comment above. */
 const NEAR_FADE_DISTANCE: f32 = 1.5;
 
 struct Instance {
@@ -69,11 +64,7 @@ struct Instance {
 struct VertexOut {
   @builtin(position) position: vec4f,
   @location(0) color: vec4f,
-  // World-space distance from the camera to this vertex — a varying, not recomputed per fragment
-  // from interpolated world position, because every vertex of a given instance shares the same
-  // tz (planes stay upright and camera-facing by construction, see the doc comment above), so
-  // the distance barely varies across one quad's face; interpolating it directly is cheaper and
-  // visually identical.
+  // Distance as a varying — instances share one tz, so interpolating beats recomputing per-fragment.
   @location(1) camDist: f32,
 }
 
@@ -89,21 +80,14 @@ fn vs_main(
     position.z * inst.sy + inst.ty,
     z,
   );
-  var out: VertexOut;
-  out.position = camera.viewProjection * vec4f(world, 1.0);
-  out.color = inst.color;
-  out.camDist = distance(world, scene.cameraPos);
-  return out;
+  return VertexOut(camera.viewProjection * vec4f(world, 1.0), inst.color, distance(world, scene.cameraPos));
 }
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
-  // Near-plane fade: as the scroll-driven camera journey (data.ts's WAYPOINTS) dollies through
-  // the depth stack, a layer the camera passes through fades to transparent instead of clipping/
-  // punching through (no depth buffer, no per-frame sort — see the doc comment above).
+  // Fades a layer the camera dollies through, instead of it clipping (no depth/sort).
   let fade = smoothstep(0.0, NEAR_FADE_DISTANCE, in.camDist);
-  // Straight (non-premultiplied) alpha — the "alpha" BlendPreset's (src-alpha,
-  // one-minus-src-alpha) factors do the premultiply in the fixed-function blend unit.
+  // Straight alpha — blend unit premultiplies.
   return vec4f(in.color.rgb, in.color.a * fade * scene.journeyAlpha);
 }
 `;

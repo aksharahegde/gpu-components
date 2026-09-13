@@ -257,7 +257,7 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
       // rest of this `if` already keeps for yaw/pitch/reveal/scroll.
       const settled = WAYPOINTS[0]!;
       this.lastJourneyT = 0;
-      this.orbit?.set({ yaw: 0, pitch: 0, target: [0, 0, settled.targetZ], distance: settled.distance });
+      this.orbit?.set({ yaw: 0, pitch: 0, target: [0, 0, settled[0]], distance: settled[1] });
       return;
     }
 
@@ -277,7 +277,7 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
     const journeyT = Math.min(1, Math.max(0, props.journeyT));
     if (journeyT !== this.lastJourneyT) {
       this.lastJourneyT = journeyT;
-      const { targetZ, distance } = journeyPose(journeyT);
+      const [targetZ, distance] = journeyPose(journeyT);
       // `OrbitControls.set()` jumps `target`/`distance` immediately (no easing of its own) — fine
       // here since `journeyT` is already a continuous scroll-driven signal, exactly like
       // `scrollCollapse`/`sceneT` above; layering damping on top would just add lag to a value

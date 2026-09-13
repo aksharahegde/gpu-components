@@ -114,17 +114,18 @@ export const COLLAPSED_DEPTH = -4.2
  * play out over, not just the old compressed range. `distance` bumped 7 -> 9.5 (world Z: 3.4 -> 5.5)
  * so it reads as an actual backward dolly before the big forward plunge into waypoints 3-5.
  */
-export interface Waypoint {
-  readonly targetZ: number
-  readonly distance: number
-}
+/** `[targetZ, distance]` — a tuple rather than `{targetZ, distance}` purely for bundle size: the
+ * object-literal form repeats both key names at every call site post-minification (property names
+ * aren't mangled), and this array/its consumers (`journeyPose`, `Hero3DComponent`) are hot enough
+ * in the source to matter for the homepage's gzip budget. */
+export type Waypoint = readonly [targetZ: number, distance: number]
 
 export const WAYPOINTS: readonly Waypoint[] = [
-  { targetZ: 0, distance: CAMERA_POSITION_Z },
-  { targetZ: -4, distance: 9.5 },
-  { targetZ: DEPTH.heatmap, distance: 3 },
-  { targetZ: -3.6, distance: 2.2 },
-  { targetZ: -3.6, distance: 2.2 },
+  [0, CAMERA_POSITION_Z],
+  [-4, 9.5],
+  [DEPTH.heatmap, 3],
+  [-3.6, 2.2],
+  [-3.6, 2.2],
 ] as const
 
 /** Linearly interpolates `targetZ`/`distance` between the bracketing pair of `WAYPOINTS` for
@@ -140,10 +141,7 @@ export function journeyPose(t: number): Waypoint {
   const localT = scaled - i
   const a = WAYPOINTS[i]!
   const b = WAYPOINTS[i + 1]!
-  return {
-    targetZ: a.targetZ + (b.targetZ - a.targetZ) * localT,
-    distance: a.distance + (b.distance - a.distance) * localT,
-  }
+  return [a[0] + (b[0] - a[0]) * localT, a[1] + (b[1] - a[1]) * localT]
 }
 
 /** Where the Phase 5 dissolve starts/ends, in the same `journeyT` domain as `WAYPOINTS` (0..1
