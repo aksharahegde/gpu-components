@@ -1,44 +1,50 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-31T14:30:00.000Z",
+  "generatedAt": "2026-09-13T00:00:00.000Z",
   "title": "Design System: gpu-components",
   "extensions": {
     "colorMeta": {
       "bg": {
         "role": "neutral",
-        "displayName": "Obsidian Base",
-        "canonical": "#08090b",
-        "tonalRamp": ["#08090b", "#0d0f13", "#101318", "#151920", "#1d222b", "#2a313d", "#384253", "#6d7686"]
+        "displayName": "Pure White",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#03045e", "#37476b", "#4f6078", "#8fc0d8", "#b9d8e7", "#d6e9f2", "#e8f4f9", "#ffffff"]
       },
       "surface": {
         "role": "neutral",
-        "displayName": "Panel Surface",
-        "canonical": "#101318",
-        "tonalRamp": ["#08090b", "#0d0f13", "#101318", "#151920", "#1d222b", "#2a313d", "#384253", "#6d7686"]
+        "displayName": "Pure White",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#03045e", "#37476b", "#4f6078", "#8fc0d8", "#b9d8e7", "#d6e9f2", "#e8f4f9", "#ffffff"]
       },
       "accent": {
         "role": "primary",
-        "displayName": "Instrument Periwinkle",
-        "canonical": "#8b9dff",
-        "tonalRamp": ["#0a0c12", "#2a3366", "#4a5bd4", "#5f70cc", "#8b9dff", "#9dabff", "#b7c4ff", "#e8ecff"]
+        "displayName": "Deep Ocean Blue",
+        "canonical": "#0077b6",
+        "tonalRamp": ["#03045e", "#023e8a", "#0077b6", "#4a9bcb", "#7fbbdd", "#90e0ef", "#b8ecf5", "#caf0f8"]
       },
       "mint": {
         "role": "semantic",
         "displayName": "Signal Mint",
-        "canonical": "#5be9b9",
-        "tonalRamp": ["#0a2e22", "#0f5a44", "#0f8a5f", "#1aad7a", "#5be9b9", "#7aedc9", "#a8f2da", "#d4f9ed"]
+        "canonical": "#0e7c58",
+        "tonalRamp": ["#052e20", "#0a4f37", "#0e7c58", "#1a9d70", "#4fbb95", "#83d1b6", "#b8e6d5", "#e2f5ee"]
       },
       "amber": {
         "role": "semantic",
         "displayName": "Caution Amber",
-        "canonical": "#f0b072",
-        "tonalRamp": ["#3d2200", "#6b3d00", "#a15c00", "#c47a1a", "#f0b072", "#f5c494", "#fad8b8", "#fdeee0"]
+        "canonical": "#92590a",
+        "tonalRamp": ["#3a2200", "#5f3907", "#92590a", "#b87715", "#d4993f", "#e6bb75", "#f2d9ac", "#faedd8"]
+      },
+      "rose": {
+        "role": "semantic",
+        "displayName": "Alert Rose",
+        "canonical": "#c02b2b",
+        "tonalRamp": ["#450e0e", "#7a1c1c", "#c02b2b", "#d65f5f", "#e28f8f", "#eeb8b8", "#f6dada", "#fbeded"]
       },
       "text": {
         "role": "neutral",
-        "displayName": "Primary Text",
-        "canonical": "#e7e9ee",
-        "tonalRamp": ["#12151b", "#2a2f38", "#454c59", "#6d7686", "#a2aab8", "#c5cad3", "#e7e9ee", "#f7f8fa"]
+        "displayName": "Ink Text",
+        "canonical": "#03045e",
+        "tonalRamp": ["#03045e", "#0a1257", "#1c2a5e", "#37476b", "#4f6078", "#7c8aa0", "#b3c0d0", "#e8eef5"]
       }
     },
     "typographyMeta": {
@@ -59,7 +65,11 @@
         "purpose": "Code blocks, inline code, brand wordmark, numeric data."
       }
     },
-    "shadows": [],
+    "shadows": [
+      { "name": "shadow-sm", "value": "0 1px 2px rgba(13, 15, 20, 0.04)", "purpose": "Lightest lift — barely-there separation, used rarely." },
+      { "name": "shadow-md", "value": "0 4px 16px -4px rgba(13, 15, 20, 0.08)", "purpose": "Default raised-chrome elevation." },
+      { "name": "shadow-lg", "value": "0 12px 32px -8px rgba(13, 15, 20, 0.10)", "purpose": "Most visibly raised elements — reserved, not ambient." }
+    ],
     "motion": [
       {
         "name": "ease-standard",
@@ -84,9 +94,9 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Primary call-to-action — accent fill, dark text, quiet hover brighten.",
+      "description": "Primary call-to-action — accent fill, white text, quiet hover to deep navy.",
       "html": "<button class=\"ds-btn-primary\">Get started</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 10px 17px; border-radius: 8px; font-size: 14.5px; font-weight: 620; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; border: 1px solid #8b9dff; background: #8b9dff; color: #0a0c12; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease; } .ds-btn-primary:hover { background: #9dabff; border-color: #9dabff; } .ds-btn-primary:focus-visible { outline: 2px solid #8b9dff; outline-offset: 2px; }"
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 10px 17px; border-radius: 8px; font-size: 14.5px; font-weight: 620; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; border: 1px solid #0077b6; background: #0077b6; color: #ffffff; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease; } .ds-btn-primary:hover { background: #023e8a; border-color: #023e8a; } .ds-btn-primary:focus-visible { outline: 2px solid #0077b6; outline-offset: 2px; }"
     },
     {
       "name": "Secondary Button",
@@ -94,15 +104,15 @@
       "refersTo": "button-secondary",
       "description": "Default bordered control for secondary actions and chrome toggles.",
       "html": "<button class=\"ds-btn-secondary\">View playground</button>",
-      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 8px; padding: 10px 17px; border-radius: 8px; font-size: 14.5px; font-weight: 550; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; border: 1px solid #2a313d; background: #101318; color: #e7e9ee; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease; } .ds-btn-secondary:hover { background: #151920; border-color: #384253; } .ds-btn-secondary:focus-visible { outline: 2px solid #8b9dff; outline-offset: 2px; }"
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 8px; padding: 10px 17px; border-radius: 8px; font-size: 14.5px; font-weight: 550; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; border: 1px solid #b9d8e7; background: #ffffff; color: #03045e; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease; } .ds-btn-secondary:hover { background: #e8f4f9; border-color: #8fc0d8; } .ds-btn-secondary:focus-visible { outline: 2px solid #0077b6; outline-offset: 2px; }"
     },
     {
       "name": "Card",
       "kind": "card",
       "refersTo": "card",
-      "description": "Default contained surface for grouped content — flat, bordered, no shadow.",
+      "description": "Default contained surface for grouped content — flat, bordered, no shadow at rest.",
       "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Shared GPU runtime</h3><p class=\"ds-card-body\">One device, one frame loop, one submit across every component on the page.</p></div>",
-      "css": ".ds-card { background: #101318; border: 1px solid #1d222b; border-radius: 10px; padding: 22px; } .ds-card-title { margin: 0 0 8px; font-size: 18px; font-weight: 620; line-height: 1.25; letter-spacing: -0.015em; color: #e7e9ee; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; } .ds-card-body { margin: 0; font-size: 16px; line-height: 1.65; color: #a2aab8; max-width: 74ch; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; }"
+      "css": ".ds-card { background: #ffffff; border: 1px solid #d6e9f2; border-radius: 10px; padding: 22px; } .ds-card-title { margin: 0 0 8px; font-size: 18px; font-weight: 620; line-height: 1.25; letter-spacing: -0.015em; color: #03045e; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; } .ds-card-body { margin: 0; font-size: 16px; line-height: 1.65; color: #37476b; max-width: 74ch; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }"
     },
     {
       "name": "Status Chip",
@@ -110,7 +120,7 @@
       "refersTo": "chip",
       "description": "Roadmap/status indicator with semantic dot — live, done, progress, planned.",
       "html": "<span class=\"ds-chip\"><span class=\"ds-chip-dot ds-chip-dot-live\"></span>Live</span>",
-      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 7px; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid #2a313d; background: #101318; color: #a2aab8; white-space: nowrap; } .ds-chip-dot { width: 6px; height: 6px; border-radius: 999px; flex: none; } .ds-chip-dot-live { background: #8b9dff; }"
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid #b9d8e7; background: #ffffff; color: #37476b; white-space: nowrap; } .ds-chip-dot { width: 6px; height: 6px; border-radius: 999px; flex: none; } .ds-chip-dot-live { background: #0077b6; }"
     },
     {
       "name": "Navigation Link",
@@ -118,7 +128,7 @@
       "refersTo": "button-secondary",
       "description": "Main nav link — dim default, accent underline when active.",
       "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link ds-nav-link-active\" href=\"#\">Architecture</a><a class=\"ds-nav-link\" href=\"#\">Components</a></nav>",
-      "css": ".ds-nav { display: flex; gap: 22px; align-items: center; } .ds-nav-link { color: #a2aab8; font-size: 14px; padding-block: 4px; border-bottom: 1.5px solid transparent; text-decoration: none; transition: color 140ms ease, border-color 140ms ease; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; } .ds-nav-link:hover { color: #e7e9ee; text-decoration: none; } .ds-nav-link-active { color: #e7e9ee; border-bottom-color: #8b9dff; }"
+      "css": ".ds-nav { display: flex; gap: 22px; align-items: center; } .ds-nav-link { color: #37476b; font-size: 14px; padding-block: 4px; border-bottom: 1.5px solid transparent; text-decoration: none; transition: color 140ms ease, border-color 140ms ease; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; } .ds-nav-link:hover { color: #03045e; text-decoration: none; } .ds-nav-link-active { color: #03045e; border-bottom-color: #0077b6; }"
     },
     {
       "name": "Notice Callout",
@@ -126,7 +136,7 @@
       "refersTo": "card",
       "description": "Constraint or caution callout with left accent bar and subtle tint.",
       "html": "<div class=\"ds-notice\"><strong>Benchmark cap.</strong> DOM rendering stops at 20,000 nodes — shown in UI, not hidden.</div>",
-      "css": ".ds-notice { border: 1px solid #2a313d; border-left: 3px solid #f0b072; border-radius: 8px; padding: 16px 18px; font-size: 14.5px; line-height: 1.6; color: #a2aab8; background: color-mix(in srgb, #f0b072 6%, #101318); font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif; } .ds-notice strong { color: #e7e9ee; font-weight: 600; }"
+      "css": ".ds-notice { border: 1px solid #b9d8e7; border-left: 3px solid #92590a; border-radius: 8px; padding: 16px 18px; font-size: 14.5px; line-height: 1.6; color: #37476b; background: color-mix(in srgb, #92590a 6%, #ffffff); font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; } .ds-notice strong { color: #03045e; font-weight: 600; }"
     },
     {
       "name": "Code Block",
@@ -134,37 +144,42 @@
       "refersTo": "card",
       "description": "File-labelled code sample with syntax token colors.",
       "html": "<div class=\"ds-code\"><div class=\"ds-code-bar\">TimelineComponent.ts</div><pre class=\"ds-code-pre\"><code><span class=\"ds-kw\">export</span> <span class=\"ds-kw\">class</span> <span class=\"ds-fn\">TimelineComponent</span> { }</code></pre></div>",
-      "css": ".ds-code { background: #0d0f13; border: 1px solid #1d222b; border-radius: 10px; overflow: hidden; } .ds-code-bar { display: flex; align-items: center; padding: 9px 14px; border-bottom: 1px solid #1d222b; background: #101318; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #6d7686; } .ds-code-pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; line-height: 1.7; color: #cfd6e4; tab-size: 2; } .ds-kw { color: #b7a4ff; } .ds-fn { color: #8fb7ff; }"
+      "css": ".ds-code { background: #f7fbfd; border: 1px solid #d6e9f2; border-radius: 10px; overflow: hidden; } .ds-code-bar { display: flex; align-items: center; padding: 9px 14px; border-bottom: 1px solid #d6e9f2; background: #ffffff; font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #4f6078; } .ds-code-pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; line-height: 1.7; color: #1f2430; tab-size: 2; } .ds-kw { color: #6d28d9; } .ds-fn { color: #0077b6; }"
     },
     {
-      "name": "Architecture Layer Row",
+      "name": "Hero Scrim Panel",
       "kind": "custom",
       "refersTo": "card",
-      "description": "Stack diagram row showing runtime ownership — signature component.",
-      "html": "<div class=\"ds-layer ds-layer-ours\"><span class=\"ds-layer-name\">@gpu-components/core</span><span class=\"ds-layer-who\">ours · npm</span></div>",
-      "css": ".ds-layer { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 15px; font-size: 13.5px; border: 1px solid #1d222b; border-radius: 8px; background: #101318; } .ds-layer-ours { border-color: color-mix(in srgb, #8b9dff 42%, #1d222b); background: color-mix(in srgb, #8b9dff 9%, #101318); } .ds-layer-name { font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; color: #e7e9ee; } .ds-layer-who { font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: #8b9dff; white-space: nowrap; }"
+      "description": "Signature translucent-blur panel that backs bare text (hero copy, kicker lines, Section headers) sitting over the sticky 3D scroll scene — a legibility fix, not decoration.",
+      "html": "<div class=\"ds-scrim\"><h1 class=\"ds-scrim-title\">This isn't a preview of the GPU web.</h1></div>",
+      "css": ".ds-scrim { position: relative; z-index: 1; padding: 28px 26px; border-radius: 10px; background: color-mix(in srgb, #ffffff 88%, transparent); backdrop-filter: blur(16px); } .ds-scrim-title { margin: 0; font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: clamp(34px, 5.4vw, 58px); font-weight: 660; line-height: 1.08; letter-spacing: -0.035em; color: #03045e; }"
     }
   ],
   "narrative": {
-    "northStar": "The Instrument Panel",
-    "overview": "This is a developer-evaluation surface for a GPU runtime library — not a consumer product landing page and not a decorative WebGPU showcase. The visual world reads like calibrated instrumentation: dark by default, system-native typography, monospace for operational labels, and color reserved for signal (accent), success (mint), and caution (amber). Expression comes from information density and honest measurement, not from gradient heroics or motion for its own sake.\n\nThe site (apps/site) implements this world in StyleX with compile-time atomic CSS, a primitive component library in src/ui.tsx, and themeable color tokens in src/tokens.stylex.ts. Light mode exists as a createTheme override but dark is the default and the primary design reference.",
+    "northStar": "The Field Notebook",
+    "overview": "This is a developer-evaluation surface for a GPU runtime library — not a consumer landing page and not a decorative WebGPU showcase. The visual world reads like a researcher's measured lab log: a pure-white page, hairline rules instead of a grey wash, system-native typography, and a single working accent reserved for action and evidence. Every grey that isn't spent on structure is contrast taken away from the GPU canvases sitting on the page — they are the reason anyone is here, and the page gets out of their way.\n\nDepth comes from a light structural shadow scale used sparingly (raised chrome, notices) rather than an ambient soft-UI wash — flat plus a hairline border is still the default for Card. Expression comes from information density and honest measurement, not gradient heroics or motion for its own sake.",
     "keyCharacteristics": [
-      "Dark-first tonal layering — depth via surface steps (bg → surface → surface2) and 1px borders, not drop shadows",
-      "System UI fonts throughout; monospace reserved for labels, code, brand mark, and table headers",
-      "Periwinkle accent (#8b9dff) used sparingly for links, primary actions, and active nav — never as ambient fill",
-      "Clinical minimal component feel: bordered controls, quiet 140ms hovers, maximum readable content per viewport",
+      "Pure-white page — structure via hairline borders (border → borderStrong → borderHover) and type weight, not a grey scrim",
+      "System UI fonts throughout (Geist self-hosted via next/font); monospace reserved for labels, code, brand mark, and table headers",
+      "Deep Ocean Blue accent (#0077b6) used sparingly for links, primary actions, and active nav — never as ambient fill",
+      "Quiet, precise component feel: bordered controls, 140ms hovers, maximum readable content per viewport",
       "Credible anti-hype posture — benchmarks disabled or capped rather than fabricated; notices for constraints",
-      "StyleX constraints shape the system: no descendant selectors, real elements over pseudo-content, breakpoints inlined per file"
+      "StyleX constraints shape the system: no descendant selectors, real elements over pseudo-content, breakpoints inlined per file, gap values from a static scale"
     ],
     "rules": [
       {
         "name": "The One Accent Rule",
-        "body": "The primary accent appears on ≤10% of any viewport — CTAs, active nav, links, and deliberate highlights only. Its rarity signals action and credibility; flooding screens with periwinkle reads as marketing, not instrumentation.",
+        "body": "The primary accent appears on ≤10% of any viewport — CTAs, active nav, links, and deliberate highlights only. Its rarity signals action and credibility; flooding screens with blue reads as marketing, not instrumentation.",
         "section": "colors"
       },
       {
         "name": "The Measured Signal Rule",
         "body": "Mint, amber, and rose are semantic only (status, notices, list polarity). Never use them as decorative gradients or ambient backgrounds except at ≤6% color-mix tints inside notice callouts.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Grey Wash Rule",
+        "body": "The page background is pure white, not a grey scrim. Every unit of grey spent on chrome is contrast the GPU canvases don't get; structure comes from hairline borders and type weight instead.",
         "section": "colors"
       },
       {
@@ -178,28 +193,39 @@
         "section": "typography"
       },
       {
+        "name": "The Static Gap Rule",
+        "body": "Gap values come from a fixed stylex.create scale, never a dynamic gap: n inline style — the site's CSP has no unsafe-inline, and a dynamic style silently drops to normal.",
+        "section": "layout"
+      },
+      {
+        "name": "The Local Breakpoint Rule",
+        "body": "Breakpoints are declared as same-file consts, not shared via stylex.defineConsts — a verified StyleX/webpack batching bug corrupts cross-file breakpoint constants under this app's build pipeline.",
+        "section": "layout"
+      },
+      {
         "name": "The Flat-By-Default Rule",
-        "body": "Surfaces rest flat. Do not add box-shadow to cards, buttons, or sections. If something needs emphasis, step the surface color or strengthen the border — not the shadow.",
+        "body": "Card and ordinary containers rest flat with a 1px border. Reach for a shadow only when a surface needs to read as structurally raised above the page — not as an ambient background treatment.",
         "section": "elevation"
       },
       {
         "name": "The Frosted Chrome Rule",
-        "body": "Backdrop blur is permitted only on sticky/fixed chrome (nav) where content scrolls beneath. Nowhere else.",
+        "body": "Backdrop blur is permitted on sticky/fixed chrome (nav) and on text panels sitting over the landing page's sticky 3D scene, where content moves beneath them. Nowhere else.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "Do use system UI fonts exclusively — no webfont imports for the site shell",
-      "Do express depth through surface steps and 1px borders (border → borderStrong → borderHover)",
+      "Do use Geist (self-hosted) exclusively — no other webfont imports for the site shell",
+      "Do keep the page background pure white; express depth through hairline borders and a rare structural shadow, not a grey wash",
       "Do cap prose at 68–74ch and put wide data in scroll containers",
       "Do use mono for operational labels (eyebrows, chips, code, table headers, brand)",
       "Do keep accent usage sparse — CTAs, links, active nav, deliberate highlights",
       "Do use real elements for list markers and state (StyleX has no ::before descendants)",
-      "Do pass state via props (last, current, primary) rather than CSS attribute selectors",
+      "Do pull gap values from the static scale, never a dynamic inline gap: n style (CSP has no unsafe-inline)",
+      "Do back bare text with a translucent-blur scrim wherever it sits over the sticky 3D hero scene",
       "Do label unmeasured performance as targets; disable controls that cannot produce real numbers"
     ],
     "donts": [
-      "Don't add box shadows to cards, buttons, or sections — this system is flat",
+      "Don't add shadows to Card or ordinary surfaces at rest — shadow is reserved for chrome that needs to read as structurally raised",
       "Don't use gradient meshes, particle effects, or WebGPU shader backgrounds as decoration",
       "Don't flood the UI with accent color — rarity is the credibility signal",
       "Don't use mint/amber/rose outside semantic contexts (status, notices, polarity lists)",
