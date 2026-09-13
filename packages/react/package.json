@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "type": "module",
   "description": "React adapter for gpu-components. Owns no GPU state.",
+  "license": "MIT",
+  "author": "Akshara Hegde",
+  "homepage": "https://gpuc.akshara.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aksharahegde/gpu-components.git",
+    "directory": "packages/react"
+  },
+  "bugs": "https://github.com/aksharahegde/gpu-components/issues",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -39,7 +48,9 @@
   },
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "publishConfig": {
     "access": "public"
