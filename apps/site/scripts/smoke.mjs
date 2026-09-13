@@ -16,7 +16,7 @@ import { join } from 'node:path'
 const OUT_DIR = join(import.meta.dirname, '..', 'out')
 
 const ROUTES = [
-  ['/', 'index.html', ['Your interface has a ceiling', 'six GPU devices', 'runs live in your browser']],
+  ['/', 'index.html', ['Seventeen components, built on one shared WebGPU runtime', 'six GPU devices', 'one device, one frame loop, one submit']],
   ['/why-gpu', 'why-gpu/index.html', ['Do not use the GPU merely because it is possible', 'Main thread']],
   ['/architecture', 'architecture/index.html', ['One device, a scheduler', 'RenderPass', 'InstancedQuadLayer']],
   ['/components', 'components/index.html', ['GPUTimeline', 'GPUDataGrid', '147.0']],

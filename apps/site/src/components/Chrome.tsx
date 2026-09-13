@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as stylex from '@stylexjs/stylex'
 import { usePathname } from 'next/navigation'
 import { Link, useIsCurrent } from '../link'
-import { color, font, radius, shadow, size } from '../tokens.stylex'
+import { color, font, radius, size } from '../tokens.stylex'
 import { Btn, Small, Stack, Wrap, typo, util } from '../ui'
 
 const ROUTES: Array<{ to: string; label: string; section?: boolean }> = [
@@ -23,8 +23,7 @@ const s = stylex.create({
     position: 'sticky',
     top: 0,
     zIndex: 50,
-    backgroundColor: `color-mix(in srgb, ${color.bg} 86%, transparent)`,
-    backdropFilter: 'blur(12px)',
+    backgroundColor: color.bg,
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: color.border,
@@ -32,7 +31,7 @@ const s = stylex.create({
     transitionDuration: '160ms',
     transitionTimingFunction: 'ease',
   },
-  headerStuck: { boxShadow: shadow.sm },
+  headerStuck: { borderBottomColor: color.borderStrong },
   inner: { display: 'flex', alignItems: 'center', gap: 28, height: size.navHeight },
   brand: {
     display: 'flex',
@@ -279,10 +278,10 @@ function ExternalIcon() {
 function Mark() {
   return (
     <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true" {...stylex.props(s.mark)}>
-      <rect width="32" height="32" rx="7" fill={color.surface2} />
-      <rect x="6" y="9" width="20" height="3" rx="1.5" fill={color.accent} />
-      <rect x="6" y="14.5" width="13" height="3" rx="1.5" fill={color.mint} />
-      <rect x="6" y="20" width="17" height="3" rx="1.5" fill={color.accent} opacity="0.55" />
+      <rect width="32" height="32" fill={color.surface2} />
+      <rect x="6" y="9" width="20" height="3" fill={color.accent} />
+      <rect x="6" y="14.5" width="13" height="3" fill={color.mint} />
+      <rect x="6" y="20" width="17" height="3" fill={color.accent} opacity="0.55" />
     </svg>
   )
 }

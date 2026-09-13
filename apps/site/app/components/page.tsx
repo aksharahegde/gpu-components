@@ -13,13 +13,10 @@ import {
   Section,
   Stack,
   Status,
-  Table,
-  TableScroll,
-  Td,
-  Th,
   tone,
 } from '../../src/ui'
 import { LinkBtn } from '../../src/components/LinkBtn'
+import { GraphTable } from '../../src/components/graphs'
 
 export const metadata: Metadata = {
   title: 'Components — gpu-components',
@@ -82,55 +79,28 @@ function Components() {
         title="The scoring, in full."
         lead="Weights: GPU necessity ×3 · reusable primitives ×3 · usefulness ×2.5 · differentiation ×2.5 · feasibility ×2 · demonstrable delta ×2 · adoption ×1.5 · fallback risk ×1."
       >
-        <TableScroll>
-          <Table>
-            <thead>
-              <tr>
-                <Th>Candidate</Th>
-                <Th>GPU need</Th>
-                <Th>Reuse</Th>
-                <Th>Useful</Th>
-                <Th>Diff</Th>
-                <Th>Weighted</Th>
-                <Th>Status</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {MATRIX.map(([name, gpu, reuse, useful, diff, score, tag], i) => {
-                const t = TAG[tag]
-                const last = i === MATRIX.length - 1
-                const top = score >= 129
-                return (
-                  <tr key={name}>
-                    <Td last={last} mono>
-                      <B>{name}</B>
-                    </Td>
-                    <Td last={last} mono>
-                      {gpu}
-                    </Td>
-                    <Td last={last} mono>
-                      {reuse}
-                    </Td>
-                    <Td last={last} mono>
-                      {useful}
-                    </Td>
-                    <Td last={last} mono>
-                      {diff}
-                    </Td>
-                    <Td last={last} mono>
-                      <span {...stylex.props(top && tone.mint)}>
-                        <B>{score.toFixed(1)}</B>
-                      </span>
-                    </Td>
-                    <Td last={last}>
-                      <Status state={t.state}>{t.label}</Status>
-                    </Td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </Table>
-        </TableScroll>
+        <GraphTable
+          title="Scoring matrix"
+          headers={['Candidate', 'GPU need', 'Reuse', 'Useful', 'Diff', 'Weighted', 'Status']}
+          align={['left', 'right', 'right', 'right', 'right', 'right', 'left']}
+          rows={MATRIX.map(([name, gpu, reuse, useful, diff, score, tag]) => {
+            const t = TAG[tag]
+            const top = score >= 129
+            return [
+              <B key="name">{name}</B>,
+              gpu,
+              reuse,
+              useful,
+              diff,
+              <span key="score" {...stylex.props(top && tone.mint)}>
+                <B>{score.toFixed(1)}</B>
+              </span>,
+              <Status key="status" state={t.state}>
+                {t.label}
+              </Status>,
+            ]
+          })}
+        />
 
         <Notice variant="amber">
           <B>Note the shape of the GPUDataGrid row.</B> It scores highest on usefulness and
@@ -140,29 +110,12 @@ function Components() {
       </Section>
 
       <Section eyebrow="First component" title="What GPUTimeline forces the runtime to have.">
-        <TableScroll>
-          <Table>
-            <thead>
-              <tr>
-                <Th>Runtime subsystem</Th>
-                <Th>Forced by</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {FORCES.map(([a, b], i) => {
-                const last = i === FORCES.length - 1
-                return (
-                  <tr key={a}>
-                    <Td last={last}>
-                      <B>{a}</B>
-                    </Td>
-                    <Td last={last}>{b}</Td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </Table>
-        </TableScroll>
+        <GraphTable
+          title="Forced subsystems"
+          headers={['Runtime subsystem', 'Forced by']}
+          align={['left', 'left']}
+          rows={FORCES.map(([a, b]) => [<B key="a">{a}</B>, b])}
+        />
 
         <Notice variant="accent">
           <B>The architecture test was GPUHeatmap, not GPUDataGrid.</B> The falsifiable claim was

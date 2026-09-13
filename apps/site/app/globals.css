@@ -57,59 +57,11 @@
  *     for (const [, obj] of result.metadata.stylex) console.log(obj.ltr);
  *   "
  */
-:root,
-.x1eeoxsw {
-  --xrfyece: #ffffff;
-  --x16pffse: #f7fbfd;
-  --xtq9ih4: #ffffff;
-  --xsvann1: #e8f4f9;
-  --xyy0n55: #d6e9f2;
-  --x1jkkunk: #b9d8e7;
-  --x1a4ewbo: #8fc0d8;
-  --x1z0vvm0: #03045e;
-  --x1v04jjr: #37476b;
-  --x1g57ce8: #4f6078;
-  --xtgewr7: #0077b6;
-  --x1y0q9md: #023e8a;
-  --x12i8rqg: #90e0ef;
-  --xjqjyzz: #ffffff;
-  --x4ocvu8: #0e7c58;
-  --xu1gviz: #92590a;
-  --x1i1lgk3: #c02b2b;
-  --x34b9jb: #1f2430;
-  --x1wcxofe: #4f6078;
-  --xregme6: #6d28d9;
-  --xkplwfs: #0f7a51;
-  --x1vxicz5: #0077b6;
-  --xvcfp5u: #92590a;
-  --xb6ui5n: #2b3140;
-}
-:root,
-.x1bj29z8 {
-  --x1eblfvp: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    Helvetica, Arial, sans-serif;
-  --xtl17kj: var(--font-geist-mono), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-    'Liberation Mono', monospace;
-}
-:root,
-.x1u7767i {
-  --xbohjis: 0 1px 2px rgba(13, 15, 20, 0.04);
-  --x1x2a50s: 0 4px 16px -4px rgba(13, 15, 20, 0.08);
-  --x1r2twdh: 0 12px 32px -8px rgba(13, 15, 20, 0.10);
-}
-:root,
-.x1uwf8c2 {
-  --x8euewz: 5px;
-  --xgr3n0k: 8px;
-  --x1a4x45o: 10px;
-  --xofk3nj: 999px;
-}
-:root,
-.x18vqpks {
-  --xn7eqpv: 1120px;
-  --x1q7wr5u: 24px;
-  --xwliee6: 58px;
-}
+:root, .x1eeoxsw{--xrfyece:#fafafa;--x16pffse:#f2f2f2;--xtq9ih4:#fafafa;--xsvann1:#f2f2f2;--xyy0n55:rgba(23, 23, 23, 0.08);--x1jkkunk:#d7d7d7;--x1a4ewbo:#b1b1b1;--x1z0vvm0:#171717;--x1v04jjr:#292929;--x1g57ce8:#585858;--xtgewr7:#006e92;--x1y0q9md:#0066ac;--x12i8rqg:#868686;--xjqjyzz:#ffffff;--x4ocvu8:#636363;--xu1gviz:#404040;--x1i1lgk3:#e40014;--x34b9jb:#262626;--x1wcxofe:#767676;--xregme6:#171717;--xkplwfs:#525252;--x1vxicz5:#006e92;--xvcfp5u:#636363;--xb6ui5n:#262626;}
+:root, .x1bj29z8{--x1eblfvp:var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;--xtl17kj:var(--font-geist-mono), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;}
+:root, .x1u7767i{--xbohjis:0 1px 2px rgba(13, 15, 20, 0.04);--x1x2a50s:0 4px 16px -4px rgba(13, 15, 20, 0.08);--x1r2twdh:0 12px 32px -8px rgba(13, 15, 20, 0.10);}
+:root, .x1uwf8c2{--x8euewz:0px;--xgr3n0k:0px;--x1a4x45o:0px;--xofk3nj:0px;}
+:root, .x18vqpks{--xn7eqpv:1152px;--x1q7wr5u:24px;--xwliee6:58px;}
 
 *,
 *::before,
@@ -120,7 +72,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
-  background-color: #ffffff;
+  background-color: #fafafa;
   color-scheme: light;
 }
 
@@ -134,8 +86,8 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: #ffffff;
-  color: #03045e;
+  background: #fafafa;
+  color: #171717;
   font-size: 16px;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif;
@@ -144,8 +96,8 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, #0077b6 18%, #ffffff);
-  color: #03045e;
+  background: color-mix(in srgb, #006e92 18%, #fafafa);
+  color: #171717;
 }
 
 em {
@@ -217,6 +169,18 @@ table {
   }
   to {
     transform: translate(2.5px, -2px);
+  }
+}
+
+/* mdx-graphs-style entrance for `src/components/graphs/*` — see `graphs/motion.ts`. */
+@keyframes graph-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 

@@ -8,25 +8,25 @@ import { COMPONENTS } from './catalog'
  * `app/`. The site is a static export, so these render once at build time
  * into `out/` as PNGs — there is no request-time work here.
  *
- * The card is the site in miniature: white ground, the favicon's three-bar
- * mark, Geist for text and Geist Mono for the eyebrow/wordmark, and the
- * ocean-blue ramp from `tokens.stylex.ts`. Satori (under `ImageResponse`)
- * cannot read CSS custom properties, so the handful of colours used here are
- * literal copies of the token values.
+ * The card is the site in miniature: near-white ground, the favicon's
+ * three-bar mark, Geist for text and Geist Mono for the eyebrow/wordmark, and
+ * the grayscale-plus-one-teal-accent palette from `tokens.stylex.ts`. Satori
+ * (under `ImageResponse`) cannot read CSS custom properties, so the handful
+ * of colours used here are literal copies of the token values.
  */
 
 export const OG_SIZE = { width: 1200, height: 630 }
 export const OG_CONTENT_TYPE = 'image/png'
 
 // Token copies (see src/tokens.stylex.ts — keep in sync by hand).
-const BG = '#ffffff'
-const SURFACE2 = '#e8f4f9'
-const BORDER = '#d6e9f2'
-const TEXT = '#03045e'
-const TEXT_DIM = '#37476b'
-const TEXT_FAINT = '#4f6078'
-const ACCENT = '#0077b6'
-const MINT = '#0e7c58'
+const BG = '#fafafa'
+const SURFACE2 = '#f2f2f2'
+const BORDER = 'rgba(23, 23, 23, 0.08)'
+const TEXT = '#171717'
+const TEXT_DIM = '#292929'
+const TEXT_FAINT = '#585858'
+const ACCENT = '#006e92'
+const MINT = '#636363'
 
 /**
  * Geist ships TTFs inside the `geist` package (already a dependency for
@@ -95,14 +95,14 @@ export function renderOgCard({ eyebrow, title, lead }: OgCardProps): ImageRespon
               gap: 5,
               width: 44,
               height: 44,
-              borderRadius: 10,
+              borderRadius: 0,
               backgroundColor: SURFACE2,
               padding: 9,
             }}
           >
-            <div style={{ display: 'flex', height: 6, borderRadius: 3, backgroundColor: ACCENT, width: 26 }} />
-            <div style={{ display: 'flex', height: 6, borderRadius: 3, backgroundColor: MINT, width: 17 }} />
-            <div style={{ display: 'flex', height: 6, borderRadius: 3, backgroundColor: ACCENT, opacity: 0.45, width: 22 }} />
+            <div style={{ display: 'flex', height: 6, borderRadius: 0, backgroundColor: ACCENT, width: 26 }} />
+            <div style={{ display: 'flex', height: 6, borderRadius: 0, backgroundColor: MINT, width: 17 }} />
+            <div style={{ display: 'flex', height: 6, borderRadius: 0, backgroundColor: ACCENT, opacity: 0.45, width: 22 }} />
           </div>
           <div style={{ display: 'flex', fontFamily: 'Geist Mono', fontSize: 28, color: TEXT }}>
             gpu-components

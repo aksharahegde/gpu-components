@@ -29,8 +29,14 @@ const TRACKS = 8
 const DOM_CAP = 20_000
 /* The same six categorical hues the registry shaders use (see `registry/timeline/timeline.wgsl.ts`
  * `PALETTE`), in hex. Both palettes exist because one is WGSL and one is Canvas2D/DOM, but a span
- * has to look like a span whichever renderer drew it — that comparison is the whole point here. */
-const COLORS = ['#0077b6', '#0e7c58', '#a9660c', '#c02b2b', '#03045e', '#6d28d9']
+ * has to look like a span whichever renderer drew it — that comparison is the whole point here.
+ *
+ * The redesign collapses this site's palette to grayscale-plus-one-teal-accent, so six distinct
+ * hues aren't available here any more. `color.accent` marks the one series worth calling out (the
+ * old primary blue); the other five keep their original *relative* weight but as shades from the
+ * gray ramp (`text` → `textDim` → `amber` → `textFaint` → `mint`, darkest to lightest) instead of
+ * hue, so buckets stay distinguishable without inventing a new colour. */
+const COLORS = ['#006e92', '#292929', '#404040', '#585858', '#171717', '#636363']
 
 /** Deterministic PRNG so every visitor benchmarks the identical dataset. */
 function mulberry32(seed: number) {
@@ -182,7 +188,7 @@ const s = stylex.create({
     fontSize: 13,
     color: color.textDim,
   },
-  span: { position: 'absolute', borderRadius: 2, willChange: 'transform' },
+  span: { position: 'absolute', willChange: 'transform' },
   readout: {
     display: 'grid',
     gridTemplateColumns: {

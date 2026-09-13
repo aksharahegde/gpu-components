@@ -133,14 +133,14 @@ const text = stylex.create({
   eyebrow: {
     fontFamily: font.mono,
     fontSize: 12,
-    letterSpacing: '0.08em',
+    letterSpacing: '0.06em',
     textTransform: 'uppercase',
     color: color.textFaint,
   },
   h1: {
     fontSize: 'clamp(34px, 5.4vw, 58px)',
     lineHeight: 1.08,
-    letterSpacing: '-0.035em',
+    letterSpacing: '-0.025em',
     // 660 rather than the 620 the dark palette used. Dark-on-light renders optically thinner than
     // light-on-dark at the same weight, so the display sizes gain weight on the way over.
     fontWeight: 660,
@@ -151,7 +151,7 @@ const text = stylex.create({
   h2: {
     fontSize: 'clamp(24px, 3vw, 32px)',
     lineHeight: 1.15,
-    letterSpacing: '-0.028em',
+    letterSpacing: '-0.025em',
     fontWeight: 660,
     color: color.text,
     textWrap: 'balance',
@@ -159,7 +159,7 @@ const text = stylex.create({
   h3: {
     fontSize: 18,
     lineHeight: 1.25,
-    letterSpacing: '-0.015em',
+    letterSpacing: '-0.025em',
     fontWeight: 620,
     color: color.text,
   },
@@ -183,7 +183,7 @@ const text = stylex.create({
 })
 
 export function Eyebrow({ children, sx }: { children: ReactNode; sx?: SX }) {
-  return <div {...stylex.props(text.eyebrow, sx)}>{children}</div>
+  return <div {...stylex.props(text.eyebrow, sx)}>[ {children} ]</div>
 }
 export function H1({ children, page, sx }: { children: ReactNode; page?: boolean; sx?: SX }) {
   return <h1 {...stylex.props(text.h1, page && text.h1Page, sx)}>{children}</h1>
@@ -257,22 +257,6 @@ const surface = stylex.create({
     borderInlineStartColor: color.accent,
     backgroundColor: `color-mix(in srgb, ${color.accent} 6%, ${color.surface})`,
   },
-  /**
-   * Same translucent-blur backing `page.tsx`'s `s.heroText`/`s.kickerPanel` use for bare text sitting
-   * over `<HeroJourney>`'s sticky 3D scene — those two fixes protected the hero's own H1/lead and one
-   * kicker paragraph, but missed that `Section`'s own eyebrow/title/lead is *also* bare text (no
-   * `Card`, no background) and three `<Section>` calls on the homepage sit inside the journey too.
-   * Opt-in via `scrimHeader` rather than a global change: outside the journey there's no scene behind
-   * `Section`, so every other page's headers stay exactly as before.
-   */
-  scrimHeader: {
-    position: 'relative',
-    zIndex: 1,
-    padding: '28px 26px',
-    borderRadius: radius.lg,
-    backgroundColor: `color-mix(in srgb, ${color.surface} 88%, transparent)`,
-    backdropFilter: 'blur(16px)',
-  },
 })
 
 export function Card({
@@ -313,7 +297,6 @@ export function Section({
   lead,
   children,
   flush,
-  scrimHeader,
 }: {
   id?: string
   eyebrow?: string
@@ -321,17 +304,13 @@ export function Section({
   lead?: ReactNode
   children?: ReactNode
   flush?: boolean
-  /** Set only on `<Section>` calls that sit inside `<HeroJourney>`'s sticky 3D scene — backs the
-   * eyebrow/title/lead block with the same translucent-blur panel the hero text and kicker line
-   * already use, so bare copy stays legible over the moving canvas. Leave unset everywhere else. */
-  scrimHeader?: boolean
 }) {
   return (
     <section id={id} {...stylex.props(surface.section, flush && surface.sectionFlush)}>
       <Wrap>
         <Stack gap={32}>
           {(eyebrow || title || lead) && (
-            <Stack gap={12} sx={scrimHeader && surface.scrimHeader}>
+            <Stack gap={12}>
               {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
               {title && <H2>{title}</H2>}
               {lead && <Lead>{lead}</Lead>}
@@ -430,7 +409,7 @@ export const button = stylex.create({
     cursor: 'pointer',
     textDecoration: { default: 'none', ':hover': 'none' },
     transitionProperty: 'background-color, border-color',
-    transitionDuration: '140ms',
+    transitionDuration: '220ms',
     transitionTimingFunction: 'ease',
     outline: { default: 'none', ':focus-visible': `2px solid ${color.accent}` },
     outlineOffset: { default: 0, ':focus-visible': 2 },
@@ -579,7 +558,7 @@ const table = stylex.create({
     color: color.textFaint,
     fontFamily: font.mono,
     fontSize: 11.5,
-    letterSpacing: '0.06em',
+    letterSpacing: '0.06em', // unchanged — already matches consolidated eyebrow value
     textTransform: 'uppercase',
     fontWeight: 500,
     whiteSpace: 'nowrap',

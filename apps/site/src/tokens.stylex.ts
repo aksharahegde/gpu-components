@@ -21,44 +21,46 @@ import * as stylex from '@stylexjs/stylex'
  */
 
 export const color = stylex.defineVars({
-  // Pure white page. Structure comes from hairline borders and type weight,
-  // not from a grey wash — every grey added here is contrast taken away from
-  // the GPU canvases, which are the reason anyone is on the page.
+  // Near-white page (mdx-graphs.kshv.me's light-mode ground, not pure #fff).
+  // Structure comes from hairline borders and type weight, not from a grey
+  // wash — every grey added here is contrast taken away from the GPU
+  // canvases, which are the reason anyone is on the page.
   //
-  // The chromatic scale is the ocean-blue Coolors ramp
-  // (03045e → 023e8a → 0077b6 → … → caf0f8): #0077b6 is the accent (4.9:1 on
-  // white), the navy ends carry ink and hover, and the cyan tints cool the
-  // neutrals. No periwinkle/indigo anywhere.
-  bg: '#ffffff',
-  bgRaised: '#f7fbfd',
-  surface: '#ffffff',
-  surface2: '#e8f4f9',
-  border: '#d6e9f2',
-  borderStrong: '#b9d8e7',
-  borderHover: '#8fc0d8',
+  // Grayscale-plus-one-accent: neutrals run #171717 (ink) through #fafafa
+  // (ground), with a single teal accent (#006e92) for links/CTAs/focus.
+  // `mint`/`amber`/`rose` keep their names but are now neutrals-with-a-red-
+  // exception — mint/amber are mid/dark grays, rose is the one saturated
+  // color left, reserved for negative/error state.
+  bg: '#fafafa',
+  bgRaised: '#f2f2f2',
+  surface: '#fafafa',
+  surface2: '#f2f2f2',
+  border: 'rgba(23, 23, 23, 0.08)',
+  borderStrong: '#d7d7d7',
+  borderHover: '#b1b1b1',
 
-  text: '#03045e',
-  textDim: '#37476b',
-  textFaint: '#4f6078',
+  text: '#171717',
+  textDim: '#292929',
+  textFaint: '#585858',
 
-  accent: '#0077b6',
-  accentHover: '#023e8a',
-  // Tints and status dots only — 1.4:1, never legal as text.
-  accentDim: '#90e0ef',
+  accent: '#006e92',
+  accentHover: '#0066ac',
+  // Tints and status dots only — not legal as text.
+  accentDim: '#868686',
   onAccent: '#ffffff',
 
-  mint: '#0e7c58',
-  amber: '#92590a',
-  rose: '#c02b2b',
+  mint: '#636363',
+  amber: '#404040',
+  rose: '#e40014',
 
   // Code sample tokens.
-  codeText: '#1f2430',
-  codeComment: '#4f6078',
-  codeKeyword: '#6d28d9',
-  codeString: '#0f7a51',
-  codeFn: '#0077b6',
-  codeNum: '#92590a',
-  codeInline: '#2b3140',
+  codeText: '#262626',
+  codeComment: '#767676',
+  codeKeyword: '#171717',
+  codeString: '#525252',
+  codeFn: '#006e92',
+  codeNum: '#636363',
+  codeInline: '#262626',
 })
 
 /**
@@ -84,14 +86,14 @@ export const shadow = stylex.defineVars({
 })
 
 export const radius = stylex.defineVars({
-  sm: '5px',
-  md: '8px',
-  lg: '10px',
-  pill: '999px',
+  sm: '0px',
+  md: '0px',
+  lg: '0px',
+  pill: '0px',
 })
 
 export const size = stylex.defineVars({
-  maxWidth: '1120px',
+  maxWidth: '1152px',
   gutter: '24px',
   navHeight: '58px',
 })

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import * as stylex from '@stylexjs/stylex'
-import { color, font, radius } from '../src/tokens.stylex'
+import { color, radius } from '../src/tokens.stylex'
 import {
   B,
   Body,
@@ -32,7 +32,7 @@ import { InstallCommand } from '../src/components/InstallCommand'
 import { Showcase } from '../src/components/Showcase'
 import { ComponentGallery } from '../src/components/ComponentGallery'
 import { HeroStage, LandingGpu } from '../src/components/HeroStage'
-import { HeroJourney } from '../src/components/hero3d/HeroJourney'
+import { GraphStat } from '../src/components/graphs'
 import { heroMotion } from '../src/heroMotion.stylex'
 
 export const metadata: Metadata = {
@@ -70,52 +70,9 @@ const s = stylex.create({
     gap: { default: 48, [HERO]: 36 },
     alignItems: 'center',
   },
-  /**
-   * The plan's legibility argument ("`Card` is opaque, `Section` isn't, so text stays readable
-   * against the sticky scene") holds for sections 2-4, whose text lives inside a `Card` — but the
-   * hero's own text column is a bare `Stack`, never a `Card`, so it had zero backing against the
-   * moving scene directly behind it. Same recipe as `Chrome.tsx`'s sticky header
-   * (`color-mix` translucent surface + `backdropFilter: blur()`, the one other `backdrop-filter`
-   * user in this app) rather than a flat opaque `Card`: a hard white rectangle over a 3D scene reads
-   * as a bug patch, a blurred panel reads as an intentional glass layer that happens to sit over
-   * the render.
-   */
-  heroText: {
-    minWidth: 0,
-    position: 'relative',
-    zIndex: 1,
-    padding: '28px 26px',
-    borderRadius: radius.lg,
-    backgroundColor: `color-mix(in srgb, ${color.surface} 88%, transparent)`,
-    backdropFilter: 'blur(16px)',
-  },
+  heroText: { minWidth: 0 },
   heroCta: { gap: 10 },
   install: { maxWidth: 520 },
-
-  stats: {
-    display: 'grid',
-    gridTemplateColumns: { default: 'repeat(3, minmax(0, 1fr))', [HERO]: 'minmax(0, 1fr)' },
-    gap: 16,
-  },
-  stat: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-    padding: '20px 22px',
-    backgroundColor: color.surface,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: color.border,
-    borderRadius: radius.lg,
-  },
-  statValue: {
-    fontFamily: font.mono,
-    fontSize: 'clamp(24px, 3vw, 30px)',
-    fontVariantNumeric: 'tabular-nums',
-    letterSpacing: '-0.02em',
-    color: color.text,
-  },
-  statLabel: { fontSize: 14, lineHeight: 1.5, color: color.textDim },
 
   kicker: {
     fontSize: 'clamp(17px, 1.7vw, 20px)',
@@ -124,22 +81,6 @@ const s = stylex.create({
     color: color.text,
     fontWeight: 560,
     maxWidth: '60ch',
-  },
-  /**
-   * Same bare-text-over-the-sticky-scene bug `s.heroText` above fixes for the hero, found on the
-   * kicker line inside the journey's "Everybody writes this UI three times" section (not wrapped
-   * in a `Card` like the stat callouts right above it, so a scene square could cross behind it) —
-   * same translucent/blurred backing, same token values, for the same reason. Only applied where
-   * a kicker actually sits inside `<HeroJourney>` (this section's); the other `s.kicker` use below
-   * is past `</HeroJourney>`, off the sticky scene, and doesn't need it.
-   */
-  kickerPanel: {
-    position: 'relative',
-    zIndex: 1,
-    padding: '28px 26px',
-    borderRadius: radius.lg,
-    backgroundColor: `color-mix(in srgb, ${color.surface} 88%, transparent)`,
-    backdropFilter: 'blur(16px)',
   },
 
   split: {
@@ -183,7 +124,6 @@ const CEILINGS: Array<[string, string]> = [
 function Home() {
   return (
     <LandingGpu>
-      <HeroJourney>
       <section {...stylex.props(s.hero)}>
         <Wrap>
           <div {...stylex.props(s.heroGrid)}>
@@ -238,7 +178,6 @@ function Home() {
       <Section
         title="The DOM is out of headroom. The GPU is barely awake."
         lead="WebGPU reached Baseline in January 2026. The fastest chip in the machine is now a standard browser API, and it spends most of its life compositing rectangles while your interface drops frames next to it."
-        scrimHeader
       >
         <Grid cols={3}>
           <Card>
@@ -272,7 +211,7 @@ function Home() {
         </Grid>
       </Section>
 
-      <Section title="Everybody writes this UI three times." scrimHeader>
+      <Section title="Everybody writes this UI three times.">
         <Stack gap={28}>
           <Body>
             First in DOM. Fine at a thousand rows, dead at five thousand — that is roughly the
@@ -281,15 +220,11 @@ function Home() {
             grows again. Both ceilings are properties of drawing from a CPU loop, and no version
             of either platform raises them.
           </Body>
-          <div {...stylex.props(s.stats)}>
-            {CEILINGS.map(([value, label]) => (
-              <div key={label} {...stylex.props(s.stat)}>
-                <span {...stylex.props(s.statValue)}>{value}</span>
-                <span {...stylex.props(s.statLabel)}>{label}</span>
-              </div>
-            ))}
-          </div>
-          <p {...stylex.props(s.kicker, s.kickerPanel)}>
+          <GraphStat
+            title="Ceilings"
+            items={CEILINGS.map(([value, label]) => ({ value, label }))}
+          />
+          <p {...stylex.props(s.kicker)}>
             Nobody budgets for the third rewrite. Nobody has to do a fourth — above this one, the
             ceiling is the hardware.
           </p>
@@ -299,7 +234,6 @@ function Home() {
       <Section
         title="Zoom is a uniform write, not a re-render."
         lead="A CPU pipeline re-walks the whole dataset on every pan, zoom, filter and brush. A GPU pipeline uploads it once. After that, interaction changes a few dozen bytes of uniform and the frame redraws from data that never moved — the dataset stopped being in the interaction path."
-        scrimHeader
       >
         <Grid cols={3}>
           <Card>
@@ -330,7 +264,6 @@ function Home() {
           </Card>
         </Grid>
       </Section>
-      </HeroJourney>
 
       <Section
         title="Here are four of them. One device."
