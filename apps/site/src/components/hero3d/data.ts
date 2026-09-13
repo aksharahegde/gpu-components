@@ -99,9 +99,11 @@ export const COLLAPSED_DEPTH = -4.2
  * 3. **Heatmap** — dolly to the densest layer (`DEPTH.heatmap`).
  * 4. **Grid/Timeline** — continue forward, camera now only ~1.4 units from `DEPTH.scatter` — this
  *    is exactly why Phase 2's near-plane fade exists (`shader.ts`).
- * 5. **Dissolve** — placeholder only: Phase 5 wires this to the `<Showcase />` handoff and will
- *    likely retune these two numbers once that fade is actually built; for now it just continues
- *    the dolly one step further so `journeyPose` has a real last segment to interpolate into.
+ * 5. **Dissolve** — Phase 5: the scene fades to nothing via `journeyAlpha()` below, so there is no
+ *    reason to also keep moving the camera right as it disappears — holding waypoint 4's exact
+ *    pose (rather than the placeholder dolly-further numbers Phase 1 shipped) means the last
+ *    segment interpolates between two identical poses, i.e. the camera simply stops, and alpha
+ *    does all the remaining work.
  *
  * Retuned in Phase 3 (real multi-section scroll range, replacing Phase 1's one-hero-height
  * placeholder): camera world position is `targetZ + distance` (orbit at yaw=0/pitch=0 sits the
@@ -122,7 +124,7 @@ export const WAYPOINTS: readonly Waypoint[] = [
   { targetZ: -4, distance: 9.5 },
   { targetZ: DEPTH.heatmap, distance: 3 },
   { targetZ: -3.6, distance: 2.2 },
-  { targetZ: -0.6, distance: 0.8 },
+  { targetZ: -3.6, distance: 2.2 },
 ] as const
 
 /** Linearly interpolates `targetZ`/`distance` between the bracketing pair of `WAYPOINTS` for
@@ -142,6 +144,39 @@ export function journeyPose(t: number): Waypoint {
     targetZ: a.targetZ + (b.targetZ - a.targetZ) * localT,
     distance: a.distance + (b.distance - a.distance) * localT,
   }
+}
+
+/** Where the Phase 5 dissolve starts/ends, in the same `journeyT` domain as `WAYPOINTS` (0..1
+ * across all five stops — the final segment, waypoint 4 -> 5, spans `t` in `[0.75, 1]`). Starting
+ * at 0.8 rather than exactly 0.75 leaves the first sliver of the last segment holding at full
+ * opacity (matches waypoint 5's now-static camera pose — nothing else changes right as the fade
+ * begins), and ending at 0.97 rather than 1.0 means the scene is already fully transparent slightly
+ * *before* the journey container's sticky pin actually releases (`HeroJourney.tsx`'s `100svh`
+ * negative-margin rig) and normal document flow carries the reader on to `<Showcase />`'s section —
+ * `Showcase.tsx`'s own `useLazyMount` (600px `rootMargin`) starts mounting its real components even
+ * earlier than that, well before they're visually on screen, so "done fading by the time the
+ * sticky layer lets go" is already comfortably ahead of "done fading by the time Showcase is
+ * visible." */
+const DISSOLVE_START_T = 0.8
+const DISSOLVE_END_T = 0.97
+
+/** Smoothstep (3x^2 - 2x^3), matching `shader.ts`'s own near-plane fade curve so the dissolve reads
+ * as the same easing language as the rest of the scene's alpha handling. */
+function smoothstep01(x: number): number {
+  const t = Math.min(1, Math.max(0, x))
+  return t * t * (3 - 2 * t)
+}
+
+/** Global alpha multiplier for the Phase 5 dissolve-to-`<Showcase />` handoff (`shader.ts`'s
+ * `scene.journeyAlpha` uniform): 1 for most of the journey, ramping smoothly to 0 as `journeyT`
+ * crosses `[DISSOLVE_START_T, DISSOLVE_END_T]`. `Hero3DComponent.plan()` calls this every tick
+ * `journeyT` changes, same as `journeyPose()`. */
+export function journeyAlpha(t: number): number {
+  const clamped = Math.min(1, Math.max(0, t))
+  if (clamped <= DISSOLVE_START_T) return 1
+  if (clamped >= DISSOLVE_END_T) return 0
+  const local = (clamped - DISSOLVE_START_T) / (DISSOLVE_END_T - DISSOLVE_START_T)
+  return 1 - smoothstep01(local)
 }
 
 function backdropLayer(): HeroInstance[] {

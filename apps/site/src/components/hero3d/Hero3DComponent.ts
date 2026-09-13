@@ -13,7 +13,7 @@ import {
 import { orbitControls, perspectiveCamera, plane, type OrbitControls, type PerspectiveCamera } from "vgpu/scene";
 import { EMPTY_PLAN, type ComponentContext, type FrameContext, type GpuComponent, type RenderPlan } from "@gpu-components/core";
 import { HERO3D_WGSL } from "./shader.ts";
-import { buildHeroScene, COLLAPSED_DEPTH, WAYPOINTS, journeyPose } from "./data.ts";
+import { buildHeroScene, COLLAPSED_DEPTH, WAYPOINTS, journeyAlpha, journeyPose } from "./data.ts";
 import { CAMERA_FAR, CAMERA_FOV_Y_DEG, CAMERA_NEAR, CAMERA_POSITION_Z } from "./cameraSpec.ts";
 
 let nextId = 0;
@@ -93,6 +93,9 @@ const PARALLAX_DAMPING_S = 0.35;
 interface SceneUniforms extends Record<string, unknown> {
   readonly sceneT: number;
   readonly collapsedZ: number;
+  /** Phase 5's dissolve handoff — see `shader.ts`'s `Scene.journeyAlpha` doc comment and
+   * `data.ts`'s `journeyAlpha()`. */
+  readonly journeyAlpha: number;
   /** Camera world position, re-set whenever `syncCamera` runs (i.e. whenever the camera actually
    * moved — resize or orbit). `shader.ts`'s fragment stage uses it for the Phase 2 near-plane fade
    * (distance from camera), not anything Phase 1 needs on its own. */
@@ -154,6 +157,9 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
   private scrollCollapse = 0;
   private lastPointerGoal = { yaw: 0, pitch: 0 };
   private lastSceneT = -1;
+  /** Last `journeyAlpha()` value actually pushed to the GPU — same "only `.set()` when it actually
+   * changed" discipline as `lastSceneT`, see `plan()`. */
+  private lastJourneyAlpha = -1;
   /** Last `journeyT` the orbit's `target`/`distance` were set from — `-1` never matches a clamped
    * `[0, 1]` input, so the first `update()` always applies waypoint 1's pose. */
   private lastJourneyT = -1;
@@ -190,6 +196,7 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
     this.sceneUniforms = uniforms(gpu, {
       sceneT: 0,
       collapsedZ: COLLAPSED_DEPTH,
+      journeyAlpha: 1,
       cameraPos: this.camera.worldPosition,
     });
 
@@ -309,6 +316,15 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
     if (sceneT !== this.lastSceneT) {
       this.lastSceneT = sceneT;
       this.sceneUniforms?.set({ sceneT });
+    }
+
+    // Phase 5 dissolve: `journeyAlpha()` is a pure function of `lastJourneyT` (already tracked by
+    // `update()`, same value `journeyPose()` reads above), so there's nothing to animate here on
+    // its own — it just rides whatever `journeyT` the scroll gesture already produced.
+    const alpha = journeyAlpha(this.lastJourneyT);
+    if (alpha !== this.lastJourneyAlpha) {
+      this.lastJourneyAlpha = alpha;
+      this.sceneUniforms?.set({ journeyAlpha: alpha });
     }
 
     this.animating = stillAnimating;

@@ -38,6 +38,11 @@ struct Camera {
 struct Scene {
   sceneT: f32,
   collapsedZ: f32,
+  /** Phase 5's dissolve handoff: a global alpha multiplier driven by journeyT approaching the
+   * journey's last waypoint (data.ts's journeyAlpha()), 1 = fully opaque, 0 = fully gone. Reuses
+   * the near-plane fade's multiply-into-fragment-alpha mechanism rather than adding a second fade
+   * path -- see the doc comment at the top of this file. */
+  journeyAlpha: f32,
   cameraPos: vec3f,
 }
 
@@ -99,7 +104,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
   let fade = smoothstep(0.0, NEAR_FADE_DISTANCE, in.camDist);
   // Straight (non-premultiplied) alpha — the "alpha" BlendPreset's (src-alpha,
   // one-minus-src-alpha) factors do the premultiply in the fixed-function blend unit.
-  return vec4f(in.color.rgb, in.color.a * fade);
+  return vec4f(in.color.rgb, in.color.a * fade * scene.journeyAlpha);
 }
 `;
 

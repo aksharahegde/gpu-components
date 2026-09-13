@@ -125,6 +125,22 @@ const s = stylex.create({
     fontWeight: 560,
     maxWidth: '60ch',
   },
+  /**
+   * Same bare-text-over-the-sticky-scene bug `s.heroText` above fixes for the hero, found on the
+   * kicker line inside the journey's "Everybody writes this UI three times" section (not wrapped
+   * in a `Card` like the stat callouts right above it, so a scene square could cross behind it) —
+   * same translucent/blurred backing, same token values, for the same reason. Only applied where
+   * a kicker actually sits inside `<HeroJourney>` (this section's); the other `s.kicker` use below
+   * is past `</HeroJourney>`, off the sticky scene, and doesn't need it.
+   */
+  kickerPanel: {
+    position: 'relative',
+    zIndex: 1,
+    padding: '28px 26px',
+    borderRadius: radius.lg,
+    backgroundColor: `color-mix(in srgb, ${color.surface} 88%, transparent)`,
+    backdropFilter: 'blur(16px)',
+  },
 
   split: {
     display: 'grid',
@@ -272,7 +288,7 @@ function Home() {
               </div>
             ))}
           </div>
-          <p {...stylex.props(s.kicker)}>
+          <p {...stylex.props(s.kicker, s.kickerPanel)}>
             Nobody budgets for the third rewrite. Nobody has to do a fourth — above this one, the
             ceiling is the hardware.
           </p>
