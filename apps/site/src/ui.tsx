@@ -257,6 +257,22 @@ const surface = stylex.create({
     borderInlineStartColor: color.accent,
     backgroundColor: `color-mix(in srgb, ${color.accent} 6%, ${color.surface})`,
   },
+  /**
+   * Same translucent-blur backing `page.tsx`'s `s.heroText`/`s.kickerPanel` use for bare text sitting
+   * over `<HeroJourney>`'s sticky 3D scene — those two fixes protected the hero's own H1/lead and one
+   * kicker paragraph, but missed that `Section`'s own eyebrow/title/lead is *also* bare text (no
+   * `Card`, no background) and three `<Section>` calls on the homepage sit inside the journey too.
+   * Opt-in via `scrimHeader` rather than a global change: outside the journey there's no scene behind
+   * `Section`, so every other page's headers stay exactly as before.
+   */
+  scrimHeader: {
+    position: 'relative',
+    zIndex: 1,
+    padding: '28px 26px',
+    borderRadius: radius.lg,
+    backgroundColor: `color-mix(in srgb, ${color.surface} 88%, transparent)`,
+    backdropFilter: 'blur(16px)',
+  },
 })
 
 export function Card({
@@ -297,6 +313,7 @@ export function Section({
   lead,
   children,
   flush,
+  scrimHeader,
 }: {
   id?: string
   eyebrow?: string
@@ -304,13 +321,17 @@ export function Section({
   lead?: ReactNode
   children?: ReactNode
   flush?: boolean
+  /** Set only on `<Section>` calls that sit inside `<HeroJourney>`'s sticky 3D scene — backs the
+   * eyebrow/title/lead block with the same translucent-blur panel the hero text and kicker line
+   * already use, so bare copy stays legible over the moving canvas. Leave unset everywhere else. */
+  scrimHeader?: boolean
 }) {
   return (
     <section id={id} {...stylex.props(surface.section, flush && surface.sectionFlush)}>
       <Wrap>
         <Stack gap={32}>
           {(eyebrow || title || lead) && (
-            <Stack gap={12}>
+            <Stack gap={12} sx={scrimHeader && surface.scrimHeader}>
               {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
               {title && <H2>{title}</H2>}
               {lead && <Lead>{lead}</Lead>}

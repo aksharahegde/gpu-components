@@ -238,6 +238,7 @@ function Home() {
       <Section
         title="The DOM is out of headroom. The GPU is barely awake."
         lead="WebGPU reached Baseline in January 2026. The fastest chip in the machine is now a standard browser API, and it spends most of its life compositing rectangles while your interface drops frames next to it."
+        scrimHeader
       >
         <Grid cols={3}>
           <Card>
@@ -271,7 +272,7 @@ function Home() {
         </Grid>
       </Section>
 
-      <Section title="Everybody writes this UI three times.">
+      <Section title="Everybody writes this UI three times." scrimHeader>
         <Stack gap={28}>
           <Body>
             First in DOM. Fine at a thousand rows, dead at five thousand — that is roughly the
@@ -298,6 +299,7 @@ function Home() {
       <Section
         title="Zoom is a uniform write, not a re-render."
         lead="A CPU pipeline re-walks the whole dataset on every pan, zoom, filter and brush. A GPU pipeline uploads it once. After that, interaction changes a few dozen bytes of uniform and the frame redraws from data that never moved — the dataset stopped being in the interaction path."
+        scrimHeader
       >
         <Grid cols={3}>
           <Card>
