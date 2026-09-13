@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { LabelOverlay, useCanvasRef, useGpuA11y, useGpuComponent } from "@gpu-components/react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { LabelOverlay, useCanvasRef, useGpu, useGpuA11y, useGpuComponent } from "@gpu-components/react";
 import type { PositionedLabel } from "@gpu-components/react";
 import {
   brushRectFromPixels,
@@ -46,6 +46,18 @@ export interface GPUTimelineProps {
   readonly onBrushSelectionChange?: (rect: BrushRect, ids: readonly number[]) => void;
   readonly style?: CSSProperties;
   readonly className?: string;
+  /**
+   * What to render when there's no WebGPU (PLAN.md §22, stage 5): `"canvas2d"` (default) mounts
+   * into the runtime's Canvas2D fallback scheduler — same `<canvas>`, same interaction handlers,
+   * CPU-rendered pixels; `"none"` renders nothing; a `ReactNode` renders in the canvas's place
+   * (e.g. an upgrade notice) for either the fully-unsupported case or a fallback the caller would
+   * rather not show. See the status branch below for exactly which case gets which treatment.
+   */
+  readonly fallback?: "canvas2d" | "none" | ReactNode;
+  /** Fires when the Canvas2D fallback degrades (a Canvas2D-specific cap was exceeded, an
+   * off-screen pass was skipped, …) — forwarded from `runtime.warnings`' `"canvas2d-degraded"`
+   * channel, filtered to this component's own id. */
+  readonly onPerformance?: (metrics: { readonly degraded: true; readonly reason: string }) => void;
 }
 
 /** How many clip-space zoom "steps" one native wheel pixel of deltaY corresponds to. */
@@ -151,12 +163,27 @@ function revealSpan(
  * broader single-id → set selection model), a shader-pass focus ring (DOM outline only for now),
  * `toAccessibleTable()`, touch gestures, and true lasso/polygon selection.
  */
-export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
-  const { spans, onViewportChange, hoveredId, selectedId, onHover, onSelect, onBrushSelectionChange, style, className } =
+export function GPUTimeline(props: GPUTimelineProps): JSX.Element | null {
+  const { spans, onViewportChange, hoveredId, selectedId, onHover, onSelect, onBrushSelectionChange, style, className, onPerformance } =
     props;
+  const fallback = props.fallback ?? "canvas2d";
+  const { status, runtime } = useGpu();
   const [canvas, ref] = useCanvasRef();
   const appRef = useRef<HTMLDivElement | null>(null);
   const componentRef = useRef<TimelineComponent | null>(null);
+
+  // `onPerformance` reuses the existing warnings channel (PLAN.md §22 stage 5.1) — no new
+  // plumbing: `Canvas2DScheduler` already forwards a degraded `pass.report()` into
+  // `runtime.warnings` as `{ code: "canvas2d-degraded", source: <component id> }`; this just
+  // filters that stream down to this mounted instance's own id.
+  useEffect(() => {
+    if (!runtime || !onPerformance) return;
+    return runtime.warnings.onWarning((w) => {
+      if (w.code === "canvas2d-degraded" && w.source === componentRef.current?.id) {
+        onPerformance({ degraded: true, reason: w.message });
+      }
+    });
+  }, [runtime, onPerformance]);
 
   const [internalViewport, setInternalViewport] = useState(props.viewport);
   const viewport = onViewportChange ? props.viewport : internalViewport;
@@ -431,6 +458,33 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onSelect/cancelInertia are assumed stable per the calling convention used elsewhere in this codebase.
   }, [spans, viewport, bounds, focusedId, announce, setViewport, onSelect, cancelInertia]);
 
+  // Status branch (PLAN.md §22, stage 5.1). All hooks above run unconditionally on every render —
+  // this must stay below every hook call.
+  //
+  // `status === "fallback"` with the default `fallback === "canvas2d"` falls through to the normal
+  // render below unchanged: `useGpuComponent` already mounts into the runtime's Canvas2D scheduler
+  // for `status === "fallback"` the same way it mounts into the GPU scheduler for `"ready"` — same
+  // canvas, same hit-test/wheel/keyboard/brush interaction (already CPU-side), same `LabelOverlay`
+  // (DOM on both paths already). `status === "unsupported"` with the same default also falls
+  // through — no Canvas2D scheduler exists in that case (the *provider*, not this component,
+  // decided there's no fallback at all), so "canvas2d" here just preserves this component's
+  // pre-existing behaviour of quietly mounting nothing rather than newly opting into a
+  // never-asked-for placeholder.
+  //
+  // A caller that wants different behaviour for either status opts in explicitly via `fallback`:
+  // `"none"` renders nothing, and a `ReactNode` renders in the canvas's place — for either status,
+  // since the resolution is identical; only default `"canvas2d"` distinguishes them, and it does so
+  // by falling through in both cases.
+  if ((status === "unsupported" || status === "fallback") && fallback !== "canvas2d") {
+    if (fallback === "none") return null;
+    // Keep the root wrapping `<div>`'s sizing so layout doesn't jump when switching modes.
+    return (
+      <div className={className} style={{ position: "relative", width: viewport.width, height: viewport.height, ...style }}>
+        {fallback}
+      </div>
+    );
+  }
+
   return (
     <div
       ref={appRef}
@@ -439,6 +493,12 @@ export function GPUTimeline(props: GPUTimelineProps): JSX.Element {
       style={{ position: "relative", width: viewport.width, height: viewport.height, ...style }}
     >
       <canvas
+        // A canvas that has had `getContext("webgpu")` called on it can never yield a `"2d"`
+        // context afterward (the browser's one-way door) — relevant to the permanent-device-loss
+        // path (`GpuRuntimeOptions.onFallback`), where `status` can flip from `"ready"` to
+        // `"fallback"` on a live mount. Keying on render mode gives React a fresh DOM element
+        // rather than reusing the spent one.
+        key={status === "fallback" ? "2d" : "gpu"}
         ref={ref}
         aria-hidden="true"
         width={viewport.width}

@@ -1,7 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { frame, target, uniforms, type Gpu } from "vgpu";
-import { createMockGpu } from "@gpu-components/testing";
+import { createFallbackRuntime, createMockGpu, createRecordingContext2D } from "@gpu-components/testing";
+import type { RecordedFillRect } from "@gpu-components/testing";
 import { createWarningsLog, gpuPass, NO_WEBGPU_CAPABILITIES, ResourceRegistry } from "@gpu-components/core";
 import type { ComponentContext } from "@gpu-components/core";
 import { TimelineComponent } from "./TimelineComponent.ts";
@@ -232,5 +233,96 @@ describe("TimelineComponent", () => {
     })();
 
     return setup;
+  });
+});
+
+/**
+ * PLAN.md §22 stage 4.7 — the same fixture and the same pixel-column expectations
+ * `render.pixels.test.ts` asserts for the GPU path ("span a's left edge lands at x=20"), driven
+ * through the Canvas2D fallback stack end to end: `createFallbackRuntime()` (a `GpuRuntime` with
+ * `caps.tier === 'fallback'`) mounting a real `TimelineComponent` against a fake canvas wired to a
+ * recording 2D context, ticked once through the runtime's own `Canvas2DScheduler` — not a
+ * hand-built `ComponentContext`, so this also exercises `GpuRuntime.mount()`'s fallback branch.
+ */
+describe("TimelineComponent — Canvas2D fallback (PLAN.md §22)", () => {
+  const W = 200;
+  const H = 100;
+  // Same fixture as render.pixels.test.ts: span a on track 0, [10, 40) on a [0, 100] domain over
+  // 200px → clip x [-0.8, -0.2] → pixel x [20, 80].
+  const SPANS = ingestSpans([
+    { start: 10, duration: 30, track: 0, label: "a" },
+    { start: 50, duration: 30, track: 0, label: "b" },
+    { start: 20, duration: 60, track: 1, label: "c" },
+  ]);
+  const VIEWPORT = { timeStart: 0, timeEnd: 100, trackCount: 2, width: W, height: H };
+
+  function fakeCanvas(ctx: CanvasRenderingContext2D): HTMLCanvasElement {
+    return {
+      width: W,
+      height: H,
+      getContext: (id: string) => (id === "2d" ? ctx : null),
+      getBoundingClientRect: () => ({ width: W, height: H, top: 0, left: 0, right: W, bottom: H, x: 0, y: 0, toJSON: () => ({}) }),
+    } as unknown as HTMLCanvasElement;
+  }
+
+  it("draws span a's known left-edge column and leaves a known gap empty", async () => {
+    const runtime = createFallbackRuntime();
+    const recorder = createRecordingContext2D();
+    const canvas = fakeCanvas(recorder.ctx);
+
+    try {
+      let component: TimelineComponent | null = null;
+      runtime.mount((_ctx) => {
+        component = new TimelineComponent(64);
+        return component;
+      }, canvas);
+      // `runtime.mount()` already calls `create()`; `update()` needs to be driven explicitly here
+      // (a real `<GPUTimeline>` does this through `useGpuComponent`'s seeding microtask instead).
+      component!.update({ spans: SPANS, viewport: VIEWPORT });
+
+      // Drive one tick of the runtime's own Canvas2DScheduler.
+      await new Promise((resolve) => setTimeout(resolve, 40));
+
+      const fillRects = recorder.calls.filter((c): c is RecordedFillRect => c.op === "fillRect");
+      assert.ok(fillRects.length > 0, "expected at least one fillRect from the span layer");
+
+      // Span a's clip rect is x [-0.8, -0.2] -> pixel x [20, 80] (same numbers render.pixels.test.ts
+      // asserts for the GPU path). Track 0's row spans roughly y [15, 35] (see fallback.test.ts's
+      // hand-computed y0/y1 = [0.15, 0.85] in clip space -> pixel y [7.5, 42.5]).
+      const coversSpanA = fillRects.some((r) => r.x <= 20 && r.x + r.w > 20 && r.y <= 25 && r.y + r.h > 25);
+      assert.ok(coversSpanA, `expected a fillRect covering span a's left edge at (20, 25); got ${JSON.stringify(fillRects)}`);
+
+      // A known gap: x=90 on track 0 falls strictly between span a [20,80) and span b [100,160) —
+      // no fillRect should cover it.
+      const coversGap = fillRects.some((r) => r.x <= 90 && r.x + r.w > 90 && r.y <= 25 && r.y + r.h > 25);
+      assert.equal(coversGap, false, "expected the gap between span a and b to be empty");
+    } finally {
+      // In `finally` so a failed assertion above can't leak the scheduler's live timer and hang
+      // the test process.
+      runtime.dispose();
+    }
+  });
+
+  it("still paints in raster LOD mode, via the RasterLayer fallback policy", async () => {
+    const runtime = createFallbackRuntime();
+    const recorder = createRecordingContext2D();
+    const canvas = fakeCanvas(recorder.ctx);
+
+    try {
+      let component: TimelineComponent | null = null;
+      // lodThreshold: 0 forces raster mode immediately, regardless of span count.
+      runtime.mount((_ctx) => {
+        component = new TimelineComponent(64, 0);
+        return component;
+      }, canvas);
+      component!.update({ spans: SPANS, viewport: VIEWPORT });
+
+      await new Promise((resolve) => setTimeout(resolve, 40));
+
+      const putImageData = recorder.calls.find((c) => c.op === "putImageData");
+      assert.ok(putImageData, "expected the raster layer to draw via putImageData in raster LOD mode");
+    } finally {
+      runtime.dispose();
+    }
   });
 });

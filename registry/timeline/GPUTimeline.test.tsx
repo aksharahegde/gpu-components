@@ -34,18 +34,23 @@ g.IS_REACT_ACT_ENVIRONMENT = true;
 
 const { createElement, act } = await import("react");
 const { createRoot } = await import("react-dom/client");
-const { createMockGpu, createMockCanvasContext } = await import("@gpu-components/testing");
-const { GPUProvider } = await import("@gpu-components/react");
+const { createMockGpu, createMockCanvasContext, createRecordingContext2D } = await import("@gpu-components/testing");
+const { GPUProvider, useGpu } = await import("@gpu-components/react");
 const { GPUTimeline } = await import("./GPUTimeline.tsx");
 const { ingestSpans } = await import("./ingest.ts");
+const { CANVAS2D_CAPS } = await import("@gpu-components/core");
 type Gpu = import("vgpu").Gpu;
+type GpuRuntime = import("@gpu-components/core").GpuRuntime;
 type ViewportState = import("@gpu-components/core").ViewportState;
 
 // Same convention as GPUProvider.test.ts: canvases resolve against whichever mock Gpu the test's
-// GPUProvider most recently connected to.
+// GPUProvider most recently connected to. "2d" is for the Canvas2D fallback path (PLAN.md §22,
+// stage 5.3) — every canvas gets its own recording context so `Canvas2DSurface`'s constructor
+// never sees `getContext("2d")` return null.
 let currentGpu: Gpu | null = null;
 dom.window.HTMLCanvasElement.prototype.getContext = function (id: string) {
   if (id === "webgpu" && currentGpu) return createMockCanvasContext(currentGpu, [400, 240]);
+  if (id === "2d") return createRecordingContext2D().ctx;
   return null;
 } as typeof dom.window.HTMLCanvasElement.prototype.getContext;
 
@@ -321,5 +326,101 @@ describe("GPUTimeline keyboard navigation", () => {
         assert.equal(app.getAttribute("aria-activedescendant"), null);
       },
     );
+  });
+});
+
+/**
+ * PLAN.md §22, stage 5.3 — the `fallback`/`onPerformance` props, under a provider that actually
+ * reaches `status === "fallback"`. Omitting `connect`/`reconnect` (unlike `testConnectOptions()`
+ * above) sends `GpuRuntime.create()` through the real `probeCapabilities()` path; jsdom's
+ * `navigator.gpu` is undefined, so `caps.webgpu` comes back `false` and the default
+ * `options.fallback !== "none"` promotes the runtime straight to `caps.tier === "fallback"` — the
+ * same path a real unsupported browser takes.
+ */
+function RuntimeProbe(props: { readonly onRuntime: (runtime: GpuRuntime) => void }) {
+  const { runtime } = useGpu();
+  if (runtime) props.onRuntime(runtime);
+  return null;
+}
+
+async function withFallbackTimeline(
+  props: Parameters<typeof GPUTimeline>[0],
+  fn: (app: Element | null, runtime: GpuRuntime | null) => void | Promise<void>,
+): Promise<void> {
+  host.innerHTML = "";
+  const root = createRoot(host);
+  let runtime: GpuRuntime | null = null;
+  await act(async () => {
+    root.render(
+      createElement(
+        GPUProvider,
+        { options: {} },
+        createElement(RuntimeProbe, { onRuntime: (r: GpuRuntime) => (runtime = r) }),
+        createElement(GPUTimeline, props),
+      ) as never,
+    );
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  });
+  try {
+    const app = host.querySelector('[role="application"]');
+    await fn(app, runtime);
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+  }
+}
+
+describe("GPUTimeline Canvas2D fallback prop (PLAN.md §22)", () => {
+  it("fallback='none' renders nothing under a fallback-mode provider", async () => {
+    await withFallbackTimeline({ spans: testSpans(), viewport: VIEWPORT, fallback: "none" }, async (app) => {
+      assert.equal(app, null, "expected no role=application root at all");
+      assert.equal(host.querySelector("canvas"), null, "expected no canvas element");
+    });
+  });
+
+  it("fallback={<UpgradeNotice/>} renders that node in the canvas's place", async () => {
+    await withFallbackTimeline(
+      { spans: testSpans(), viewport: VIEWPORT, fallback: createElement("p", { "data-testid": "upgrade" }, "Upgrade your browser") },
+      async () => {
+        const notice = host.querySelector('[data-testid="upgrade"]');
+        assert.ok(notice, "expected the fallback ReactNode to render");
+        assert.equal(notice!.textContent, "Upgrade your browser");
+        assert.equal(host.querySelector("canvas"), null, "expected no canvas — the ReactNode replaces it");
+      },
+    );
+  });
+
+  it("default fallback='canvas2d' still renders the canvas and label overlay under status='fallback'", async () => {
+    await withFallbackTimeline({ spans: testSpans(), viewport: VIEWPORT }, async (app) => {
+      assert.ok(app, "expected the GPUTimeline root to render normally in fallback mode");
+      assert.ok(host.querySelector("canvas"), "expected a canvas element");
+      assert.equal(host.querySelectorAll('[role="listitem"]').length, 3, "labels render the same on both backends");
+    });
+  });
+
+  it("onPerformance fires once with the reason from a real canvas2d-degraded warning", async () => {
+    // A genuine degradation, not a fabricated warning with a guessed component id (ids are
+    // assigned sequentially process-wide, so a hand-picked "timeline-0" would silently stop
+    // matching the moment an earlier test in this file mounts one more component first): enough
+    // spans to exceed `InstancedQuadLayer`'s Canvas2D budget (`CANVAS2D_CAPS.quads`), with the
+    // viewport wide enough that the CPU LOD heuristic stays in instanced mode rather than
+    // switching to the (differently-capped) raster path.
+    const count = CANVAS2D_CAPS.quads + 1;
+    const spans = ingestSpans(
+      Array.from({ length: count }, (_, i) => ({ start: i, duration: 1, track: 0 })),
+    );
+    const viewport: ViewportState = { timeStart: 0, timeEnd: count, trackCount: 1, width: 20_000, height: 100 };
+
+    const events: { degraded: true; reason: string }[] = [];
+    await withFallbackTimeline({ spans, viewport, onPerformance: (m) => events.push(m) }, async () => {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 60));
+      });
+      assert.equal(events.length, 1, `expected exactly one onPerformance call, got ${events.length}`);
+      assert.match(events[0]!.reason, /exceeds the Canvas2D budget/);
+    });
   });
 });

@@ -129,6 +129,9 @@ function Stage() {
   const [hovered, setHovered] = useState<number | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
   const [brushCount, setBrushCount] = useState<number | null>(null)
+  // Canvas2D fallback readout (PLAN.md §22, stage 5.2) — `onPerformance` reuses the existing
+  // warnings channel, so this is the only state this page needs to add.
+  const [degradedReason, setDegradedReason] = useState<string | null>(null)
 
 
   // GPUTimeline sizes itself from `viewport.width/height` (it has no ResizeObserver of its own —
@@ -230,13 +233,10 @@ function Stage() {
         {status === 'pending' && <div {...stylex.props(s.overlayMsg)}>Requesting a GPU device…</div>}
         {status === 'unsupported' && (
           <div {...stylex.props(s.overlayMsg)}>
-            <strong {...stylex.props(s.strong)}>WebGPU is unavailable in this browser.</strong>
-            <br />
-            There is no Canvas2D fallback yet — it is still unbuilt, and this page says so rather
-            than showing you an empty canvas and letting you guess.
+            <strong {...stylex.props(s.strong)}>WebGPU is unavailable, and no fallback was requested.</strong>
           </div>
         )}
-        {status === 'ready' && box.width > 1 && (
+        {(status === 'ready' || status === 'fallback') && box.width > 1 && (
           <GPUTimeline
             spans={spans}
             viewport={viewport}
@@ -246,6 +246,7 @@ function Stage() {
             onHover={setHovered}
             onSelect={setSelected}
             onBrushSelectionChange={(_rect, ids) => setBrushCount(ids.length)}
+            onPerformance={(m) => setDegradedReason(m.reason)}
           />
         )}
       </div>
@@ -273,6 +274,16 @@ function Stage() {
           <Readout label="Canvas">
             {Math.round(box.width)} × {Math.round(box.height)}
           </Readout>
+          <Readout label="Backend">
+            {status === 'fallback' ? (
+              <span {...stylex.props(s.strong)}>Canvas2D fallback (no WebGPU)</span>
+            ) : (
+              'WebGPU'
+            )}
+          </Readout>
+          {degradedReason && (
+            <p {...stylex.props(s.note)}>Canvas2D degraded: {degradedReason}</p>
+          )}
         </div>
 
         <div {...stylex.props(s.panel)}>
