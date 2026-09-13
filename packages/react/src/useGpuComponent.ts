@@ -13,8 +13,10 @@ import { useGpu } from "./useGpu.ts";
  *   every render in idiomatic React and must never trigger a remount.
  * - `[props]` — calls the mounted component's `update(props)`. A prop change never remounts.
  *
- * A no-op while `status !== 'ready'` — pair with `useGpu().status` for a fallback UI; this hook
- * does not need its own unsupported branch.
+ * A no-op unless `status` is `'ready'` or `'fallback'` — pair with `useGpu().status` for an
+ * unsupported-browser UI; this hook does not need its own unsupported branch. `'fallback'` mounts
+ * the same way `'ready'` does: `runtime.mount()` picks the Canvas2D scheduler internally based on
+ * `caps.tier`, so this hook needs no branch of its own for it.
  */
 export function useGpuComponent<Props>(
   factory: (ctx: ComponentContext) => GpuComponent<Props>,
@@ -32,7 +34,7 @@ export function useGpuComponent<Props>(
   const seeded = useRef<GpuComponent<Props> | null>(null);
 
   useEffect(() => {
-    if (!runtime || status !== "ready" || !canvas) return;
+    if (!runtime || (status !== "ready" && status !== "fallback") || !canvas) return;
 
     const handle = runtime.mount((ctx) => {
       const component = factoryRef.current(ctx);

@@ -1,4 +1,5 @@
 import { effect, type Effect, type Gpu } from "vgpu";
+import type { WarningsLog } from "../warnings.ts";
 import type { Canvas2DPassEncoder, PassEncoder } from "../passEncoder.ts";
 
 /**
@@ -20,7 +21,8 @@ export interface RasterFallbackPolicy {
 }
 
 export interface RasterLayerOptions {
-  readonly gpu: Gpu;
+  /** `null` in fallback mode — the layer skips its `effect()` allocation entirely. */
+  readonly gpu: Gpu | null;
   /** WGSL source for a full-screen fragment shader — `effect(gpu, …)`'s own contract: one
    * `@fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f` entry, no vertex stage of
    * its own. */
@@ -29,6 +31,9 @@ export interface RasterLayerOptions {
   /** Enables the Canvas2D backend. Omitted, a raster layer draws nothing in fallback mode and says
    * so through `pass.report()`. */
   readonly fallback?: RasterFallbackPolicy;
+  /** Reports `"no-canvas2d-policy"` once at construction (not per-frame) when `gpu === null` and
+   * no `fallback` was supplied. Optional, same as `InstancedQuadLayerOptions.warnings`. */
+  readonly warnings?: WarningsLog;
 }
 
 /**
@@ -42,7 +47,7 @@ export interface RasterLayerOptions {
  * (mipmaps, hardware filtering) this doesn't provide.
  */
 export class RasterLayer {
-  private readonly effect: Effect;
+  private readonly effect: Effect | null;
   private readonly fallback: RasterFallbackPolicy | undefined;
   private readonly label: string | undefined;
   /** Reused across frames, reallocated only when the surface size changes — allocating an
@@ -51,15 +56,26 @@ export class RasterLayer {
   private image: ImageData | null = null;
 
   constructor(opts: RasterLayerOptions) {
-    this.effect = effect(opts.gpu, opts.shader, { label: opts.label });
     this.fallback = opts.fallback;
     this.label = opts.label;
+    if (opts.gpu) {
+      this.effect = effect(opts.gpu, opts.shader, { label: opts.label });
+    } else {
+      this.effect = null;
+      if (!this.fallback) {
+        opts.warnings?.report({
+          code: "no-canvas2d-policy",
+          source: this.label ?? "RasterLayer",
+          message: "no Canvas2D fallback policy supplied — this layer draws nothing in fallback mode",
+        });
+      }
+    }
   }
 
   /** Binds a named resource the shader declares (uniforms, storage buffers) — same bind-by-name
-   * convention as `InstancedQuadLayer.bind()`. */
+   * convention as `InstancedQuadLayer.bind()`. No-op in fallback mode. */
   bind(values: Record<string, unknown>): void {
-    this.effect.set(values);
+    this.effect?.set(values);
   }
 
   /** Encodes the full-screen fragment pass against whichever backend the scheduler opened. */
@@ -68,6 +84,7 @@ export class RasterLayer {
       this.drawCanvas2D(pass);
       return;
     }
+    if (!this.effect) return;
     pass.frame.draw(this.effect);
   }
 
@@ -79,8 +96,16 @@ export class RasterLayer {
       pass.report(`${this.label ?? "RasterLayer"}: no Canvas2D fallback policy — nothing drawn`);
       return;
     }
-    const width = Math.max(1, Math.floor(pass.width));
-    const height = Math.max(1, Math.floor(pass.height));
+    // `putImageData` ignores the context's transform entirely — it always writes raw device
+    // pixels at the given device-pixel origin (PLAN.md §22's DPR edge case). `pass.width/height`
+    // are CSS pixels, so sizing the image from them directly would only cover 1/dpr² of a
+    // `dpr > 1` canvas. `shade()`'s contract is already resolution-agnostic (its formulas use
+    // `(x+0.5)/w` fractions, not absolute pixel counts), so shading at the real device resolution
+    // costs nothing and is strictly more correct — no separate dpr=1 downgrade path needed.
+    const canvasEl = (pass.ctx as { canvas?: { width?: number } }).canvas;
+    const dpr = canvasEl?.width && pass.width > 0 ? canvasEl.width / pass.width : 1;
+    const width = Math.max(1, Math.round(pass.width * dpr));
+    const height = Math.max(1, Math.round(pass.height * dpr));
     if (!this.image || this.image.width !== width || this.image.height !== height) {
       this.image = pass.ctx.createImageData(width, height);
     }

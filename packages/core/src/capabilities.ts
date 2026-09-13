@@ -21,6 +21,23 @@ export const NO_WEBGPU_CAPABILITIES: Capabilities = {
 };
 
 /**
+ * Same zeroed limits as `NO_WEBGPU_CAPABILITIES` — there is still no `Gpu` — but `tier: "fallback"`
+ * signals a *chosen* degraded mode (Canvas2D) rather than an unsupported one. Tier promotion from
+ * "none" to "fallback" is the runtime's decision, not `probeCapabilities()`'s: only the runtime
+ * knows whether `options.fallback !== "none"` was actually requested.
+ */
+export const FALLBACK_CAPABILITIES: Capabilities = {
+  webgpu: false,
+  timestampQuery: false,
+  float32Filterable: false,
+  maxStorageBufferBindingSize: 0,
+  maxBufferSize: 0,
+  maxTextureDimension2D: 0,
+  maxComputeWorkgroupsPerDimension: 0,
+  tier: "fallback",
+};
+
+/**
  * Probes `navigator.gpu.requestAdapter()` directly, independent of `init()`, so we know which
  * *optional* features (e.g. `timestamp-query`) are actually supported before ever naming them in
  * `requiredFeatures` — `vgpu`'s docs are explicit that an unsupported required feature fails

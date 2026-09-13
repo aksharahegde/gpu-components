@@ -35,7 +35,7 @@ export interface LineInstance {
 }
 
 export interface LineLayerOptions {
-  readonly gpu: Gpu;
+  readonly gpu: Gpu | null;
   /** Initial capacity, in lines. Grows on demand like any `InstancedQuadLayer`. */
   readonly capacity: number;
   /** Override the built-in `LINE_WGSL`. Must keep the `LineInstance` layout and the `viewport` /
@@ -108,14 +108,21 @@ export class LineLayer {
       capacity: opts.capacity,
       blend: opts.blend,
       label: opts.label,
-      warnings: opts.warnings,
+      // Only wired in GPU mode. In fallback mode (`gpu: null`), `base`'s constructor would
+      // otherwise report a spurious "no-canvas2d-policy" warning — `base` genuinely has no
+      // `QuadFallbackPolicy`, but that's expected and harmless here: `LineLayer.draw()` bypasses
+      // `base.draw()` entirely on the Canvas2D path (its own `drawCanvas2D()` decodes the fixed
+      // `LineInstance` layout directly). A stub policy would silence the warning too, but at the
+      // cost of `upload()` now retaining a CPU mirror `base` never reads, on every upload, even in
+      // GPU mode — real cost for a mirror this component's own fallback never touches.
+      warnings: opts.gpu ? opts.warnings : undefined,
     });
     this.label = opts.label;
   }
 
   /** See `InstancedQuadLayer.instances` — the same escape hatch, for a compute pass that generates
    * or filters lines on the GPU (a future graph component's edge list, say). */
-  get instances(): StorageBuffer {
+  get instances(): StorageBuffer | null {
     return this.base.instances;
   }
 

@@ -54,6 +54,9 @@ export function gpuPass(frame: FramePass): GpuPassEncoder {
 export const CANVAS2D_CAPS = {
   quads: 50_000,
   lineSegments: 20_000,
+  /** CPU density-binning budget (PLAN.md §22, stage 4.3) — above it, `TimelineComponent`'s fallback
+   * bins by stride rather than walking every span, and reports. */
+  binnedSpans: 250_000,
 } as const;
 
 /**

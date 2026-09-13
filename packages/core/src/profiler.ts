@@ -48,9 +48,13 @@ export const DISABLED_PROFILER: Profiler = {
  * function does not re-check capability support; `timer(gpu)` itself throws `VGPU-TIMER-INVALID`
  * if asked for on a device that never actually got the `"timestamp-query"` feature (`vgpu`'s own
  * docs), so callers must gate correctly before calling this with `true`.
+ *
+ * `gpu: null` (the Canvas2D fallback's case, PLAN.md §22 stage 3.5) only ever touches `gpu` when
+ * `gpuTimingEnabled` is also true, which a fallback caller never does — so `createProfiler(null,
+ * false)` is always safe and still populates CPU frame stats (`recordFrame`/`lastFrame`).
  */
-export function createProfiler(gpu: Gpu, gpuTimingEnabled: boolean): Profiler {
-  const gpuTimer: Timer | null = gpuTimingEnabled ? timer(gpu) : null;
+export function createProfiler(gpu: Gpu | null, gpuTimingEnabled: boolean): Profiler {
+  const gpuTimer: Timer | null = gpuTimingEnabled && gpu ? timer(gpu) : null;
   let lastFrame: FrameStats | null = null;
 
   return {

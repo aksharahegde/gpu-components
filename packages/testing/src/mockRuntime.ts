@@ -68,3 +68,14 @@ export function mockGpuRuntimeOptions(
 export function tick(ms = 40): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+/**
+ * A `GpuRuntime` in Canvas2D fallback mode (`caps.tier === 'fallback'`, `caps.webgpu === false`) —
+ * no `Gpu` at all, `GpuRuntime.createFallback()` under the hood. For testing a component's
+ * fallback policy end to end (PLAN.md §22 stage 3.8) without a real browser or `navigator.gpu`.
+ */
+export function createFallbackRuntime(
+  options: Omit<GpuRuntimeOptions, "reconnect" | "connect" | "adopt"> = {},
+): GpuRuntime {
+  return GpuRuntime.createFallback(options);
+}

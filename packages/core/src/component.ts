@@ -5,6 +5,7 @@ import type { ResourceRegistry } from "./registry.ts";
 import type { Globals } from "./uniforms.ts";
 import type { SurfaceLike } from "./surface.ts";
 import type { WarningsLog } from "./warnings.ts";
+import type { ViewportUniforms } from "./viewport.ts";
 
 /** Something a `RenderPlan` reads or writes. Declared, unused in v1 (see PLAN.md §11.3) — reserved
  * for a future topological sort if pass count ever grows past ~20. */
@@ -62,10 +63,14 @@ export interface RuntimeHandle {
 
 export interface ComponentContext {
   readonly runtime: RuntimeHandle;
-  /** vgpu context — documented escape hatch (PLAN.md §9.4). */
-  readonly gpu: Gpu;
+  /** vgpu context — documented escape hatch (PLAN.md §9.4). `null` in fallback mode
+   * (`caps.tier === 'fallback'`). A component that wants a fallback must construct its layers with
+   * `gpu: ctx.gpu` and guard its own direct vgpu calls (`compute()`/`uniforms()`/`storage()`/…) —
+   * those layers already tolerate `gpu: null`, but a raw vgpu call does not. */
+  readonly gpu: Gpu | null;
   readonly surface: SurfaceLike;
-  readonly globals: SharedUniforms<Globals>;
+  /** `null` in fallback mode — there is no shared uniform buffer without a `Gpu`. */
+  readonly globals: SharedUniforms<Globals> | null;
   readonly registry: ResourceRegistry;
   readonly caps: Capabilities;
   /** Teardown accumulator: register a cleanup function, run once by `dispose()`. */
@@ -107,4 +112,10 @@ export interface GpuComponent<Props = unknown> {
   hitTest?(x: number, y: number): HitResult | null;
   describe?(): SemanticModel;
   onContextRestored?(): void;
+
+  /** The viewport the component's own shaders read, for the Canvas2D backend to transform with
+   * (PLAN.md §22, stage 3.5) — the GPU path passes viewport through a uniform buffer that doesn't
+   * exist in fallback mode. Required for a component that wants a fallback; omitted, the
+   * `Canvas2DScheduler` passes an identity viewport. */
+  readonly viewportUniforms?: ViewportUniforms;
 }

@@ -23,7 +23,10 @@ export function useGpuCanvas(
       setHandle(null);
       return;
     }
-    const surface = runtime.registerSurface(canvas, opts);
+    // `status === "ready"` (checked above) guarantees `caps.tier === "gpu"`, so this is always a
+    // `SurfaceHandle` in practice — `registerSurface()`'s return type is a union only because it
+    // is also reachable in fallback mode via `useGpuComponent`'s different path.
+    const surface = runtime.registerSurface(canvas, opts) as SurfaceHandle;
     setHandle(surface);
     return () => {
       runtime.unregisterSurface(canvas);

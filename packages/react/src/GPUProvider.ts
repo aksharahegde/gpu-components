@@ -1,7 +1,10 @@
 import { createContext, createElement, useEffect, useRef, useState, type ReactNode } from "react";
 import { GpuRuntime, type GpuRuntimeOptions } from "@gpu-components/core";
 
-export type GpuStatus = "pending" | "ready" | "unsupported";
+/** `"fallback"` — WebGPU isn't available but a `Canvas2DScheduler` is running instead
+ * (`caps.tier === 'fallback'`); `"unsupported"` — no rendering at all (`caps.tier === 'none'`,
+ * `GpuRuntimeOptions.fallback: 'none'`). */
+export type GpuStatus = "pending" | "ready" | "fallback" | "unsupported";
 
 export interface GpuContextValue {
   readonly runtime: GpuRuntime | null;
@@ -56,7 +59,10 @@ export function GPUProvider(props: GPUProviderProps) {
         runtime.dispose();
         return;
       }
-      setValue({ runtime, status: runtime.caps.webgpu ? "ready" : "unsupported" });
+      setValue({
+        runtime,
+        status: runtime.caps.webgpu ? "ready" : runtime.caps.tier === "fallback" ? "fallback" : "unsupported",
+      });
     });
 
     return () => {

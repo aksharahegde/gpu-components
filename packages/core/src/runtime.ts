@@ -1,11 +1,13 @@
-import { init, initFromDevice, uniforms, type ClearColor, type Gpu, type SharedUniforms, type SurfaceOptions } from "vgpu";
-import { NO_WEBGPU_CAPABILITIES, probeCapabilities, supportedFeatures, type Capabilities } from "./capabilities.ts";
+import { init, initFromDevice, uniforms, type ClearColor, type Gpu, type SharedUniforms, type SurfaceOptions, type Target } from "vgpu";
+import { FALLBACK_CAPABILITIES, NO_WEBGPU_CAPABILITIES, probeCapabilities, supportedFeatures, type Capabilities } from "./capabilities.ts";
 import type { ComponentContext, GpuComponent, RuntimeHandle } from "./component.ts";
 import { createProfiler, DISABLED_PROFILER, type Profiler } from "./profiler.ts";
 import { ResourceRegistry } from "./registry.ts";
 import { FrameScheduler } from "./scheduler.ts";
+import { Canvas2DScheduler } from "./canvas2dScheduler.ts";
+import { Canvas2DSurface } from "./canvas2dSurface.ts";
 import { createWarningsLog, type WarningsLog } from "./warnings.ts";
-import { SurfaceHandle } from "./surface.ts";
+import { SurfaceHandle, type SurfaceLike } from "./surface.ts";
 import type { Globals } from "./uniforms.ts";
 
 export interface GpuRuntimeOptions {
@@ -27,6 +29,21 @@ export interface GpuRuntimeOptions {
   readonly clearColor?: ClearColor;
   readonly onDeviceLost?: (info: GPUDeviceLostInfo) => void;
   readonly onRecovered?: () => void;
+  /**
+   * What to do when WebGPU isn't available (or, after `RECOVERY_BACKOFF_MS` is exhausted following
+   * a device loss, permanently unavailable): `"canvas2d"` (default) mounts a `Canvas2DScheduler`
+   * and reports `caps.tier === "fallback"`; `"none"` keeps the pre-existing `caps.tier === "none"`
+   * behaviour (a host that wants its own unsupported-browser UI, no degraded rendering at all).
+   */
+  readonly fallback?: "canvas2d" | "none";
+  /** Fires when a device loss's recovery backoff is exhausted and the runtime permanently demotes
+   * itself to `caps.tier === "fallback"` (only when `fallback !== "none"`) — a real bug fix
+   * independent of the Canvas2D feature itself: previously exhaustion just left every mount frozen
+   * forever with no signal. A live GPU-backed `<canvas>` cannot be demoted in place (a canvas that
+   * has had `getContext("webgpu")` called on it can never yield a `"2d"` context afterward), so the
+   * host must remount its canvas elements (e.g. React keying on `status`) to actually pick up the
+   * Canvas2D path. */
+  readonly onFallback?: (reason: string) => void;
   /** Test-only: overrides how `create()` gets its `Gpu` + `Capabilities`, bypassing the browser
    * `navigator.gpu` probe and `init()` entirely. `@gpu-components/testing`'s mock runtime uses
    * this so code that calls `GpuRuntime.create()` itself (e.g. `<GPUProvider>`, which cannot be
@@ -68,18 +85,27 @@ export class GpuRuntime implements RuntimeHandle {
   private gpuRef: Gpu | null;
   caps: Capabilities;
   private scheduler: FrameScheduler | null;
+  private fallbackScheduler: Canvas2DScheduler | null;
   private globalsRef: SharedUniforms<Globals> | null;
   registry: ResourceRegistry;
   /** PLAN.md §28.2 — a plain log, not GPU state, so (unlike `profiler`) it's created once and
    * persists across device-loss recovery rather than being rebuilt per-`Gpu`. */
   readonly warnings: WarningsLog = createWarningsLog();
 
-  private readonly surfaces = new Map<HTMLCanvasElement, SurfaceHandle>();
+  private readonly surfaces = new Map<HTMLCanvasElement, SurfaceHandle | Canvas2DSurface>();
   private readonly mounts = new Map<string, MountRecord>();
   private readonly options: GpuRuntimeOptions;
   private _disposed = false;
   private recovering = false;
 
+  /**
+   * The scheduler is chosen once, at construction, from `caps.tier` — never per-mount, never
+   * mid-lifecycle. A `GpuRuntime` either has a `Gpu` (and a `FrameScheduler`) or it doesn't (and,
+   * unless `fallback: "none"`, has a `Canvas2DScheduler` instead). `scheduler` is pre-built by the
+   * `Gpu`-bearing construction paths below; the fallback path builds its own `Canvas2DScheduler`
+   * here, since `this.warnings` (an instance field with its own initializer) is only guaranteed to
+   * exist once the constructor body runs.
+   */
   private constructor(
     gpu: Gpu | null,
     caps: Capabilities,
@@ -91,6 +117,8 @@ export class GpuRuntime implements RuntimeHandle {
     this.gpuRef = gpu;
     this.caps = caps;
     this.scheduler = scheduler;
+    this.fallbackScheduler =
+      !scheduler && caps.tier === "fallback" ? new Canvas2DScheduler(this.warnings, options.clearColor) : null;
     this.globalsRef = globals;
     this.options = options;
     this.registry = registry;
@@ -121,6 +149,9 @@ export class GpuRuntime implements RuntimeHandle {
 
     const caps = await probeCapabilities();
     if (!caps.webgpu) {
+      if ((options.fallback ?? "canvas2d") !== "none") {
+        return new GpuRuntime(null, FALLBACK_CAPABILITIES, null, null, registry, options);
+      }
       return new GpuRuntime(null, NO_WEBGPU_CAPABILITIES, null, null, registry, options);
     }
 
@@ -128,6 +159,12 @@ export class GpuRuntime implements RuntimeHandle {
     const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
     const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)));
     return new GpuRuntime(gpu, caps, scheduler, globals, registry, options);
+  }
+
+  /** Synchronous constructor for a runtime that already knows it wants the Canvas2D path — tests,
+   * and hosts that skip the `navigator.gpu` probe entirely. */
+  static createFallback(options: GpuRuntimeOptions = {}): GpuRuntime {
+    return new GpuRuntime(null, FALLBACK_CAPABILITIES, null, null, new ResourceRegistry(), options);
   }
 
   /** Whether `timer(gpu)` GPU timing should actually be turned on — `options.profiling` opted in
@@ -226,6 +263,18 @@ export class GpuRuntime implements RuntimeHandle {
       }
     }
     this.recovering = false;
+
+    // Recovery backoff exhausted: previously this left every mount frozen forever with no signal
+    // at all — a real bug independent of the Canvas2D feature, fixed here since we're in this
+    // code. We do NOT attempt in-place demotion of any live GPU-backed `<canvas>` — a canvas that
+    // has had `getContext("webgpu")` called on it can never yield a `"2d"` context afterward (the
+    // browser's one-way door), so there is nothing safe to do to the existing mounts from here.
+    // The host must discard and remount its canvas elements (see GPUTimeline's `key` prop) once it
+    // observes the tier flip; `onFallback` is exactly that observation point.
+    if (this._disposed || (this.options.fallback ?? "canvas2d") === "none") return;
+    this.caps = FALLBACK_CAPABILITIES;
+    this.fallbackScheduler = new Canvas2DScheduler(this.warnings, this.options.clearColor);
+    this.options.onFallback?.("device-loss recovery exhausted its backoff — permanently demoted to caps.tier 'fallback'");
   }
 
   private replayMounts(): void {
@@ -235,7 +284,7 @@ export class GpuRuntime implements RuntimeHandle {
       const ctx = this.buildContext(record.component.id, surface, record.disposers);
       record.component.create(ctx);
       record.component.onContextRestored?.();
-      this.scheduler?.mount(record.component, surface);
+      this.scheduler?.mount(record.component, surface as SurfaceHandle);
       // create()/onContextRestored() rebuild GPU state from the component's own CPU-side source of
       // truth, but nothing has told the scheduler a frame is actually needed for it — without this,
       // a recovered surface sits blank until an unrelated prop change happens to mark it dirty.
@@ -243,12 +292,19 @@ export class GpuRuntime implements RuntimeHandle {
     }
   }
 
-  private getOrCreateSurface(canvas: HTMLCanvasElement, opts?: SurfaceOptions): SurfaceHandle {
+  private getOrCreateSurface(canvas: HTMLCanvasElement, opts?: SurfaceOptions): SurfaceHandle | Canvas2DSurface {
+    const existing = this.surfaces.get(canvas);
+    if (existing) return existing;
+
+    if (this.caps.tier === "fallback") {
+      const handle = new Canvas2DSurface(canvas);
+      this.surfaces.set(canvas, handle);
+      return handle;
+    }
+
     if (!this.gpuRef) {
       throw new Error("gpu-components: cannot register a surface — caps.webgpu is false");
     }
-    const existing = this.surfaces.get(canvas);
-    if (existing) return existing;
     // Runtime-wide default, overridable per surface. Coalesced rather than spread-ordered: an
     // `opts` that carries an explicit `clearColor: undefined` key would clobber the default under
     // `{ clearColor: default, ...opts }`, since spreading copies present-but-undefined keys.
@@ -263,16 +319,41 @@ export class GpuRuntime implements RuntimeHandle {
 
   private buildContext(
     componentId: string,
-    surface: SurfaceHandle,
+    surface: SurfaceHandle | Canvas2DSurface,
     disposers: Array<() => void>,
   ): ComponentContext {
+    if (this.caps.tier === "fallback") {
+      // No `SurfaceLike` equivalent exists for a `Canvas2DSurface` (it has no vgpu `Target`) —
+      // and nothing in this codebase's components actually reads `ctx.surface` today, so a thin
+      // adapter that forwards the three methods real components could plausibly call is enough;
+      // `.surface` itself is left unreachable in practice, not lied about with a fake `Target`.
+      const surfaceLike: SurfaceLike = {
+        get surface(): Target {
+          throw new Error("gpu-components: ctx.surface.surface has no Canvas2D equivalent (caps.tier === 'fallback')");
+        },
+        get dirty() {
+          return surface.dirty;
+        },
+        clearDirty: () => surface.clearDirty(),
+        markDirty: () => surface.markDirty(),
+      };
+      return {
+        runtime: this,
+        gpu: null,
+        surface: surfaceLike,
+        globals: null,
+        registry: this.registry,
+        caps: this.caps,
+        onDispose: (fn) => disposers.push(fn),
+      };
+    }
     if (!this.gpuRef || !this.globalsRef) {
       throw new Error(`gpu-components: cannot build a context for "${componentId}" — no active gpu`);
     }
     return {
       runtime: this,
       gpu: this.gpuRef,
-      surface,
+      surface: surface as SurfaceHandle,
       globals: this.globalsRef,
       registry: this.registry,
       caps: this.caps,
@@ -299,14 +380,14 @@ export class GpuRuntime implements RuntimeHandle {
    * last frame actually do" want the profiler.
    */
   get mountedCount(): number {
-    return this.scheduler?.mountedCount ?? 0;
+    return this.scheduler?.mountedCount ?? this.fallbackScheduler?.mountedCount ?? 0;
   }
 
   get profiler(): Profiler {
-    return this.scheduler?.profiler ?? DISABLED_PROFILER;
+    return this.scheduler?.profiler ?? this.fallbackScheduler?.profiler ?? DISABLED_PROFILER;
   }
 
-  registerSurface(canvas: HTMLCanvasElement, opts?: SurfaceOptions): SurfaceHandle {
+  registerSurface(canvas: HTMLCanvasElement, opts?: SurfaceOptions): SurfaceHandle | Canvas2DSurface {
     return this.getOrCreateSurface(canvas, opts);
   }
 
@@ -325,8 +406,15 @@ export class GpuRuntime implements RuntimeHandle {
     canvas: HTMLCanvasElement,
     surfaceOpts?: SurfaceOptions,
   ): MountHandle {
-    if (!this.gpuRef || !this.scheduler) {
+    // `!this.gpuRef` alone is not the right gate here (see `fallbackMode` below) — fallback mode
+    // is a chosen, stable state with a real scheduler; the throw is reserved for the transient
+    // device-loss-recovery window, where neither scheduler exists yet.
+    const fallbackMode = this.caps.tier === "fallback";
+    if (!fallbackMode && !this.gpuRef) {
       throw new Error("gpu-components: cannot mount a component — caps.webgpu is false");
+    }
+    if (!this.scheduler && !this.fallbackScheduler) {
+      throw new Error("gpu-components: cannot mount a component — device lost, recovering");
     }
     const surface = this.getOrCreateSurface(canvas, surfaceOpts);
     const disposers: Array<() => void> = [];
@@ -339,7 +427,9 @@ export class GpuRuntime implements RuntimeHandle {
     component.create(probeCtx);
     const record: MountRecord = { component, canvas, surfaceOpts, disposers };
     this.mounts.set(component.id, record);
-    const unmountFromScheduler = this.scheduler.mount(component, surface);
+    const unmountFromScheduler = fallbackMode
+      ? this.fallbackScheduler!.mount(component, surface as Canvas2DSurface)
+      : this.scheduler!.mount(component, surface as SurfaceHandle);
 
     return {
       unmount: () => {
@@ -361,6 +451,7 @@ export class GpuRuntime implements RuntimeHandle {
     if (this._disposed) return;
     this._disposed = true;
     this.scheduler?.stop();
+    this.fallbackScheduler?.stop();
     for (const record of this.mounts.values()) {
       for (const disposer of record.disposers.splice(0)) disposer();
       record.component.dispose();

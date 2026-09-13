@@ -183,6 +183,44 @@ describe("InstancedQuadLayer — Canvas2D backend", () => {
     gpu.dispose();
   });
 
+  it("gpu: null draws identically to the gpu-present case", () => {
+    const { pass, recorder } = makePass();
+    const layer = new InstancedQuadLayer({ gpu: null, shader: SHADER, instanceStride: STRIDE, capacity: 4, fallback: quadPolicy });
+
+    layer.upload(packQuads([{ x0: -1, x1: 0, color: packRgba8(255, 0, 0) }]), 1);
+    layer.draw(pass);
+
+    assert.equal(recorder.calls.length, 1);
+    const rect = recorder.calls[0]!;
+    assert.equal(rect.op, "fillRect");
+    if (rect.op !== "fillRect") return;
+    assert.equal(rect.x, 0);
+    assert.equal(rect.w, 100);
+    assert.equal(rect.fillStyle, "rgb(255,0,0)");
+  });
+
+  it("gpu: null with no fallback policy reports once at construction, not per frame", () => {
+    const warnings: { code: string; source: string; message: string }[] = [];
+    const layer = new InstancedQuadLayer({
+      gpu: null,
+      shader: SHADER,
+      instanceStride: STRIDE,
+      capacity: 4,
+      label: "no-policy",
+      warnings: { report: (w) => warnings.push(w), recent: [], onWarning: () => () => {}, dispose: () => {} },
+    });
+
+    const { pass, recorder } = makePass();
+    layer.upload(packQuads([{ x0: -1, x1: 0, color: 0 }]), 1);
+    layer.draw(pass);
+    layer.draw(pass);
+
+    assert.equal(recorder.calls.length, 0);
+    assert.equal(warnings.length, 1, "reported once, at construction");
+    assert.equal(warnings[0]!.code, "no-canvas2d-policy");
+    assert.equal(warnings[0]!.source, "no-policy");
+  });
+
   it("does not alias the caller's scratch buffer", async () => {
     const { gpu } = await createMockGpu();
     const { pass, recorder } = makePass();
@@ -254,6 +292,23 @@ describe("LineLayer — Canvas2D backend", () => {
     assert.ok(stroke.y0 > 0 && stroke.y0 < 100, `row boundary should be inside the surface, got ${stroke.y0}`);
 
     gpu.dispose();
+  });
+
+  it("gpu: null strokes identically to the gpu-present case", () => {
+    const { pass, recorder } = makePass();
+    const layer = new LineLayer({ gpu: null, capacity: 8 });
+
+    layer.uploadLines([
+      { x0: 50, y0: -1, x1: 50, y1: 1, widthPx: 2, color: packRgba8(255, 255, 255, 128), flags: LINE_FLAG_CLIP_Y },
+    ]);
+    layer.draw(pass);
+
+    assert.equal(recorder.calls.length, 1);
+    const stroke = recorder.calls[0]!;
+    assert.equal(stroke.op, "stroke");
+    if (stroke.op !== "stroke") return;
+    assert.equal(stroke.x0, 100);
+    assert.equal(stroke.x1, 100);
   });
 
   it("needs no fallback policy — core owns the LineInstance layout", async () => {
@@ -330,5 +385,43 @@ describe("RasterLayer — Canvas2D backend", () => {
     assert.match(reports[0]!, /density: no Canvas2D fallback policy/);
 
     gpu.dispose();
+  });
+
+  it("gpu: null shades identically to the gpu-present case", () => {
+    const { pass, recorder } = makePass();
+    let shadeCalls = 0;
+    const layer = new RasterLayer({
+      gpu: null,
+      shader: RASTER_SHADER,
+      fallback: {
+        shade: (rgba) => {
+          shadeCalls++;
+          rgba[3] = 255;
+        },
+      },
+    });
+
+    layer.draw(pass);
+
+    assert.equal(shadeCalls, 1);
+    assert.equal(recorder.calls.length, 1);
+  });
+
+  it("gpu: null with no fallback policy reports once at construction", () => {
+    const warnings: { code: string; source: string; message: string }[] = [];
+    const layer = new RasterLayer({
+      gpu: null,
+      shader: RASTER_SHADER,
+      label: "density",
+      warnings: { report: (w) => warnings.push(w), recent: [], onWarning: () => () => {}, dispose: () => {} },
+    });
+    const { pass, recorder } = makePass();
+
+    layer.draw(pass);
+    layer.draw(pass);
+
+    assert.equal(recorder.calls.length, 0);
+    assert.equal(warnings.length, 1);
+    assert.equal(warnings[0]!.code, "no-canvas2d-policy");
   });
 });

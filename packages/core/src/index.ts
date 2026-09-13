@@ -1,7 +1,7 @@
 export type {
   Capabilities,
 } from "./capabilities.ts";
-export { NO_WEBGPU_CAPABILITIES, probeCapabilities, supportedFeatures } from "./capabilities.ts";
+export { FALLBACK_CAPABILITIES, NO_WEBGPU_CAPABILITIES, probeCapabilities, supportedFeatures } from "./capabilities.ts";
 
 export type {
   ComponentContext,
@@ -30,6 +30,8 @@ export { RingBuffer } from "./ringBuffer.ts";
 export type { RingBufferOptions, RingState } from "./ringBuffer.ts";
 export { ResourceRegistry } from "./registry.ts";
 export { FrameScheduler } from "./scheduler.ts";
+export { Canvas2DScheduler } from "./canvas2dScheduler.ts";
+export { Canvas2DSurface } from "./canvas2dSurface.ts";
 export { createProfiler, DISABLED_PROFILER } from "./profiler.ts";
 export type { FrameStats, Profiler } from "./profiler.ts";
 export { createWarningsLog } from "./warnings.ts";

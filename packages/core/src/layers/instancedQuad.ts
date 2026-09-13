@@ -39,7 +39,9 @@ export interface QuadFallbackPolicy {
 }
 
 export interface InstancedQuadLayerOptions {
-  readonly gpu: Gpu;
+  /** `null` in fallback mode (`caps.tier === 'fallback'`) — the layer skips every GPU allocation
+   * and draws through `fallback` instead. */
+  readonly gpu: Gpu | null;
   /** WGSL source declaring a `viewport` uniform and an `instances` storage array — bound by name,
    * reflected from the shader (PLAN.md §9.4: "we never hand-write a bind group layout"). */
   readonly shader: string;
@@ -66,14 +68,14 @@ export interface InstancedQuadLayerOptions {
  * (phase 5) is the acceptance test for that reuse (PLAN.md §29).
  */
 export class InstancedQuadLayer {
-  private readonly gpu: Gpu;
+  private readonly gpu: Gpu | null;
   private readonly shader: string;
   private readonly stride: number;
   private readonly blend: BlendPreset | undefined;
   private readonly label: string | undefined;
-  private buffer: StorageBuffer;
+  private buffer: StorageBuffer | null;
   private capacity: number;
-  private readonly drawable: Draw;
+  private readonly drawable: Draw | null;
   private count = 0;
   private readonly warnings: WarningsLog | undefined;
   private growthCount = 0;
@@ -92,38 +94,53 @@ export class InstancedQuadLayer {
     this.warnings = opts.warnings;
     this.fallback = opts.fallback;
     this.capacity = Math.max(1, opts.capacity);
-    this.buffer = storage(this.gpu, this.capacity * this.stride, "read");
-    this.drawable = draw(this.gpu, {
-      shader: this.shader,
-      vertices: 6,
-      blend: this.blend,
-      label: this.label,
-    });
-    this.drawable.set({ instances: this.buffer });
+    if (this.gpu) {
+      this.buffer = storage(this.gpu, this.capacity * this.stride, "read");
+      this.drawable = draw(this.gpu, {
+        shader: this.shader,
+        vertices: 6,
+        blend: this.blend,
+        label: this.label,
+      });
+      this.drawable.set({ instances: this.buffer });
+    } else {
+      this.buffer = null;
+      this.drawable = null;
+      if (!this.fallback) {
+        opts.warnings?.report({
+          code: "no-canvas2d-policy",
+          source: this.label ?? "InstancedQuadLayer",
+          message: "no Canvas2D fallback policy supplied — this layer draws nothing in fallback mode",
+        });
+      }
+    }
   }
 
   /** The underlying per-instance storage buffer — an escape hatch for a compute pass (e.g. a
    * culling/binning kernel, PLAN.md §12.2) that needs to read the exact same instance data a
    * render pass draws, not a copy. Re-`.set()` it on the compute pipeline after every `upload()`
-   * that might have grown the buffer (growth replaces the underlying `StorageBuffer` object). */
-  get instances(): StorageBuffer {
+   * that might have grown the buffer (growth replaces the underlying `StorageBuffer` object).
+   * `null` in fallback mode — there is no GPU buffer to hand out. */
+  get instances(): StorageBuffer | null {
     return this.buffer;
   }
 
-  /** Binds the shared (or component-owned) viewport uniform block by its WGSL name. */
+  /** Binds the shared (or component-owned) viewport uniform block by its WGSL name. No-op in
+   * fallback mode — there is no `Draw` to bind against. */
   bindViewport(uniforms: unknown): void {
-    this.drawable.set({ viewport: uniforms });
+    this.drawable?.set({ viewport: uniforms });
   }
 
-  /** Binds any other named resource the shader declares (a colormap texture, a selection mask, …). */
+  /** Binds any other named resource the shader declares (a colormap texture, a selection mask, …).
+   * No-op in fallback mode. */
   bind(values: Record<string, unknown>): void {
-    this.drawable.set(values);
+    this.drawable?.set(values);
   }
 
   /** Writes `count` instances' worth of `bytes` into the storage buffer, growing it first if
    * `count` exceeds the current capacity. */
   upload(bytes: ArrayBufferView<ArrayBuffer>, count: number): void {
-    if (count > this.capacity) {
+    if (this.gpu && count > this.capacity) {
       // `StorageBuffer`'s public interface has no `destroy()` — per `vgpu`'s own docs, a storage
       // buffer "is destroyed by gpu.dispose() — or earlier, by hand, through the internal handle"
       // (storage.d.ts), and that internal handle isn't part of the type this factory returns. The
@@ -133,7 +150,7 @@ export class InstancedQuadLayer {
       const previousCapacity = this.capacity;
       this.capacity = count;
       this.buffer = storage(this.gpu, this.capacity * this.stride, "read");
-      this.drawable.set({ instances: this.buffer });
+      this.drawable?.set({ instances: this.buffer });
 
       // The *first* growth is just "the initial capacity guess was a little off" — not a bug.
       // Repeated growth (the component's data keeps outgrowing what it presized) is the real
@@ -147,9 +164,9 @@ export class InstancedQuadLayer {
         });
       }
     }
-    this.buffer.write(bytes);
+    this.buffer?.write(bytes);
     this.count = count;
-    if (this.fallback) {
+    if (this.fallback || !this.gpu) {
       // Copy, not a view onto the caller's buffer: callers reuse scratch buffers between uploads
       // (TimelineComponent's rule scratch does exactly this), so aliasing would leave the fallback
       // rendering whatever the next frame happened to write.
@@ -167,6 +184,7 @@ export class InstancedQuadLayer {
       this.drawCanvas2D(pass, this.count);
       return;
     }
+    if (!this.drawable) return;
     pass.frame.draw(this.drawable, { instances: this.count });
   }
 
@@ -224,6 +242,7 @@ export class InstancedQuadLayer {
       this.drawCanvas2D(pass, this.count);
       return;
     }
+    if (!this.drawable) return;
     pass.frame.draw(this.drawable, { indirect });
   }
 
