@@ -86,6 +86,29 @@ class TestComponent implements GpuComponent<{ n: number }> {
   }
 }
 
+/** Mirrors GPUGraph's shape: dirty flips false at the top of plan(), animating alone keeps the
+ * scheduler ticking it — the branch `packages/core/src/scheduler.ts`'s active filter depends on. */
+class AnimatingComponent implements GpuComponent<{ n: number }> {
+  readonly id: string;
+  dirty = false;
+  animating = true;
+  planCalls = 0;
+
+  constructor(id: string) {
+    this.id = id;
+  }
+  create(ctx: ComponentContext): void {
+    ctx.registry.acquire(this.id, () => ({}));
+    ctx.onDispose(() => ctx.registry.release(this.id));
+  }
+  update(): void {}
+  plan() {
+    this.planCalls += 1;
+    return coreTypes.EMPTY_PLAN;
+  }
+  dispose(): void {}
+}
+
 const host = dom.window.document.getElementById("root")!;
 
 async function mount(children: unknown) {
@@ -276,6 +299,100 @@ describe("GPUProvider", () => {
     assert.equal(first.createCalls, 1, "prop change must not re-create the component");
     assert.equal(first.updateCalls, 2, "prop change must call update() exactly once more");
     assert.deepEqual(first.lastProps, { n: 2 });
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("keeps planning an animating component across rAF ticks with no prop change, and stops after unmount", async () => {
+    let instance: AnimatingComponent | null = null;
+
+    function Widget() {
+      const [canvas, ref] = useCanvasRef();
+      useGpuComponent<{ n: number }>(
+        () => {
+          instance = new AnimatingComponent("animating-mount");
+          return instance;
+        },
+        canvas,
+        { n: 1 },
+      );
+      return createElement("canvas", { ref, width: 2, height: 2 });
+    }
+
+    host.innerHTML = "";
+    const root = createRoot(host);
+    await act(async () => {
+      root.render(createElement(GPUProvider, { options: testConnectOptions() }, createElement(Widget, null)));
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    assert.ok(instance, "component should be mounted");
+    const mounted = instance as unknown as AnimatingComponent;
+
+    // Advance several rAF ticks (the mocked rAF runs on a 16ms setTimeout) with no prop change.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    const callsAfterFirstWait = mounted.planCalls;
+    assert.ok(callsAfterFirstWait > 1, "an animating component must be replanned across ticks without a prop change");
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    assert.ok(
+      mounted.planCalls > callsAfterFirstWait,
+      "plan count should keep growing while still animating",
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+
+    const callsAtUnmount = mounted.planCalls;
+    // Give the (now-stopped) loop a chance to misbehave before asserting it didn't.
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    assert.equal(
+      mounted.planCalls,
+      callsAtUnmount,
+      "unmounting must stop further planning for this component",
+    );
+  });
+
+  it("StrictMode double-mount/unmount churn still results in exactly one component planning", async () => {
+    const created: AnimatingComponent[] = [];
+
+    function Widget() {
+      const [canvas, ref] = useCanvasRef();
+      useGpuComponent<{ n: number }>(
+        () => {
+          const c = new AnimatingComponent("strict-animating");
+          created.push(c);
+          return c;
+        },
+        canvas,
+        { n: 1 },
+      );
+      return createElement("canvas", { ref, width: 2, height: 2 });
+    }
+
+    const root = await mount(createElement(GPUProvider, { options: testConnectOptions() }, createElement(Widget, null)));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    });
+
+    const stillPlanning = created.filter((c) => c.planCalls > 0);
+    assert.equal(
+      stillPlanning.length,
+      1,
+      `expected exactly one surviving component to be planning under StrictMode churn, saw ${created.length} created`,
+    );
 
     await act(async () => {
       root.unmount();

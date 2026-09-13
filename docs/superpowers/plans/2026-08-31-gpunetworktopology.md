@@ -596,7 +596,11 @@ Append `registry/networktopology/*.test.ts` to the existing `--test` argument li
 - Viewport bounds `[-4,4]` like graph; `useMeasuredStage`
 - Readout: iterations / settled / node+edge counts
 - Legend text: up / degraded / down; hot links pulse
-- Footnote: force layout is GPU-resident; known browser animation defect may still apply; not in CLI registry yet
+- Footnote (historical — corrected in `HANDOFF.md` §5.1/§5.2): a "does not animate in the browser"
+  defect was recorded here and in `HANDOFF.md`, diagnosed as "nothing calls `requestAnimationFrame`."
+  A follow-up real-browser investigation proved that diagnosis wrong — the animation loop has always
+  lived in `packages/core/src/scheduler.ts` via vgpu's `frameLoop`, and a Playwright spec confirmed
+  the layout genuinely animates and correctly stops on convergence. Now shipped in the CLI registry.
 
 - [ ] **Step 3: Playground page + index card**
 
@@ -605,7 +609,8 @@ Page metadata/title like histogram/depgraph. Index blurb:
 - name: `GPUNetworkTopology`
 - slug: `networktopology`
 - blurb: force-laid service mesh with status, link health, and traffic pulse
-- note: playground-only until the shared force-layout animation defect is fixed
+- note (historical): was playground-only pending the force-layout animation investigation; now
+  shipped in the CLI registry — see `HANDOFF.md` §5.1/§5.2
 
 Bump live demo count copy from 11 → 12.
 

@@ -729,6 +729,99 @@
           "hash": "c4802a1a574ad5f3ce48dc5459108c418037fbf61f66a38a99e8ae954a216a79"
         }
       ]
+    },
+    {
+      "name": "graph",
+      "type": "registry:component",
+      "title": "GPUGraph",
+      "description": "Force-directed graph layout. GPU-resident ping-pong position buffer iterated in place, settling on its own after a bounded number of iterations — no per-frame CPU readback.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUGraph.tsx",
+          "type": "registry:component",
+          "hash": "9222d721ff72b661a8384cd7ccf73b67f0698b29f2ef4f4badc95c7b60b91592"
+        },
+        {
+          "path": "GraphComponent.ts",
+          "type": "registry:component",
+          "hash": "63f3b82cfab770c73ee953abd7cc0c4a07efe75b7adde5ffbe9903b313e3d77c"
+        },
+        {
+          "path": "graph.wgsl.ts",
+          "type": "registry:component",
+          "hash": "15af0fe4391a825375edc38b561949b99e8528e63cd474b636d564ecc2d87c02"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "089cf83a059a3c2a54b4461ce2ece57125dafbd1f7c0aef086c140eb75b434e6"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "463914c7d12848af739054d4bf74d2b75fb391e582575d7dc491ced9a28d7cc1"
+        },
+        {
+          "path": "layout.wgsl.ts",
+          "type": "registry:component",
+          "hash": "64c09eac8b95ba7ac60bf0483f845126e9c5b7d40b6d13d1933c052d8e05f2d0"
+        }
+      ]
+    },
+    {
+      "name": "networktopology",
+      "type": "registry:component",
+      "title": "GPUNetworkTopology",
+      "description": "Network topology map — a `GraphComponent` fork with a continuous traffic-pulse animation driven by time, on top of the same GPU-resident force-directed layout.",
+      "dependencies": [
+        "@gpu-components/core",
+        "@gpu-components/react",
+        "react",
+        "vgpu"
+      ],
+      "files": [
+        {
+          "path": "GPUNetworkTopology.tsx",
+          "type": "registry:component",
+          "hash": "44fb67eca40d7f62a597bf05ea47b0c45ebbfd8712b38356f75e4eae78f533da"
+        },
+        {
+          "path": "NetworkTopologyComponent.ts",
+          "type": "registry:component",
+          "hash": "8a0c8363747ac46f2cb11731d24f3cb98dd927b7c26986836c16039fdc2de8cc"
+        },
+        {
+          "path": "generate.ts",
+          "type": "registry:component",
+          "hash": "b3ad7361d57a23946973ef07ee0201a5c778aed5415130d5745f5d0888cc775a"
+        },
+        {
+          "path": "index.ts",
+          "type": "registry:component",
+          "hash": "7160f85aee7377ac46130a0fb9b54910c8a738c49ee11db632772f1c816757ad"
+        },
+        {
+          "path": "ingest.ts",
+          "type": "registry:component",
+          "hash": "4a12b1d5b2139fa42917c041c8822a2178f72b36e8003bcf4bd116e415e749fc"
+        },
+        {
+          "path": "layout.wgsl.ts",
+          "type": "registry:component",
+          "hash": "071870d06118fb9c09d3af018cf7ef4b6edd6056c280eaf6b368ad820ce07535"
+        },
+        {
+          "path": "topology.wgsl.ts",
+          "type": "registry:component",
+          "hash": "254a714267dad07cfd6080bf0f9aa1d07235998869a79f2458d7cadc9999336e"
+        }
+      ]
     }
   ]
 }

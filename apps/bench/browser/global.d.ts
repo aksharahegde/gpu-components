@@ -13,6 +13,7 @@ declare global {
       runGpuTiming(): Promise<GpuTimingResult>;
       runTextBudget(): Promise<TextBudgetResult>;
       runLogText(): Promise<LogTextResult>;
+      runGraphAnimation(): Promise<{ stop(): void }>;
     };
   }
 }

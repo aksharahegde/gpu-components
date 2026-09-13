@@ -87,8 +87,16 @@ const ITEMS = {
     description:
       "Virtualized multi-page document compositor — not a PDF renderer. Takes host-rasterized page bitmaps (e.g. from pdf.js) and composites a small resident-texture pool as one positioned quad per page, with continuous zoom/scroll and CPU page hit-testing.",
   },
-  // GPUGraph is deliberately absent: its layout does not animate in the browser (a known open
-  // defect), and a copy-source registry must not ship a component that is broken where it runs.
+  graph: {
+    title: "GPUGraph",
+    description:
+      "Force-directed graph layout. GPU-resident ping-pong position buffer iterated in place, settling on its own after a bounded number of iterations — no per-frame CPU readback.",
+  },
+  networktopology: {
+    title: "GPUNetworkTopology",
+    description:
+      "Network topology map — a `GraphComponent` fork with a continuous traffic-pulse animation driven by time, on top of the same GPU-resident force-directed layout.",
+  },
 };
 
 /** Never shipped to a consumer: tests, harnesses, internal notes. */

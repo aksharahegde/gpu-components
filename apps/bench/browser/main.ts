@@ -9,6 +9,7 @@ import { runSharedContextScenario } from "../src/harness/sharedContextScenario.t
 import { runGpuTimingScenario } from "../src/harness/gpuTimingScenario.ts";
 import { runTextBudgetScenario } from "../src/harness/textBudgetScenario.ts";
 import { runLogTextScenario } from "../src/harness/logTextScenario.ts";
+import { runGraphAnimation, type GraphAnimationHandle } from "../src/harness/graphAnimationScenario.ts";
 import type { RendererId } from "../src/types.ts";
 // `Window.__bench`'s type comes from the ambient `./global.d.ts` in this directory — picked up
 // automatically by `include` in tsconfig.json, no import needed (and importing a `.d.ts` as a
@@ -46,5 +47,16 @@ window.__bench = {
   async runLogText() {
     stage.innerHTML = "";
     return runLogTextScenario(stage);
+  },
+  async runGraphAnimation() {
+    stage.innerHTML = "";
+    let handle: GraphAnimationHandle | null = await runGraphAnimation(stage);
+    handle.canvas.id = "graph-canvas";
+    return {
+      stop() {
+        handle?.stop();
+        handle = null;
+      },
+    };
   },
 };

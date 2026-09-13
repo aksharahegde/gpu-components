@@ -236,6 +236,10 @@ export class GpuRuntime implements RuntimeHandle {
       record.component.create(ctx);
       record.component.onContextRestored?.();
       this.scheduler?.mount(record.component, surface);
+      // create()/onContextRestored() rebuild GPU state from the component's own CPU-side source of
+      // truth, but nothing has told the scheduler a frame is actually needed for it — without this,
+      // a recovered surface sits blank until an unrelated prop change happens to mark it dirty.
+      surface.markDirty();
     }
   }
 

@@ -11,6 +11,7 @@ class ProbeComponent implements GpuComponent {
   createCalls = 0;
   disposeCalls = 0;
   contextRestoredCalls = 0;
+  planCalls = 0;
   releasedKey: string | undefined;
 
   constructor(id: string, registryKey: string) {
@@ -26,6 +27,7 @@ class ProbeComponent implements GpuComponent {
 
   update(): void {}
   plan(): RenderPlan {
+    this.planCalls += 1;
     return EMPTY_PLAN;
   }
   dispose(): void {
@@ -81,6 +83,41 @@ describe("GpuRuntime", () => {
       probe.contextRestoredCalls,
       1,
       "onContextRestored() must run once after create() replays",
+    );
+
+    runtime.dispose();
+  });
+
+  it("replans a recovered component without waiting for a prop change (replayMounts marks the surface dirty)", async () => {
+    let onRecovered: () => void = () => {};
+    const recovered = new Promise<void>((resolve) => {
+      onRecovered = resolve;
+    });
+
+    const runtime = await createMockRuntime({ runtime: { onRecovered: () => onRecovered() } });
+    const canvas = createMockCanvas(runtime.gpu!);
+
+    let probe!: ProbeComponent;
+    runtime.mount(() => {
+      probe = new ProbeComponent("probe", "device-loss-replan-key");
+      return probe;
+    }, canvas);
+
+    await tick(40);
+    const callsBeforeLoss = probe.planCalls;
+    assert.ok(callsBeforeLoss > 0, "component should have been planned at least once before loss");
+
+    runtime.simulateDeviceLoss();
+    await recovered;
+
+    // No prop change happens here — before the fix, a clean (`dirty = false`), non-animating
+    // component like this one would never be replanned post-recovery: create() rebuilds GPU state
+    // but nothing tells the scheduler a frame is actually needed for it.
+    await tick(40);
+
+    assert.ok(
+      probe.planCalls > callsBeforeLoss,
+      "a replayed component must be planned again after recovery, without a prop change",
     );
 
     runtime.dispose();

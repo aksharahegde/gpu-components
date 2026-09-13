@@ -55,6 +55,13 @@ export class FrameScheduler {
 
   private ensureRunning(): void {
     if (this.handle) return;
+    // ponytail: runs forever once started, even when every mounted component is settled and
+    // clean — there is no wake path today (components flip `dirty`/`animating` from inside their
+    // own update()/event handlers without telling the scheduler to restart a stopped loop), so a
+    // naive stop-when-idle would stall the next component that dirties itself outside a mount
+    // call. rAF is already throttled by browsers in background tabs, which covers most of the
+    // real cost in practice. Revisit with a real wake signal (e.g. component-initiated
+    // `ensureRunning()`) if idle GPU usage ever actually matters.
     this.handle = frameLoop(this.gpu, (frame) => this.tick(frame));
   }
 
@@ -66,6 +73,12 @@ export class FrameScheduler {
 
   private tick(frame: Frame): void {
     const c = clock(this.gpu);
+
+    const active = [...this.mounted.values()].filter(
+      (m) => m.component.dirty || m.component.animating || m.surface.dirty,
+    );
+    if (active.length === 0) return;
+
     const dpr =
       typeof globalThis.devicePixelRatio === "number" ? globalThis.devicePixelRatio : 1;
     this.globals.set({ time: c.time, deltaTime: c.deltaTime, dpr });
@@ -75,11 +88,6 @@ export class FrameScheduler {
       deltaTime: c.deltaTime,
       frameCount: c.frameCount,
     };
-
-    const active = [...this.mounted.values()].filter(
-      (m) => m.component.dirty || m.component.animating,
-    );
-    if (active.length === 0) return;
 
     const cpuStart = performance.now();
     const plans = active.map((m) => ({ mounted: m, plan: m.component.plan(frameCtx) }));

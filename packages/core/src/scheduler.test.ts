@@ -155,12 +155,80 @@ describe("FrameScheduler", () => {
     const scheduler = new FrameScheduler(gpu, globals);
 
     const t = target(gpu, { size: [2, 2] });
+    const surface = fakeSurface(t);
     const clean = new CleanComponent();
-    scheduler.mount(clean, fakeSurface(t));
+    scheduler.mount(clean, surface);
+
+    // A brand-new surface starts dirty (it needs an initial paint even for a component born
+    // clean) — settle it first so this test isolates "clean component, clean surface".
+    await tick(1);
+    surface.clearDirty();
+    const callsAfterSettling = clean.planCalls;
 
     await tick(60);
 
-    assert.equal(clean.planCalls, 0, "a clean, non-animating component must never be planned");
+    assert.equal(
+      clean.planCalls,
+      callsAfterSettling,
+      "a clean, non-animating component on a clean surface must never be (re-)planned",
+    );
+
+    scheduler.stop();
+    gpu.dispose();
+  });
+
+  it("keeps planning an animating-but-clean component across ticks, then stops once it settles", async () => {
+    const { gpu } = await createMockGpu();
+    const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
+    const scheduler = new FrameScheduler(gpu, globals);
+
+    const t = target(gpu, { size: [2, 2] });
+    const surface = fakeSurface(t);
+    // Mirrors GPUGraph: dirty flips false at the top of plan(), animating alone keeps it ticking.
+    class AnimatingComponent implements GpuComponent {
+      readonly id = "animating";
+      dirty = false;
+      animating = true;
+      planCalls = 0;
+      private ticksLeft = 8;
+
+      create(): void {}
+      update(): void {}
+      plan(): RenderPlan {
+        this.planCalls += 1;
+        this.ticksLeft -= 1;
+        if (this.ticksLeft <= 0) this.animating = false;
+        return EMPTY_PLAN;
+      }
+      dispose(): void {}
+    }
+
+    const animating = new AnimatingComponent();
+    scheduler.mount(animating, surface);
+
+    // `tick(ms)` is milliseconds, not frame count (vgpu's Node rAF fallback is a 16ms setTimeout);
+    // wait long enough for at least one real frame, then settle the surface's initial dirty flag.
+    await tick(20);
+    surface.clearDirty();
+
+    await tick(50);
+    const midCalls = animating.planCalls;
+    assert.ok(midCalls > 0, "an animating-but-clean component must keep getting planned");
+    assert.ok(animating.animating, "component should still be mid-animation at this point");
+
+    // Drive it well past the point it flips `animating = false` (8 plan calls, ~16ms apart), then
+    // confirm plan calls stop growing — the settle half of the same branch.
+    await tick(300);
+    const settledCalls = animating.planCalls;
+    assert.equal(animating.animating, false, "component should have settled by now");
+
+    await tick(200);
+    assert.equal(
+      animating.planCalls,
+      settledCalls,
+      "a settled, clean component on a clean surface must stop being planned",
+    );
+    assert.ok(settledCalls > midCalls, "plan count should have kept growing while still animating");
 
     scheduler.stop();
     gpu.dispose();
