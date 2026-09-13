@@ -70,7 +70,25 @@ const s = stylex.create({
     gap: { default: 48, [HERO]: 36 },
     alignItems: 'center',
   },
-  heroText: { minWidth: 0 },
+  /**
+   * The plan's legibility argument ("`Card` is opaque, `Section` isn't, so text stays readable
+   * against the sticky scene") holds for sections 2-4, whose text lives inside a `Card` — but the
+   * hero's own text column is a bare `Stack`, never a `Card`, so it had zero backing against the
+   * moving scene directly behind it. Same recipe as `Chrome.tsx`'s sticky header
+   * (`color-mix` translucent surface + `backdropFilter: blur()`, the one other `backdrop-filter`
+   * user in this app) rather than a flat opaque `Card`: a hard white rectangle over a 3D scene reads
+   * as a bug patch, a blurred panel reads as an intentional glass layer that happens to sit over
+   * the render.
+   */
+  heroText: {
+    minWidth: 0,
+    position: 'relative',
+    zIndex: 1,
+    padding: '28px 26px',
+    borderRadius: radius.lg,
+    backgroundColor: `color-mix(in srgb, ${color.surface} 88%, transparent)`,
+    backdropFilter: 'blur(16px)',
+  },
   heroCta: { gap: 10 },
   install: { maxWidth: 520 },
 

@@ -55,11 +55,22 @@ const s = stylex.create({
    * page scrolls, which would otherwise make a `100vh` sticky layer taller than the actually-stable
    * visible area and jitter against it — `100svh` is the small/stable viewport height, matching
    * what stays visible throughout the scroll. Codebase has no prior viewport-height usage to match
-   * (`Chrome.tsx`'s header is `position: sticky` but unsized, relying on content height). */
+   * (`Chrome.tsx`'s header is `position: sticky` but unsized, relying on content height).
+   *
+   * `marginBottom: -100svh` is load-bearing, not decoration: `position: sticky` (unlike `fixed`)
+   * still occupies its own box in normal flow at its *static* position — a sibling placed after it
+   * lays out *below* that box, not on top of it. Without this, `s.content` rendered a full viewport
+   * height lower than the sticky canvas, which is exactly why the hero's text was missing from the
+   * very first screenshot at scroll 0: the canvas filled the viewport and the actual copy was
+   * sitting one `100svh` further down, off-screen until the user scrolled past it. The negative
+   * margin cancels the sticky box's contribution to flow height so `s.content` starts at the same
+   * flow position as the sticky layer's top, letting `z-index` actually do the overlap job the
+   * comment above already assumed it was doing. */
   sticky: {
     position: 'sticky',
     top: 0,
     height: '100svh',
+    marginBottom: 'calc(-1 * 100svh)',
     zIndex: 0,
     overflow: 'hidden',
     pointerEvents: 'none',
