@@ -222,13 +222,13 @@ export class WhiteboardComponent implements GpuComponent<WhiteboardProps> {
       warnings: ctx.runtime.warnings,
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.backgroundUniform = uniforms(ctx.gpu, { domainMin: [0, 0], domainMax: [1, 1] });
-    this.shapeUniform = uniforms(ctx.gpu, {
+    this.backgroundUniform = uniforms(ctx.gpu!, { domainMin: [0, 0], domainMax: [1, 1] });
+    this.shapeUniform = uniforms(ctx.gpu!, {
       strokeWidthPx: STROKE_WIDTH_PX,
       pointSizePx: POINT_SIZE_PX,
       fillOpacity: FILL_OPACITY,

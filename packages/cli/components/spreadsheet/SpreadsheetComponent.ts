@@ -113,12 +113,12 @@ export class SpreadsheetComponent implements GpuComponent<SpreadsheetProps> {
       warnings: ctx.runtime.warnings,
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.paramsUniform = uniforms(ctx.gpu, {
+    this.paramsUniform = uniforms(ctx.gpu!, {
       rowCount: 0,
       columnCount: 0,
       hoveredRow: -1,

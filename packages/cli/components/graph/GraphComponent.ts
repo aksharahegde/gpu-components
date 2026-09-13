@@ -142,22 +142,22 @@ export class GraphComponent implements GpuComponent<GraphProps> {
     this.caps = ctx.caps;
     this.warnings = ctx.runtime.warnings;
 
-    this.layout = compute(ctx.gpu, LAYOUT_WGSL);
-    this.layoutParams = uniforms(ctx.gpu, { nodeCount: 0, ...DEFAULTS });
-    this.graphParams = uniforms(ctx.gpu, {
+    this.layout = compute(ctx.gpu!, LAYOUT_WGSL);
+    this.layoutParams = uniforms(ctx.gpu!, { nodeCount: 0, ...DEFAULTS });
+    this.graphParams = uniforms(ctx.gpu!, {
       nodeSizePx: 8,
       edgeWidthPx: 1,
       hoveredNode: -1,
       selectedNode: -1,
     });
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
 
-    this.nodeDraw = draw(ctx.gpu, { shader: NODE_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-nodes` });
-    this.edgeDraw = draw(ctx.gpu, { shader: EDGE_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-edges` });
+    this.nodeDraw = draw(ctx.gpu!, { shader: NODE_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-nodes` });
+    this.edgeDraw = draw(ctx.gpu!, { shader: EDGE_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-edges` });
 
     // Allocate against whatever data is already held, so a device-loss replay rebuilds identically
     // (§10.6) — and a placeholder otherwise, so bindings are valid before the first update.

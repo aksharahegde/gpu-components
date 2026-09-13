@@ -102,21 +102,21 @@ export class ImageDiffComponent implements GpuComponent<ImageDiffProps> {
     this.caps = ctx.caps;
 
     this.raster = new RasterLayer({ gpu: ctx.gpu, shader: IMAGE_DIFF_WGSL, label: `${this.id}-composite` });
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.diffParams = uniforms(ctx.gpu, {
+    this.diffParams = uniforms(ctx.gpu!, {
       mode: 0,
       split: 0.5,
       blend: 0.5,
       amplify: DEFAULT_AMPLIFY,
       threshold: DEFAULT_THRESHOLD,
     });
-    this.statsParams = uniforms(ctx.gpu, { width: 1, height: 1, threshold: DEFAULT_THRESHOLD });
-    this.statsPipeline = compute(ctx.gpu, DIFF_STATS_WGSL);
-    this.statsBuffer = storage(ctx.gpu, 2 * 4, "read-write");
+    this.statsParams = uniforms(ctx.gpu!, { width: 1, height: 1, threshold: DEFAULT_THRESHOLD });
+    this.statsPipeline = compute(ctx.gpu!, DIFF_STATS_WGSL);
+    this.statsBuffer = storage(ctx.gpu!, 2 * 4, "read-write");
 
     this.raster.bind({ viewport: this.viewportUniform, params: this.diffParams });
     this.statsPipeline.set({ params: this.statsParams, stats: this.statsBuffer });

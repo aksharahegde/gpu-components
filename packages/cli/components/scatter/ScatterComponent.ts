@@ -92,12 +92,12 @@ export class ScatterComponent implements GpuComponent<ScatterProps> {
       warnings: ctx.runtime.warnings,
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.paramsUniform = uniforms(ctx.gpu, {
+    this.paramsUniform = uniforms(ctx.gpu!, {
       pointSizePx: DEFAULT_POINT_PX,
       categoryFilter: 0,
       hoveredIndex: -1,

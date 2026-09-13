@@ -116,20 +116,20 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
       fallback: { shade: (rgba, width, height) => this.shadeCanvas2D(rgba, width, height) },
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.gridUniform = uniforms(ctx.gpu, { rows: 1, cols: 1, sampleX: 1, sampleY: 1 });
-    this.reduceParams = uniforms(ctx.gpu, { count: 0, chunkCount: 1 });
+    this.gridUniform = uniforms(ctx.gpu!, { rows: 1, cols: 1, sampleX: 1, sampleY: 1 });
+    this.reduceParams = uniforms(ctx.gpu!, { count: 0, chunkCount: 1 });
 
-    this.reduceChunk = compute(ctx.gpu, REDUCE_CHUNK_WGSL);
-    this.reduceFinal = compute(ctx.gpu, REDUCE_FINAL_WGSL);
+    this.reduceChunk = compute(ctx.gpu!, REDUCE_CHUNK_WGSL);
+    this.reduceFinal = compute(ctx.gpu!, REDUCE_FINAL_WGSL);
 
     // `range` is two f32s the render shader reads and pass 2 writes — never read back on the CPU.
-    this.rangeBuffer = storage(ctx.gpu, 2 * 4, "read-write");
-    this.partialsBuffer = storage(ctx.gpu, MAX_CHUNKS * 2 * 4, "read-write");
+    this.rangeBuffer = storage(ctx.gpu!, 2 * 4, "read-write");
+    this.partialsBuffer = storage(ctx.gpu!, MAX_CHUNKS * 2 * 4, "read-write");
 
     // The colormap LUT through the shared registry: content-keyed, so a second heatmap with the
     // same ramp reuses this exact buffer instead of allocating its own (PLAN.md §14.1a).

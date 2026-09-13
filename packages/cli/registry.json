@@ -19,12 +19,12 @@
         {
           "path": "GPUTimeline.tsx",
           "type": "registry:component",
-          "hash": "389445cd7d528ac8f79b1a92f414387e509da065ea1028022cce7f260cc93783"
+          "hash": "0df0cef93aedcc87fed066a24c41b5e1a9a07430695b9ac2923697cd1e334972"
         },
         {
           "path": "TimelineComponent.ts",
           "type": "registry:component",
-          "hash": "37eb216a6692abee4cd9e843743d7599cfb112259242b501d7f3b7b6b38fbf20"
+          "hash": "0fa595f8d242083a4837df0e3ffb86bcf82fe864914ae8cf8f2252fccbfc03b8"
         },
         {
           "path": "axisRules.ts",
@@ -45,6 +45,11 @@
           "path": "densityBin.wgsl.ts",
           "type": "registry:component",
           "hash": "755b794946898f6a677874ba66be149a1472505a38476e9e3fc454baaab21880"
+        },
+        {
+          "path": "fallback.ts",
+          "type": "registry:component",
+          "hash": "f4eb0ef991adf55b5531c753aee443be17f0a3e0dfa6269aa575baabd7f616d9"
         },
         {
           "path": "highlight.wgsl.ts",
@@ -108,7 +113,7 @@
         {
           "path": "HeatmapComponent.ts",
           "type": "registry:component",
-          "hash": "961ffa7e9e5563d71ad5286acf212db3fa7551e8a2966238a224f87ffae56867"
+          "hash": "bcabcc1e1166fb463e5a51d38732f43924c3e2994fc1fc12b6e80adedbacdbe4"
         },
         {
           "path": "colormap.ts",
@@ -157,7 +162,7 @@
         {
           "path": "GridComponent.ts",
           "type": "registry:component",
-          "hash": "d7d9035823be1c16071625a2219ebc6e1d63beccbfe63f379df455f68991959a"
+          "hash": "105b5ff00229f82c4092553063c2178554b7ccf322a7908161f160779385611e"
         },
         {
           "path": "grid.wgsl.ts",
@@ -201,7 +206,7 @@
         {
           "path": "ScatterComponent.ts",
           "type": "registry:component",
-          "hash": "0d098d0aa2aca3faa0f81fc40967cd777e7eca92e4693899348960ff9e6775ba"
+          "hash": "d7120f14ed88ded5b1a9e4f3546c724f44d29bc64ab2e92a99489f6d2538ad49"
         },
         {
           "path": "index.ts",
@@ -245,7 +250,7 @@
         {
           "path": "ImageDiffComponent.ts",
           "type": "registry:component",
-          "hash": "b6abeba100969538d2662a760e80108922e7f7ee6f78ce8348ec7e5b79dbb057"
+          "hash": "5bf84d02354cc3bf381d6ad42a650de3bb3348eadcfe478d5d095b14700daae7"
         },
         {
           "path": "imagediff.wgsl.ts",
@@ -284,7 +289,7 @@
         {
           "path": "LogViewerComponent.ts",
           "type": "registry:component",
-          "hash": "4175966a34e2d89c04bc9b0784ecdd2a375b2d46699e04d8603d4e5cf20153bf"
+          "hash": "c669b72ad12af668384dd753d6ee0a0090c270356eb9e9556592ce22b30dd37b"
         },
         {
           "path": "index.ts",
@@ -323,7 +328,7 @@
         {
           "path": "CandlestickComponent.ts",
           "type": "registry:component",
-          "hash": "abcff62c3830d1d8d9f0dae63d3470d2b28eb3907e46493412d8f64940fb9dd8"
+          "hash": "992bb738c68c267d7db78ee6b81cea9dc3bb79a471199707b35805fa9007ec7d"
         },
         {
           "path": "GPUCandlestick.tsx",
@@ -362,7 +367,7 @@
         {
           "path": "DensityMapComponent.ts",
           "type": "registry:component",
-          "hash": "deb5fa1d59008255b67931e0e8f8a20568ee37dda082a08ca252d5761204b833"
+          "hash": "fb42426702625e9a47424e245db35c57d4b8f79fe267f7739afa3d715aa36515"
         },
         {
           "path": "GPUDensityMap.tsx",
@@ -441,7 +446,7 @@
         {
           "path": "HistogramComponent.ts",
           "type": "registry:component",
-          "hash": "0799d2eebae64c885c9d41b51c32186e734641f2b0b8acc907b35515e4e923ce"
+          "hash": "7195c13fea5564c5b8cc5a0f6f2401208f1de1406992d505c12ecb5c6d047203"
         },
         {
           "path": "axisRules.ts",
@@ -495,7 +500,7 @@
         {
           "path": "DepGraphComponent.ts",
           "type": "registry:component",
-          "hash": "8abc7b091b8ddfbabc71ddadea87a656d9b4f28a4530c253b33a3ae668dd7f79"
+          "hash": "c968737d443ac3bb5711faa10844e3d9b188fabd93742eb86a454604e51c098d"
         },
         {
           "path": "GPUDepGraph.tsx",
@@ -544,7 +549,7 @@
         {
           "path": "SpreadsheetComponent.ts",
           "type": "registry:component",
-          "hash": "9ab3e2eefa2135c0ab1e5ccdf0ffa47859d8c2e81cebfa9e400a01e929e02ac3"
+          "hash": "a330a2b3033b3bd5794478989a06673e897ec21699a250b674ea3cc340faf12c"
         },
         {
           "path": "cellRef.ts",
@@ -613,7 +618,7 @@
         {
           "path": "NodeEditorComponent.ts",
           "type": "registry:component",
-          "hash": "f184ccfdc42ac3188efd6a2c5e053c447a5fb34d0bec549793d1f2e74e8204af"
+          "hash": "4e60c4c0d07b19e626c5a757afdba31b7ce020ea1018656e0b31f802f3b7b737"
         },
         {
           "path": "index.ts",
@@ -657,7 +662,7 @@
         {
           "path": "WhiteboardComponent.ts",
           "type": "registry:component",
-          "hash": "5f01ee34b9bc6eedf6c0c32adbf5758698e45abfa098d1c59dd9f945a32e6c54"
+          "hash": "39725aba87ef473d8500a7f31e15fba3d858a8080aa78099c21343828ee22400"
         },
         {
           "path": "background.wgsl.ts",
@@ -711,7 +716,7 @@
         {
           "path": "PdfViewerComponent.ts",
           "type": "registry:component",
-          "hash": "302be414e2fe583e8c6069c09f6b50a32ec6400ea2d1df332f5601fe34ae28a5"
+          "hash": "dd95c7544594d4b13c0b2cbd1c2ef9e366fe17355381d03ccbfebb8a3831e0f2"
         },
         {
           "path": "index.ts",
@@ -750,7 +755,7 @@
         {
           "path": "GraphComponent.ts",
           "type": "registry:component",
-          "hash": "63f3b82cfab770c73ee953abd7cc0c4a07efe75b7adde5ffbe9903b313e3d77c"
+          "hash": "863f25edfd1d4ef3d8b28799b2e8b3af9f97e26eab1c41b737831e08f3fc4391"
         },
         {
           "path": "graph.wgsl.ts",
@@ -794,7 +799,7 @@
         {
           "path": "NetworkTopologyComponent.ts",
           "type": "registry:component",
-          "hash": "8a0c8363747ac46f2cb11731d24f3cb98dd927b7c26986836c16039fdc2de8cc"
+          "hash": "ed0dbc8c7ad45c48acefae73b63bb3b412ff8b30c6dc56557285c1683c3cb65e"
         },
         {
           "path": "generate.ts",

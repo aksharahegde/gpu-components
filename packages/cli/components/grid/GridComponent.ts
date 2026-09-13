@@ -98,12 +98,12 @@ export class GridComponent implements GpuComponent<GridProps> {
       warnings: ctx.runtime.warnings,
     });
 
-    this.viewportUniform = uniforms(ctx.gpu, {
+    this.viewportUniform = uniforms(ctx.gpu!, {
       timeToClip: [1, 0],
       trackToClip: [1, 0],
       pxSize: [1, 1],
     });
-    this.paramsUniform = uniforms(ctx.gpu, {
+    this.paramsUniform = uniforms(ctx.gpu!, {
       rowCount: 0,
       columnCount: 0,
       numericColumnCount: 0,
