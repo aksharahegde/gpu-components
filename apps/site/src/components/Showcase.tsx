@@ -1,14 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as stylex from '@stylexjs/stylex'
+import dynamic from 'next/dynamic'
 import { useGpu } from '@gpu-components/react'
-import type { ViewportState } from '@gpu-components/core'
-import { GPUTimeline, ingestSpans, type RawSpan } from '../../../../registry/timeline'
-import { GPUScatter, ingestColumns } from '../../../../registry/scatter'
-import { GPUHeatmap, ingestMatrix } from '../../../../registry/heatmap'
-import { GPUDataGrid, ingestRows, type GridColumn } from '../../../../registry/grid'
-import { mulberry32, useMeasuredStage } from './demos/chrome'
 import { color, font, radius, shadow } from '../tokens.stylex'
 
 /**
@@ -28,7 +23,20 @@ import { color, font, radius, shadow } from '../tokens.stylex'
  * counts components the scheduler *redrew* on the last tick, not components mounted — settled
  * components are skipped, which is the whole point of the dirty flag. The caption now reports both
  * numbers and says which is which.
+ *
+ * Each stage lives in its own module under `showcase/`, loaded via `next/dynamic` rather than a
+ * top-level import: the registry component it renders (and that component's own WGSL/data-prep
+ * code) forms its own webpack chunk regardless, but a static import here still made Next fetch all
+ * four chunks as unconditional `<script async>` tags on every visit to "/" — `useLazyMount`'s
+ * `{visible && <TimelineStage />}` gate was only ever deferring the *mount*, not the *download*,
+ * so a visitor who never scrolled this far still paid ~100KB raw of JS for four demos they never
+ * saw. `dynamic(..., { ssr: false })` makes the import itself wait for the same `visible` flag.
  */
+const TimelineStage = dynamic(() => import('./showcase/TimelineStage'), { ssr: false })
+const ScatterStage = dynamic(() => import('./showcase/ScatterStage'), { ssr: false })
+const HeatmapStage = dynamic(() => import('./showcase/HeatmapStage'), { ssr: false })
+const GridStage = dynamic(() => import('./showcase/GridStage'), { ssr: false })
+
 export function Showcase() {
   return <ShowcaseBody />
 }
@@ -138,7 +146,15 @@ function Caption({ status, started }: { status: string; started: boolean }) {
   )
 }
 
-function Panel({ title, note, children }: { title: string; note: string; children: ReactNode }) {
+function Panel({
+  title,
+  note,
+  children,
+}: {
+  title: string
+  note: string
+  children: ReactNode
+}) {
   return (
     <figure {...stylex.props(s.panel)}>
       <figcaption {...stylex.props(s.panelHead)}>
@@ -148,219 +164,6 @@ function Panel({ title, note, children }: { title: string; note: string; childre
       <div {...stylex.props(s.panelStage)}>{children}</div>
     </figure>
   )
-}
-
-/**
- * Shared shell for the four stages: measures its box and renders nothing until the runtime is up
- * and the element has a real width, which every registry component requires (they size from
- * `viewport.width/height` rather than observing their own canvas — PLAN.md §11.1).
- */
-function Stage({
-  children,
-}: {
-  children: (box: { width: number; height: number }) => ReactNode
-}) {
-  const { status } = useGpu()
-  const { ref, box } = useMeasuredStage({ width: 520, height: 200 })
-  return (
-    <div ref={ref} {...stylex.props(s.stageBox)}>
-      {status === 'ready' && box.width > 1 && children(box)}
-    </div>
-  )
-}
-
-const SPAN_NAMES = ['fetchUser', 'db.query', 'render', 'auth.verify', 'cache.get', 'net.write']
-const DOMAIN_MS = 60_000
-
-function TimelineStage() {
-  const spans = useMemo(() => {
-    const rnd = mulberry32(0x5eed)
-    const raw: RawSpan[] = new Array(50_000)
-    for (let i = 0; i < raw.length; i++) {
-      const burst = Math.floor(rnd() * 240)
-      raw[i] = {
-        start: (burst / 240) * DOMAIN_MS + rnd() * (DOMAIN_MS / 240) * 0.6,
-        duration: rnd() * rnd() * 40 + 0.05,
-        track: Math.floor(rnd() * 8),
-        label: SPAN_NAMES[i % SPAN_NAMES.length]!,
-      }
-    }
-    return ingestSpans(raw)
-  }, [])
-
-  return (
-    <Stage>
-      {(box) => <TimelineInner spans={spans} box={box} />}
-    </Stage>
-  )
-}
-
-function TimelineInner({
-  spans,
-  box,
-}: {
-  spans: ReturnType<typeof ingestSpans>
-  box: { width: number; height: number }
-}) {
-  const [viewport, setViewport] = useState<ViewportState>(() => ({
-    timeStart: 0,
-    timeEnd: DOMAIN_MS,
-    trackCount: 8,
-    rowStart: 0,
-    rowEnd: 8,
-    width: box.width,
-    height: box.height,
-  }))
-  useEffect(() => {
-    setViewport((v) => ({ ...v, width: box.width, height: box.height }))
-  }, [box.width, box.height])
-
-  return <GPUTimeline spans={spans} viewport={viewport} onViewportChange={setViewport} />
-}
-
-function ScatterStage() {
-  const data = useMemo(() => {
-    const rnd = mulberry32(0x5ca7)
-    const n = 100_000
-    const x = new Float32Array(n)
-    const y = new Float32Array(n)
-    const category = new Uint8Array(n)
-    const clusters = [
-      { cx: 0.28, cy: 0.68, spread: 0.1, category: 0 },
-      { cx: 0.6, cy: 0.36, spread: 0.13, category: 1 },
-      { cx: 0.8, cy: 0.74, spread: 0.07, category: 2 },
-    ]
-    for (let i = 0; i < n; i++) {
-      const c = clusters[i % clusters.length]!
-      const u = Math.max(rnd(), 1e-9)
-      const v = rnd()
-      const r = Math.sqrt(-2 * Math.log(u)) * c.spread
-      x[i] = c.cx + r * Math.cos(2 * Math.PI * v)
-      y[i] = c.cy + r * Math.sin(2 * Math.PI * v)
-      category[i] = c.category
-    }
-    return ingestColumns(x, y, category, ['baseline', 'canary', 'control'])
-  }, [])
-
-  return <Stage>{(box) => <ScatterInner data={data} box={box} />}</Stage>
-}
-
-function ScatterInner({
-  data,
-  box,
-}: {
-  data: ReturnType<typeof ingestColumns>
-  box: { width: number; height: number }
-}) {
-  const [viewport, setViewport] = useState<ViewportState>(() => ({
-    timeStart: data.bounds.xMin,
-    timeEnd: data.bounds.xMax,
-    trackCount: 1,
-    rowStart: data.bounds.yMin,
-    rowEnd: data.bounds.yMax,
-    yContinuous: true,
-    width: box.width,
-    height: box.height,
-  }))
-  useEffect(() => {
-    setViewport((v) => ({ ...v, width: box.width, height: box.height }))
-  }, [box.width, box.height])
-
-  return <GPUScatter data={data} viewport={viewport} onViewportChange={setViewport} />
-}
-
-const HEAT_ROWS = 120
-const HEAT_COLS = 200
-
-function HeatmapStage() {
-  const data = useMemo(() => {
-    const values = new Float32Array(HEAT_ROWS * HEAT_COLS)
-    for (let r = 0; r < HEAT_ROWS; r++) {
-      for (let c = 0; c < HEAT_COLS; c++) {
-        const gradient = (c / HEAT_COLS) * 0.4
-        const d1 = Math.hypot(r / HEAT_ROWS - 0.3, c / HEAT_COLS - 0.25)
-        const d2 = Math.hypot(r / HEAT_ROWS - 0.7, c / HEAT_COLS - 0.7)
-        values[r * HEAT_COLS + c] =
-          gradient + Math.exp(-d1 * d1 * 40) + 0.7 * Math.exp(-d2 * d2 * 25)
-      }
-    }
-    return ingestMatrix(values, HEAT_ROWS, HEAT_COLS)
-  }, [])
-
-  return <Stage>{(box) => <HeatmapInner data={data} box={box} />}</Stage>
-}
-
-function HeatmapInner({
-  data,
-  box,
-}: {
-  data: ReturnType<typeof ingestMatrix>
-  box: { width: number; height: number }
-}) {
-  const [viewport, setViewport] = useState<ViewportState>(() => ({
-    timeStart: 0,
-    timeEnd: HEAT_COLS,
-    trackCount: HEAT_ROWS,
-    rowStart: 0,
-    rowEnd: HEAT_ROWS,
-    width: box.width,
-    height: box.height,
-  }))
-  useEffect(() => {
-    setViewport((v) => ({ ...v, width: box.width, height: box.height }))
-  }, [box.width, box.height])
-
-  return <GPUHeatmap data={data} viewport={viewport} onViewportChange={setViewport} />
-}
-
-const GRID_COLUMNS: GridColumn[] = [
-  { key: 'service', label: 'Service', width: 130 },
-  { key: 'p95', label: 'p95 (ms)', width: 96, numeric: true, align: 'right' },
-  { key: 'rps', label: 'Req/s', width: 96, numeric: true, align: 'right' },
-  { key: 'errors', label: 'Errors', width: 84, numeric: true, align: 'right' },
-]
-const GRID_SERVICES = ['checkout', 'catalog', 'identity', 'billing', 'search', 'inventory']
-const GRID_ROWS = 5_000
-const GRID_VISIBLE = 8
-
-function GridStage() {
-  const data = useMemo(() => {
-    const rnd = mulberry32(0x91d)
-    return ingestRows(
-      Array.from({ length: GRID_ROWS }, (_, i) => ({
-        service: GRID_SERVICES[i % GRID_SERVICES.length],
-        p95: Math.round(rnd() * rnd() * 800 * 10) / 10,
-        rps: Math.round(rnd() * 4000),
-        errors: Math.round(rnd() * rnd() * 120),
-      })),
-      GRID_COLUMNS,
-    )
-  }, [])
-
-  return <Stage>{(box) => <GridInner data={data} box={box} />}</Stage>
-}
-
-function GridInner({
-  data,
-  box,
-}: {
-  data: ReturnType<typeof ingestRows>
-  box: { width: number; height: number }
-}) {
-  const [viewport, setViewport] = useState<ViewportState>(() => ({
-    timeStart: 0,
-    timeEnd: 1,
-    trackCount: GRID_ROWS,
-    rowStart: 0,
-    rowEnd: GRID_VISIBLE,
-    width: box.width,
-    height: box.height,
-  }))
-  useEffect(() => {
-    setViewport((v) => ({ ...v, width: box.width, height: box.height }))
-  }, [box.width, box.height])
-
-  return <GPUDataGrid data={data} viewport={viewport} onViewportChange={setViewport} />
 }
 
 const PANELS = '@media (max-width: 860px)'
@@ -399,7 +202,6 @@ const s = stylex.create({
   panelTitle: { fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: color.text },
   panelNote: { fontFamily: font.mono, fontSize: 11.5, color: color.textFaint },
   panelStage: { position: 'relative', height: 208, backgroundColor: color.bgRaised },
-  stageBox: { position: 'absolute', inset: 0 },
   caption: { fontSize: 14, lineHeight: 1.6, color: color.textDim, margin: 0 },
   captionStrong: { color: color.text, fontWeight: 600 },
 })
