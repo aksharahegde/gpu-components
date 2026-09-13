@@ -97,6 +97,54 @@ function hitShape(shape: WhiteboardShape, px: number, py: number, tolerance: num
   }
 }
 
+export interface Bounds {
+  readonly xMin: number;
+  readonly yMin: number;
+  readonly xMax: number;
+  readonly yMax: number;
+}
+
+/** Axis-aligned bounding box of one shape — the marquee-select test in `GPUWhiteboard.tsx` (a
+ * shape is selected when its bbox intersects the drag rectangle, the standard marquee convention),
+ * reusing the same coordinate accessors `hitShape` already switches on. */
+export function shapeBounds(shape: WhiteboardShape): Bounds {
+  switch (shape.kind) {
+    case "rect":
+    case "ellipse":
+      return { xMin: shape.x, yMin: shape.y, xMax: shape.x + shape.w, yMax: shape.y + shape.h };
+    case "point":
+      return { xMin: shape.x, yMin: shape.y, xMax: shape.x, yMax: shape.y };
+    case "ruler":
+      return {
+        xMin: Math.min(shape.x0, shape.x1),
+        yMin: Math.min(shape.y0, shape.y1),
+        xMax: Math.max(shape.x0, shape.x1),
+        yMax: Math.max(shape.y0, shape.y1),
+      };
+    case "polygon":
+    case "freehand": {
+      let xMin = Infinity;
+      let yMin = Infinity;
+      let xMax = -Infinity;
+      let yMax = -Infinity;
+      for (const p of shape.points) {
+        xMin = Math.min(xMin, p.x);
+        yMin = Math.min(yMin, p.y);
+        xMax = Math.max(xMax, p.x);
+        yMax = Math.max(yMax, p.y);
+      }
+      if (!(xMin <= xMax)) return { xMin: 0, yMin: 0, xMax: 0, yMax: 0 };
+      return { xMin, yMin, xMax, yMax };
+    }
+  }
+}
+
+/** Whether two axis-aligned boxes overlap (touching edges count, matching `pointInRect`'s inclusive
+ * bounds elsewhere in this file). */
+export function boundsIntersect(a: Bounds, b: Bounds): boolean {
+  return a.xMin <= b.xMax && a.xMax >= b.xMin && a.yMin <= b.yMax && a.yMax >= b.yMin;
+}
+
 export function createScene(shapes: readonly WhiteboardShape[] = [], tolerance = DEFAULT_HIT_TOLERANCE): Scene {
   let items = shapes.slice();
   return {

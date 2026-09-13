@@ -139,6 +139,18 @@ describe("GPUWhiteboard render correctness (real Dawn pixels)", () => {
     hovered.component.dispose();
   });
 
+  it("highlights a multi-shape selection differently from no selection", async (t) => {
+    if (!gpu) return t.skip("vgpu/node (Dawn) unavailable");
+    const other: WhiteboardShape = { id: "rect-2", kind: "rect", x: 4, y: 4, w: 2, h: 2 };
+    const plain = await render(gpu, { shapes: [RECT, other] });
+    const selected = await render(gpu, { shapes: [RECT, other], selectedIds: new Set(["rect-1", "rect-2"]) });
+
+    assert.notDeepEqual(selected.pixels, plain.pixels, "a multi-shape selection must change the rendered image");
+
+    plain.component.dispose();
+    selected.component.dispose();
+  });
+
   it("hit-tests a rendered rect back to its id through the real viewport transform", async (t) => {
     if (!gpu) return t.skip("vgpu/node (Dawn) unavailable");
     const { component } = await render(gpu, { shapes: [RECT] });

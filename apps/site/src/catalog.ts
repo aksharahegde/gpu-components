@@ -107,8 +107,8 @@ export const COMPONENTS: readonly CatalogEntry[] = [
   {
     slug: 'whiteboard',
     name: 'GPUWhiteboard',
-    blurb: 'A procedural dot-grid canvas with instanced shapes and ink, forked from GPUAnnotationCanvas.',
-    note: 'Pan, zoom and hover today. Drawing tools and multi-select are next.',
+    blurb: 'Draw shapes, select/marquee/move/delete — a procedural dot-grid canvas forked from GPUAnnotationCanvas.',
+    note: 'Draw tools reuse GPUAnnotationCanvas’s tool machine; selection reuses GPUNodeEditor’s shift-click/marquee pattern.',
   },
   {
     slug: 'pdfviewer',

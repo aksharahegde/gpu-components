@@ -641,7 +641,7 @@
       "name": "whiteboard",
       "type": "registry:component",
       "title": "GPUWhiteboard",
-      "description": "Freeform infinite canvas. A procedural dot-grid background, instanced rect/ellipse/point shapes plus ruler/polygon/freehand ink, and exact CPU hit-testing — pan and zoom only in v1, draw tools and multi-select land in later phases.",
+      "description": "Freeform infinite canvas. A procedural dot-grid background, instanced rect/ellipse/point shapes plus ruler/polygon/freehand ink, and exact CPU hit-testing. Draw tools create shapes by pointer gesture; a select tool click/shift-clicks/marquee-drags a multi-selection, drags it to move, and Delete/Backspace removes it.",
       "dependencies": [
         "@gpu-components/core",
         "@gpu-components/react",
@@ -652,12 +652,12 @@
         {
           "path": "GPUWhiteboard.tsx",
           "type": "registry:component",
-          "hash": "1f8ec5e2736bfcdb970b5ae44c4afd98ae4eb53a0435c7b095e0cc5dd9353664"
+          "hash": "99f205357b415a34ccbd89f1799b063780e8cba3f2ddf7902b9d2da48a520455"
         },
         {
           "path": "WhiteboardComponent.ts",
           "type": "registry:component",
-          "hash": "02ee305d4fb3a241531d3fdd420321f3080703514fdbaadbb48961675247f60d"
+          "hash": "5f01ee34b9bc6eedf6c0c32adbf5758698e45abfa098d1c59dd9f945a32e6c54"
         },
         {
           "path": "background.wgsl.ts",
@@ -667,7 +667,7 @@
         {
           "path": "index.ts",
           "type": "registry:component",
-          "hash": "f87053bcc29b5f85b0773e7c6ca70293c4b29b51f729b1e638ad1f07b6a4c1b8"
+          "hash": "b1676f9bf61d34e555f74a0a8b694b8396d730bb31e7cff0a65f472e640b4398"
         },
         {
           "path": "ingest.ts",
@@ -677,12 +677,17 @@
         {
           "path": "scene.ts",
           "type": "registry:component",
-          "hash": "0b3486a95ff8b99298864b088974f9ceea8249a9d4ebcae6f40585a10b4252d9"
+          "hash": "5a4dff4173b643549660b7e3d0ae90b772b1e1837f25f58fdd3da551cd8d65c2"
         },
         {
           "path": "shapes.wgsl.ts",
           "type": "registry:component",
           "hash": "64efbb80c97a990a44e5457647619768d72b9d385f921bdbdca290ced6624088"
+        },
+        {
+          "path": "tools.ts",
+          "type": "registry:component",
+          "hash": "1c302400053abe54519c4224273832e93d29dfa91f16e914e69179277c53f37d"
         }
       ]
     },

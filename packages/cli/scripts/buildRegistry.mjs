@@ -80,7 +80,7 @@ const ITEMS = {
   whiteboard: {
     title: "GPUWhiteboard",
     description:
-      "Freeform infinite canvas. A procedural dot-grid background, instanced rect/ellipse/point shapes plus ruler/polygon/freehand ink, and exact CPU hit-testing — pan and zoom only in v1, draw tools and multi-select land in later phases.",
+      "Freeform infinite canvas. A procedural dot-grid background, instanced rect/ellipse/point shapes plus ruler/polygon/freehand ink, and exact CPU hit-testing. Draw tools create shapes by pointer gesture; a select tool click/shift-clicks/marquee-drags a multi-selection, drags it to move, and Delete/Backspace removes it.",
   },
   pdfviewer: {
     title: "GPUPdfViewer",

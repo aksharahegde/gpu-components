@@ -149,4 +149,23 @@ describe("WhiteboardComponent", () => {
     component.dispose();
     gpu.dispose();
   });
+
+  it("accepts a multi-shape selectedIds set without throwing, and re-uploads on a new set", async () => {
+    const { gpu } = await createMockGpu();
+    const surfaceTarget = target(gpu, { size: [16, 16] });
+    const component = new WhiteboardComponent();
+    component.create(makeCtx(gpu, surfaceTarget));
+
+    const shapes = [RECT, { id: "rect-2", kind: "rect", x: 5, y: 5, w: 1, h: 1 } as WhiteboardShape];
+    component.update({ shapes, viewport: VIEWPORT, selectedIds: new Set(["rect-1", "rect-2"]) });
+    assert.equal(component.plan().renderPasses.length, 1);
+
+    // A fresh Set (even with the same members) is a new reference — same "diff by identity" rule
+    // `NodeEditorComponent` follows for its own `selectedNodes`/`selectedEdges`.
+    component.update({ shapes, viewport: VIEWPORT, selectedIds: new Set(["rect-1"]) });
+    assert.equal(component.plan().renderPasses.length, 1);
+
+    component.dispose();
+    gpu.dispose();
+  });
 });

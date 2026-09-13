@@ -36,7 +36,9 @@ export interface WhiteboardProps {
   readonly shapes: readonly WhiteboardShape[];
   readonly viewport: ViewportState;
   readonly hoveredId?: string | null;
-  readonly selectedId?: string | null;
+  /** Multi-select, reusing `GPUNodeEditor`'s `selectedNodes` shape — a `Set` rather than a single
+   * id, so shift-click and marquee-drag (`GPUWhiteboard.tsx`) can highlight an arbitrary group. */
+  readonly selectedIds?: ReadonlySet<string>;
 }
 
 interface BackgroundUniforms extends Record<string, unknown> {
@@ -110,7 +112,7 @@ function writeQuadInstance(
 function packQuadInstances(
   shapes: readonly WhiteboardShape[],
   hoveredId: string | null,
-  selectedId: string | null,
+  selectedIds: ReadonlySet<string> | undefined,
 ): { readonly bytes: Uint8Array<ArrayBuffer>; readonly count: number } {
   const quads = shapes.filter(
     (s): s is WhiteboardShape & { kind: "rect" | "ellipse" | "point" } =>
@@ -121,7 +123,7 @@ function packQuadInstances(
   for (let i = 0; i < quads.length; i++) {
     const s = quads[i]!;
     const flags =
-      (s.id === selectedId ? SHAPE_FLAG_SELECTED : 0) |
+      (selectedIds?.has(s.id) ? SHAPE_FLAG_SELECTED : 0) |
       (s.id === hoveredId ? SHAPE_FLAG_HOVERED : 0) |
       (paletteIndex(s.color) << SHAPE_COLOR_SHIFT);
     if (s.kind === "point") writeQuadInstance(view, i, SHAPE_KIND_POINT, flags, s.x, s.y, 0, 0);
@@ -134,12 +136,13 @@ function packQuadInstances(
 function packLineInstances(
   shapes: readonly WhiteboardShape[],
   hoveredId: string | null,
-  selectedId: string | null,
+  selectedIds: ReadonlySet<string> | undefined,
 ): LineInstance[] {
   const lines: LineInstance[] = [];
   for (const s of shapes) {
-    const emphasis = s.id === selectedId ? 0.45 : s.id === hoveredId ? 0.25 : 0;
-    const widthPx = s.id === selectedId ? STROKE_WIDTH_PX * 1.5 : STROKE_WIDTH_PX;
+    const selected = selectedIds?.has(s.id) ?? false;
+    const emphasis = selected ? 0.45 : s.id === hoveredId ? 0.25 : 0;
+    const widthPx = selected ? STROKE_WIDTH_PX * 1.5 : STROKE_WIDTH_PX;
     const color = lineColor(s.color, emphasis);
     if (s.kind === "ruler") {
       lines.push({ x0: s.x0, y0: s.y0, x1: s.x1, y1: s.y1, widthPx, color });
@@ -167,11 +170,13 @@ let nextId = 0;
 /**
  * `GPUWhiteboard` — freeform infinite canvas (PLAN.md #14).
  *
- * Phase 1: a procedural background grid (`RasterLayer`, no geometry), shapes forked verbatim from
+ * A procedural background grid (`RasterLayer`, no geometry), shapes forked verbatim from
  * `registry/annotationcanvas` (one quad per rect/ellipse/point via `InstancedQuadLayer`, one line
- * per ruler/polygon/freehand edge via `LineLayer`), and CPU hit-testing against a retained `Scene` —
- * no draw tools, no selection UI, no drag yet. No compute passes, no `animating`: nothing here moves
- * on its own.
+ * per ruler/polygon/freehand edge via `LineLayer`), and CPU hit-testing against a retained `Scene`.
+ * Draw tools, multi-select, move, and delete all live one layer up in `GPUWhiteboard.tsx`
+ * (`tools.ts` for creation, the nodeeditor-style shift-click/marquee pattern for selection) — this
+ * class stays a pure "given shapes + hover + selection, draw and hit-test them" component, host-owned
+ * shapes in, nothing mutated here. No compute passes, no `animating`: nothing here moves on its own.
  */
 export class WhiteboardComponent implements GpuComponent<WhiteboardProps> {
   readonly id: string;
@@ -192,7 +197,7 @@ export class WhiteboardComponent implements GpuComponent<WhiteboardProps> {
   private uploadedShapes: readonly WhiteboardShape[] | null = null;
   private currentViewport: ViewportState | null = null;
   private currentHoveredId: string | null = null;
-  private currentSelectedId: string | null = null;
+  private currentSelectedIds: ReadonlySet<string> | undefined = undefined;
 
   constructor() {
     this.id = `whiteboard-${nextId++}`;
@@ -238,12 +243,16 @@ export class WhiteboardComponent implements GpuComponent<WhiteboardProps> {
     // Device-loss replay: re-derive from the CPU-side source of truth (PLAN.md §10.6/§14.2).
     if (this.uploadedShapes) {
       this.scene = createScene(this.uploadedShapes);
-      this.uploadShapes(this.uploadedShapes, this.currentHoveredId, this.currentSelectedId);
+      this.uploadShapes(this.uploadedShapes, this.currentHoveredId, this.currentSelectedIds);
     }
     if (this.currentViewport) this.writeViewport(this.currentViewport);
   }
 
-  private uploadShapes(shapes: readonly WhiteboardShape[], hoveredId: string | null, selectedId: string | null): void {
+  private uploadShapes(
+    shapes: readonly WhiteboardShape[],
+    hoveredId: string | null,
+    selectedIds: ReadonlySet<string> | undefined,
+  ): void {
     if (shapes.length > RECOMMENDED_MAX_SHAPES) {
       this.warnings?.report({
         code: "whiteboard-size",
@@ -253,9 +262,9 @@ export class WhiteboardComponent implements GpuComponent<WhiteboardProps> {
           `soft cap — CPU hit-testing and per-change buffer rebuilds scale linearly with this count`,
       });
     }
-    const { bytes, count } = packQuadInstances(shapes, hoveredId, selectedId);
+    const { bytes, count } = packQuadInstances(shapes, hoveredId, selectedIds);
     this.quadLayer?.upload(bytes, count);
-    this.lineLayer?.uploadLines(packLineInstances(shapes, hoveredId, selectedId));
+    this.lineLayer?.uploadLines(packLineInstances(shapes, hoveredId, selectedIds));
   }
 
   private writeViewport(viewport: ViewportState): void {
@@ -270,18 +279,18 @@ export class WhiteboardComponent implements GpuComponent<WhiteboardProps> {
 
   update(props: WhiteboardProps): void {
     const hoveredId = props.hoveredId ?? null;
-    const selectedId = props.selectedId ?? null;
+    const selectedIds = props.selectedIds;
     if (
       props.shapes !== this.uploadedShapes ||
       hoveredId !== this.currentHoveredId ||
-      selectedId !== this.currentSelectedId
+      selectedIds !== this.currentSelectedIds
     ) {
       if (props.shapes !== this.uploadedShapes) this.scene = createScene(props.shapes);
       else this.scene?.setShapes(props.shapes);
-      this.uploadShapes(props.shapes, hoveredId, selectedId);
+      this.uploadShapes(props.shapes, hoveredId, selectedIds);
       this.uploadedShapes = props.shapes;
       this.currentHoveredId = hoveredId;
-      this.currentSelectedId = selectedId;
+      this.currentSelectedIds = selectedIds;
     }
 
     this.currentViewport = props.viewport;
