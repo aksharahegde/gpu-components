@@ -2,8 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useCanvasRef, useGpuComponent } from '@gpu-components/react'
+import type { SurfaceOptions } from 'vgpu'
 import { Hero3DComponent, type Hero3DProps } from './Hero3DComponent.ts'
 import { usePrefersReducedMotion } from './usePrefersReducedMotion.ts'
+
+/** Below this viewport width the DPR cap tightens from 2 to 1.5 (Phase 5 budget: bounds the
+ * canvas's backing-store resolution, and so its fill-rate cost, on the small viewports where a
+ * full 2x backing store buys the least visible sharpness). Matches `useGpuCanvas.ts`'s note that
+ * `SurfaceOptions` is read once at first registration — this reads `window` at mount time, not
+ * reactively, which is fine: nobody resizes past this breakpoint mid-session in practice, and a
+ * full remount is what every other one-time surface option here already assumes. */
+const NARROW_VIEWPORT_PX = 900
 
 /** How close to unchanged a pointer/scroll reading has to be to skip a state update — small enough
  * to be visually invisible, big enough that idle jitter (mouse resting, no real scroll) doesn't
@@ -118,7 +127,17 @@ export function Hero3D() {
     }),
     [reducedMotion, pointer, scrollCollapse],
   )
-  useGpuComponent(() => new Hero3DComponent(), canvas, props)
+  // DPR cap (Phase 5 budget): `vgpu`'s `surface()` reads raw `devicePixelRatio` for the canvas's
+  // backing-store resolution unless told otherwise — uncapped, that's 3x+ on modern phones for a
+  // decorative background nobody is inspecting pixel-by-pixel. Same clamp pattern as
+  // `GPUDataGrid`/`GPUSpreadsheet`'s `Math.min(2, devicePixelRatio)`, just handed to the surface
+  // itself (this component draws straight to the GPU surface, no 2D overlay canvas of its own).
+  const surfaceOpts = useMemo<SurfaceOptions>(() => {
+    const cap = typeof window !== 'undefined' && window.innerWidth < NARROW_VIEWPORT_PX ? 1.5 : 2
+    const raw = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+    return { dpr: Math.min(raw, cap) }
+  }, [])
+  useGpuComponent(() => new Hero3DComponent(), canvas, props, surfaceOpts)
 
   return (
     <canvas
