@@ -32,6 +32,7 @@ import { InstallCommand } from '../src/components/InstallCommand'
 import { Showcase } from '../src/components/Showcase'
 import { ComponentGallery } from '../src/components/ComponentGallery'
 import { HeroStage, LandingGpu } from '../src/components/HeroStage'
+import { HeroJourney } from '../src/components/hero3d/HeroJourney'
 import { heroMotion } from '../src/heroMotion.stylex'
 
 export const metadata: Metadata = {
@@ -148,6 +149,7 @@ const CEILINGS: Array<[string, string]> = [
 function Home() {
   return (
     <LandingGpu>
+      <HeroJourney>
       <section {...stylex.props(s.hero)}>
         <Wrap>
           <div {...stylex.props(s.heroGrid)}>
@@ -292,6 +294,7 @@ function Home() {
           </Card>
         </Grid>
       </Section>
+      </HeroJourney>
 
       <Section
         title="Here are four of them. One device."

@@ -30,9 +30,9 @@ export interface Hero3DProps {
   /** 0 = waypoint 1 (today's settled hero pose), 1 = the last of `data.ts`'s `WAYPOINTS`.
    * Continuous — `update()` lerps the bracketing pair via `journeyPose()` and drives the camera's
    * `target`/`distance` straight off it, no separate easing (same reasoning as `scrollCollapse`
-   * below: the input already rides the reader's own scroll gesture). Phase 1: `Hero3D.tsx`
-   * temporarily reuses `scrollCollapse`'s exact scroll range for this — a real multi-section range
-   * is Phase 3's job. */
+   * below: the input already rides the reader's own scroll gesture). Phase 3: `Hero3D.tsx` derives
+   * this from the sticky journey container's own bounding rect (0 at its top, 1 at its bottom) —
+   * a real multi-section range, not `scrollCollapse`'s one-hero-height placeholder anymore. */
   readonly journeyT: number;
 }
 

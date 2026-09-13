@@ -9,7 +9,6 @@ import * as stylex from '@stylexjs/stylex'
 import { GPUProvider, useGpu } from '@gpu-components/react'
 import { PROVIDER_OPTIONS } from './demos/chrome'
 import { HeroMiniatures } from './HeroMiniatures'
-import { Hero3D } from './hero3d/Hero3D'
 import { color, radius, shadow, size } from '../tokens.stylex'
 
 /**
@@ -48,6 +47,15 @@ function useNarrowViewport(): boolean {
   return narrow
 }
 
+/** PLAN's fallback-ladder gate, factored out so `HeroJourney.tsx` (Phase 3's sticky wrapper) can
+ * decide — without duplicating it — whether to mount the sticky 3D layer at all: the same "real
+ * WebGPU and at/above the `HERO` breakpoint" test `HeroStage` already used inline. */
+export function useHero3DActive(): boolean {
+  const { status } = useGpu()
+  const narrow = useNarrowViewport()
+  return status === 'ready' && !narrow
+}
+
 /**
  * The hero's stage. Three states (PLAN's fallback ladder, Phase 2):
  *
@@ -70,16 +78,23 @@ function useNarrowViewport(): boolean {
  * `prefers-reduced-motion` has no branch here yet (see `hero3d/usePrefersReducedMotion.ts`'s doc
  * comment) — this phase has no animation to suppress, so it would collapse to this same static
  * render either way.
+ *
+ * Phase 3: when `use3D`, the canvas no longer mounts here at all — `HeroJourney.tsx` promotes it
+ * to a `position: sticky` layer spanning this section through "Zoom is a uniform write", behind
+ * the actual page content (`page.tsx` wraps the relevant sections in `<HeroJourney>`). This grid
+ * cell renders nothing for that branch (the sticky layer shows through the empty column) rather
+ * than the bounded, tilted `figure`/`stage`, which stays exactly as-is for the `HeroMiniatures`
+ * fallback — a static image still wants its own bounded panel, not a page-spanning sticky rig.
  */
 export function HeroStage() {
-  const { status } = useGpu()
-  const narrow = useNarrowViewport()
-  const use3D = status === 'ready' && !narrow
+  const use3D = useHero3DActive()
+
+  if (use3D) return null
 
   return (
     <figure {...stylex.props(s.figure)}>
-      <div {...stylex.props(s.stage, use3D && s.stageFlat)}>
-        {use3D ? <Hero3D /> : <HeroMiniatures />}
+      <div {...stylex.props(s.stage)}>
+        <HeroMiniatures />
       </div>
     </figure>
   )
@@ -128,14 +143,5 @@ const s = stylex.create({
     boxShadow: { default: shadow.lg, [HERO]: shadow.md },
     overflow: 'hidden',
     pointerEvents: 'none',
-  },
-  /**
-   * The 3D hero draws its own perspective on the GPU — a CSS `perspective()`/`rotateX/Y()` on top
-   * would rasterize the canvas flat and skew *that raster*, fighting the real projection and
-   * blurring on high-DPR screens (see `HeroStage`'s doc comment). The clip (`marginInlineEnd`) and
-   * surrounding frame stay; only the transform drops.
-   */
-  stageFlat: {
-    transform: 'none',
   },
 })

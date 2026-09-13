@@ -102,6 +102,15 @@ export const COLLAPSED_DEPTH = -4.2
  * 5. **Dissolve** — placeholder only: Phase 5 wires this to the `<Showcase />` handoff and will
  *    likely retune these two numbers once that fade is actually built; for now it just continues
  *    the dolly one step further so `journeyPose` has a real last segment to interpolate into.
+ *
+ * Retuned in Phase 3 (real multi-section scroll range, replacing Phase 1's one-hero-height
+ * placeholder): camera world position is `targetZ + distance` (orbit at yaw=0/pitch=0 sits the
+ * camera at `target.z + distance` looking down `-Z` — see `Hero3DComponent.create()`'s initial
+ * pose). The original waypoint 2 (`targetZ: -4, distance: 7`) put the camera at world Z 3 — almost
+ * exactly where waypoint 1 already sits (3.4) — so the "pull back to see the whole stack" waypoint
+ * barely moved the camera at all; verified as a real weak spot even with proper scroll distance to
+ * play out over, not just the old compressed range. `distance` bumped 7 -> 9.5 (world Z: 3.4 -> 5.5)
+ * so it reads as an actual backward dolly before the big forward plunge into waypoints 3-5.
  */
 export interface Waypoint {
   readonly targetZ: number
@@ -110,7 +119,7 @@ export interface Waypoint {
 
 export const WAYPOINTS: readonly Waypoint[] = [
   { targetZ: 0, distance: CAMERA_POSITION_Z },
-  { targetZ: -4, distance: 7 },
+  { targetZ: -4, distance: 9.5 },
   { targetZ: DEPTH.heatmap, distance: 3 },
   { targetZ: -3.6, distance: 2.2 },
   { targetZ: -0.6, distance: 0.8 },

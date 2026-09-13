@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type RefObject } from 'react'
 import { useCanvasRef, useGpuComponent } from '@gpu-components/react'
 import type { SurfaceOptions } from 'vgpu'
 import { Hero3DComponent, type Hero3DProps } from './Hero3DComponent.ts'
@@ -37,6 +37,18 @@ const CHANGE_EPSILON = 0.002
  *   approved plan (`Showcase.tsx`'s lazy-mount observer is the closest existing convention, though
  *   this one can't be a one-way latch — scrolling back up must un-collapse). The sampling loop
  *   stops entirely the moment the hero is no longer intersecting, per the plan's cost discipline.
+ *   Now that `HeroJourney.tsx` makes this canvas `position: sticky`, this rect naturally reads 0
+ *   the whole time the canvas is pinned (a stuck sticky element's own rect top sits at its `top`
+ *   offset, 0) and only starts climbing once the journey container's end pushes it back into
+ *   normal flow — i.e. it now fires exactly during the sticky-exit at the *end* of the journey,
+ *   which is the effect it was always for (fading the scene flat as it scrolls away), not a
+ *   placeholder anymore.
+ * - `journeyT`: 0 at the top of the journey container, 1 at its bottom — read from the *container*
+ *   `HeroJourney.tsx` passes down as `journeyContainerRef`, not the canvas (the canvas's own rect
+ *   stays pinned at `top: 0` for virtually the whole journey once sticky, so it can't be the
+ *   source for a value that's supposed to move smoothly across four sections). Sampled in the same
+ *   tick as `scrollCollapse`/pointer — one loop, three derived values, per the plan's "extend, don't
+ *   duplicate" instruction.
  *
  * `vgpu`'s `surface()` auto-resizes from the canvas's CSS size (`surface.d.ts`: "the surface
  * resizes itself right after the frame clock advances"), so this needs no width/height attributes
@@ -46,17 +58,32 @@ const CHANGE_EPSILON = 0.002
  * `aria-hidden`: pure decoration. The hero's real content (heading, lead, CTA) lives in `page.tsx`,
  * unchanged.
  */
-export function Hero3D() {
+export function Hero3D({
+  journeyContainerRef,
+}: {
+  /** The Phase 3 journey container (`HeroJourney.tsx`) whose bounding rect `journeyT` is derived
+   * from. Optional only so this component still degrades to something sane if ever mounted without
+   * the wrapper (`journeyT` falls back to `scrollCollapse`, Phase 1's original placeholder range) —
+   * in practice `HeroJourney` always passes one. */
+  journeyContainerRef?: RefObject<HTMLDivElement | null>
+}) {
   const [canvas, ref] = useCanvasRef()
   const reducedMotion = usePrefersReducedMotion()
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null)
   const [scrollCollapse, setScrollCollapse] = useState(0)
+  const [journeyT, setJourneyT] = useState(0)
 
   // Reduced motion disables both inputs outright (per the approved plan): no pointer tracking, no
   // scroll sampling loop — `Hero3DComponent.update()` ignores both anyway, but not even attaching
   // the listeners is the honest version of "disabled," not "computed and discarded."
   useEffect(() => {
     if (!canvas || reducedMotion) return
+
+    // Gate the loop on the journey container when there is one — it spans four sections, so it
+    // stays "intersecting" (and the loop keeps sampling) across the whole range the canvas is
+    // pinned for, not just whatever sliver of the canvas's own (now sticky, mostly-0-rect) box
+    // happens to overlap the viewport. Falls back to the canvas itself when unmounted bare.
+    const observedEl = journeyContainerRef?.current ?? canvas
 
     let intersecting = false
     let raf = 0
@@ -70,6 +97,19 @@ export function Hero3D() {
       const rect = canvas.getBoundingClientRect()
       const collapse = rect.top < 0 ? Math.min(1, -rect.top / Math.max(1, rect.height)) : 0
       setScrollCollapse((prev) => (Math.abs(prev - collapse) > CHANGE_EPSILON ? collapse : prev))
+
+      const container = journeyContainerRef?.current
+      if (container) {
+        const crect = container.getBoundingClientRect()
+        // 0 when the container's top just reached the viewport top (sticky pin begins), 1 when its
+        // bottom has scrolled up to the viewport bottom (sticky pin ends) — the exact span a
+        // `position: sticky; top: 0` child spends pinned inside a taller parent.
+        const span = Math.max(1, crect.height - window.innerHeight)
+        const t = Math.min(1, Math.max(0, -crect.top / span))
+        setJourneyT((prev) => (Math.abs(prev - t) > CHANGE_EPSILON ? t : prev))
+      } else {
+        setJourneyT((prev) => (Math.abs(prev - collapse) > CHANGE_EPSILON ? collapse : prev))
+      }
 
       if (!hasPointer) {
         setPointer((prev) => (prev === null ? prev : null))
@@ -93,6 +133,7 @@ export function Hero3D() {
           // nobody can see this canvas, so there is nothing left to compute.
           const rect = canvas.getBoundingClientRect()
           setScrollCollapse(rect.top < 0 ? 1 : 0)
+          setJourneyT(rect.top < 0 ? 1 : 0)
           setPointer((prev) => (prev === null ? prev : null))
           if (raf) cancelAnimationFrame(raf)
           raf = 0
@@ -102,7 +143,7 @@ export function Hero3D() {
       },
       { rootMargin: '0px' },
     )
-    io.observe(canvas)
+    io.observe(observedEl)
 
     const onPointerMove = (event: PointerEvent) => {
       pointerPos.x = event.clientX
@@ -116,7 +157,7 @@ export function Hero3D() {
       window.removeEventListener('pointermove', onPointerMove)
       if (raf) cancelAnimationFrame(raf)
     }
-  }, [canvas, reducedMotion])
+  }, [canvas, reducedMotion, journeyContainerRef])
 
   const props = useMemo<Hero3DProps>(
     () => ({
@@ -124,13 +165,9 @@ export function Hero3D() {
       pointerX: pointer?.x ?? null,
       pointerY: pointer?.y ?? null,
       scrollCollapse,
-      // TEMPORARY (Phase 1 of the camera-journey extension): reuses `scrollCollapse`'s exact 0..1
-      // range — one hero-height of scroll — so the waypoint camera move can be validated end to
-      // end before inventing new scroll-range math. Phase 3 extends the observed range to span
-      // multiple sections so the journey isn't compressed into the hero's own scroll-out.
-      journeyT: scrollCollapse,
+      journeyT,
     }),
-    [reducedMotion, pointer, scrollCollapse],
+    [reducedMotion, pointer, scrollCollapse, journeyT],
   )
   // DPR cap (Phase 5 budget): `vgpu`'s `surface()` reads raw `devicePixelRatio` for the canvas's
   // backing-store resolution unless told otherwise — uncapped, that's 3x+ on modern phones for a
