@@ -40,12 +40,12 @@ struct VertexOut {
 }
 
 const PALETTE = array<vec3f, 6>(
-  vec3f(0.545, 0.616, 1.0),
-  vec3f(0.357, 0.914, 0.725),
-  vec3f(0.941, 0.690, 0.447),
-  vec3f(0.941, 0.541, 0.541),
-  vec3f(0.498, 0.847, 0.941),
-  vec3f(0.718, 0.643, 1.0),
+  vec3f(0.239, 0.310, 0.839),
+  vec3f(0.055, 0.486, 0.345),
+  vec3f(0.663, 0.400, 0.047),
+  vec3f(0.753, 0.169, 0.169),
+  vec3f(0.059, 0.455, 0.565),
+  vec3f(0.427, 0.157, 0.851),
 );
 
 @vertex
@@ -112,15 +112,15 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
   // Header band across the top ~28% of the box — reads as a title bar without any text.
   let isHeader = in.offset.y < -0.44;
   if (isHeader) {
-    color = mix(color, vec3f(0.05, 0.06, 0.09), 0.55);
+    color = mix(color, vec3f(1.0), 0.45);
   } else {
-    color = mix(color, vec3f(0.09, 0.10, 0.14), 0.72);
+    color = mix(color, vec3f(1.0), 0.86);
   }
 
   if ((in.state & 2u) != 0u) {
-    color = mix(color, vec3f(1.0), 0.28);
+    color = mix(color, vec3f(0.051, 0.059, 0.078), 0.16);
   } else if ((in.state & 1u) != 0u) {
-    color = mix(color, vec3f(1.0), 0.16);
+    color = mix(color, vec3f(0.051, 0.059, 0.078), 0.09);
   }
 
   // Thin border, brighter when hovered/selected.
@@ -131,7 +131,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
   } else if ((in.state & 1u) != 0u) {
     borderStrength = select(borderStrength, 0.85, edgeDist > 0.84);
   }
-  color = mix(color, vec3f(0.62, 0.72, 1.0), borderStrength);
+  color = mix(color, vec3f(0.239, 0.310, 0.839), borderStrength);
 
   return vec4f(color, params.opacity);
 }

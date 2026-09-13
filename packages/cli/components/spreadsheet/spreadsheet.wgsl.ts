@@ -54,13 +54,20 @@ struct SheetParams {
 @group(0) @binding(4) var<storage, read> flashCells: array<u32>;
 @group(0) @binding(5) var<storage, read> flashAlphas: array<f32>;
 
-const ROW_EVEN = vec3f(0.055, 0.063, 0.075);
-const ROW_ODD  = vec3f(0.075, 0.086, 0.102);
-const HOVER    = vec3f(0.16, 0.18, 0.23);
-const SELECTED = vec3f(0.20, 0.24, 0.34);
-const FLASH    = vec3f(0.30, 0.42, 0.30);
-const HEAT_LO = vec3f(0.10, 0.16, 0.28);
-const HEAT_HI = vec3f(0.42, 0.24, 0.16);
+const ROW_EVEN = vec3f(1.000, 1.000, 1.000);
+const ROW_ODD  = vec3f(0.957, 0.961, 0.969);
+const HOVER    = vec3f(0.878, 0.894, 0.937);
+const SELECTED = vec3f(0.796, 0.827, 0.949);
+const FLASH    = vec3f(0.741, 0.906, 0.804);
+/* Deliberately softer at the cold end than \`grid/grid.wgsl.ts\`'s otherwise-identical pair. An
+ * empty spreadsheet cell holds 0 rather than NaN, so it is *not* skipped by the \`value == value\`
+ * guard below — it maps to the bottom of the range and gets the cold wash like any other cell.
+ * That was invisible when the rows were near-black and the cold end was a dark navy; on white a
+ * true cold-end blue tints the entire empty sheet. Keeping \`HEAT_LO\` near the row colour restores
+ * the weight the dark palette had. The real fix is for empty cells not to participate in the
+ * range at all, which is a data question rather than a palette one. */
+const HEAT_LO = vec3f(0.902, 0.929, 0.973);
+const HEAT_HI = vec3f(0.949, 0.769, 0.702);
 
 fn columnAt(x: f32) -> i32 {
   var lo: i32 = 0;

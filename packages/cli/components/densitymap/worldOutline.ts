@@ -7,7 +7,7 @@ import { packRgba8, type LineInstance } from "@gpu-components/core";
 import { lonLatToMercator } from "./mercator.ts";
 
 const WIDTH_PX = 1.25;
-const COLOR = packRgba8(160, 190, 210, 90);
+const COLOR = packRgba8(90, 120, 145, 110);
 
 /** Coarse continent / landmass rings as [lon, lat][] (degrees). */
 const RINGS: readonly (readonly (readonly [number, number])[])[] = [

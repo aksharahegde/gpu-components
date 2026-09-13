@@ -65,9 +65,9 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
   }
   // Input ports read cool blue, output ports warm amber — a consistent left-in/right-out visual
   // grammar across every node.
-  var color = select(vec3f(0.60, 0.78, 1.0), vec3f(1.0, 0.74, 0.42), in.kind == 1u);
+  var color = select(vec3f(0.114, 0.306, 0.847), vec3f(0.761, 0.400, 0.047), in.kind == 1u);
   if ((in.flags & 2u) != 0u) {
-    color = mix(color, vec3f(1.0), 0.5);
+    color = mix(color, vec3f(0.051, 0.059, 0.078), 0.35);
   }
   return vec4f(color, 1.0);
 }

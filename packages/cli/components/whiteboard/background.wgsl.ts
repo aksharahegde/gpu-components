@@ -24,8 +24,8 @@ struct BackgroundParams {
 @group(0) @binding(0) var<uniform> viewport: Viewport;
 @group(0) @binding(1) var<uniform> params: BackgroundParams;
 
-const BG = vec3f(0.035, 0.039, 0.05);
-const DOT = vec3f(0.18, 0.20, 0.25);
+const BG = vec3f(1.000, 1.000, 1.000);
+const DOT = vec3f(0.816, 0.827, 0.851);
 const CELL = 1.0;
 const DOT_RADIUS = 0.035;
 

@@ -26,12 +26,24 @@ struct DensityParams {
 @group(0) @binding(2) var<storage, read> density: array<u32>;
 @group(0) @binding(3) var<storage, read> maxPerTrack: array<u32>;
 
-/** A sequential intensity ramp (dark → bright accent), distinct from \`timeline.wgsl.ts\`'s
- * categorical span \`PALETTE\` — density is one continuous quantity, not six discrete categories. */
+/** A sequential intensity ramp (surface → deep accent), distinct from \`timeline.wgsl.ts\`'s
+ * categorical span \`PALETTE\` — density is one continuous quantity, not six discrete categories.
+ * Runs light-to-dark so that "more" reads as "heavier" on a light surface; \`lo\` is the clear
+ * colour, which makes the empty end of the ramp vanish into the canvas as it should. */
 fn colormap(t: f32) -> vec3f {
-  let lo = vec3f(0.086, 0.098, 0.145);
-  let hi = vec3f(0.545, 0.616, 1.0);
-  return mix(lo, hi, clamp(t, 0.0, 1.0));
+  // \`lo\` is the colour of the *least busy occupied* bin, not of an empty one — \`fs_main\`
+  // discards \`value == 0u\` before reaching here, so nothing is gained by anchoring \`lo\` on the
+  // clear colour and a visible floor is what separates "one span here" from "no spans here".
+  //
+  // The square root is a display curve, not a change to the data: bin counts in a realistic trace
+  // are heavily skewed toward the low end, so a linear ramp spends almost all of its range on the
+  // handful of hottest bins and renders everything else as the same near-empty tint. Anchoring
+  // \`lo\` at the clear colour *and* mapping linearly was the first attempt, and it flattened the
+  // whole field to near-white.
+  let s = sqrt(clamp(t, 0.0, 1.0));
+  let lo = vec3f(0.816, 0.843, 0.945);
+  let hi = vec3f(0.157, 0.208, 0.639);
+  return mix(lo, hi, s);
 }
 
 @fragment

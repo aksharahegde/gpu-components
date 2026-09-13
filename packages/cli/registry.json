@@ -19,7 +19,7 @@
         {
           "path": "GPUTimeline.tsx",
           "type": "registry:component",
-          "hash": "c69facb82df88f0af581ea864cb7ce3b38c7e1cf9ea3e137477d53b1bce9ccc8"
+          "hash": "389445cd7d528ac8f79b1a92f414387e509da065ea1028022cce7f260cc93783"
         },
         {
           "path": "TimelineComponent.ts",
@@ -29,7 +29,7 @@
         {
           "path": "axisRules.ts",
           "type": "registry:component",
-          "hash": "de432b1973e8c211034772777cf7254175ea05509cf4afb62fae7130694f4c93"
+          "hash": "ce8d594ebaa65be9c609eb823b0f91cf49d8b39d5472be1d4a5569c8e9f62a15"
         },
         {
           "path": "brushSelect.wgsl.ts",
@@ -49,7 +49,7 @@
         {
           "path": "highlight.wgsl.ts",
           "type": "registry:component",
-          "hash": "a0b93e845195bc945360c3c9970718a46df6710ed0b2fad3ac12e7df066e4a41"
+          "hash": "a66fc0f89b16ce06607d7c43a59c295c2e29621cacd19c605ccf6a686c0f8609"
         },
         {
           "path": "hitTest.ts",
@@ -69,7 +69,7 @@
         {
           "path": "raster.wgsl.ts",
           "type": "registry:component",
-          "hash": "4c14ba6180e160a65d7059ce051954b23022c1bcc2d697a79e13c7ddc84779aa"
+          "hash": "e9a7836d3fc5043f2079da4f2fe627886c949dba8af79e7372a8a4880920cb88"
         },
         {
           "path": "reduceDensity.wgsl.ts",
@@ -79,7 +79,7 @@
         {
           "path": "timeline.wgsl.ts",
           "type": "registry:component",
-          "hash": "d2511095139fb096ae48a6ba644b7da45acf2e3c71a35bba65100c00228ef0ef"
+          "hash": "3946cc8b431d0c6a0f6e56d2e3091853402b7d8c41902973b5a5363a08a842ee"
         },
         {
           "path": "viewModel.ts",
@@ -152,17 +152,17 @@
         {
           "path": "GPUDataGrid.tsx",
           "type": "registry:component",
-          "hash": "5ef77f9d111160a497b501291fc81b02a404a23761d4d58afa80119aaf704a0e"
+          "hash": "aec51e8ad7bca04378d3fe4023f7846ca248cf3cd144205bd3d1ca30b82962f5"
         },
         {
           "path": "GridComponent.ts",
           "type": "registry:component",
-          "hash": "49aa5ed4af034346b0b17fac39dd94eb97d01937c541989655816ad4e6541819"
+          "hash": "d7d9035823be1c16071625a2219ebc6e1d63beccbfe63f379df455f68991959a"
         },
         {
           "path": "grid.wgsl.ts",
           "type": "registry:component",
-          "hash": "5387faf9bd7f81d6d77cf7872b7adc829eb9dd65953a44fdf3838d335f716d12"
+          "hash": "975544bc8ccb22e902e1a81383d566036f3e929e0f1e2509c9dab220f2be5b7e"
         },
         {
           "path": "index.ts",
@@ -177,7 +177,7 @@
         {
           "path": "textLayer.ts",
           "type": "registry:component",
-          "hash": "c718c2cd2c247a29f1f654074d5477ce431a115f1fea6902f89c77424b63804f"
+          "hash": "3faae556144a147e0cad039085e76c9628fc037d8e3cee2d2db205472e2e4f6c"
         }
       ]
     },
@@ -196,7 +196,7 @@
         {
           "path": "GPUScatter.tsx",
           "type": "registry:component",
-          "hash": "1a6d69a739ea262fb28d09813d5108dfdec9ff5327c543832f82e59f3dbef753"
+          "hash": "32a60f166d308606956cda685c38e959bcc1be4f7b259ba235e6d311cdeb8097"
         },
         {
           "path": "ScatterComponent.ts",
@@ -216,7 +216,7 @@
         {
           "path": "scatter.wgsl.ts",
           "type": "registry:component",
-          "hash": "dd48ca887f1b366c2ba568a1c745c40a65c548260eab402d399d16ef21db3e21"
+          "hash": "f53c4257fd9e7e7c4897c332b3c95688691b115c1b57d9e522061763c60d41ee"
         },
         {
           "path": "spatialIndex.ts",
@@ -279,7 +279,7 @@
         {
           "path": "GPULogViewer.tsx",
           "type": "registry:component",
-          "hash": "191987c145a55f33fa17d10bddc853cf98c7244edd8b6310218da0dc49547615"
+          "hash": "70c716c53f7aae4cf976e6518dd6924324c5734422b41893d38d3a8c25ff5c14"
         },
         {
           "path": "LogViewerComponent.ts",
@@ -299,12 +299,12 @@
         {
           "path": "logviewer.wgsl.ts",
           "type": "registry:component",
-          "hash": "4d5a8fe53b54a45fd7a084f974a66640d5a0ed933744c16fbfe55fe2825f3509"
+          "hash": "da30a9f6440bdc3d57ae57f530808e1107f6c5b92fb944e0791f6581f22061f8"
         },
         {
           "path": "textLayer.ts",
           "type": "registry:component",
-          "hash": "271a1bb99d08d26f4a9f5f8d5782ae70829c6f727390b07d2e7f8010ab2fe60c"
+          "hash": "5592a2699dd041f378842a08d515d67f9c90d8bfb5c8048830e506498700b48e"
         }
       ]
     },
@@ -333,7 +333,7 @@
         {
           "path": "candlestick.wgsl.ts",
           "type": "registry:component",
-          "hash": "a9170992211ebbe892cc68b98983302cd23cd4b92bf3e89ee7b4d2c467999b70"
+          "hash": "7cf463024c0c875b20bf82c671763123037cdef66fbf719d01dff23169f139e1"
         },
         {
           "path": "index.ts",
@@ -377,12 +377,12 @@
         {
           "path": "graticule.ts",
           "type": "registry:component",
-          "hash": "4d615e9aa6e376a2b534fc1c2322622f0bd7d04b5cf75fab3960f9ab8dbc078c"
+          "hash": "177285456cc8c82278a207ebec33fddf1239846ade0ec9434149d934a1a37131"
         },
         {
           "path": "hex.wgsl.ts",
           "type": "registry:component",
-          "hash": "d4ba9f46f6cfc0c06241da238e1d095038aed0f637840659f5fec6f75ed9dd4f"
+          "hash": "fa0103acef9fcb5d78543b25f1c32d1c5d8d488354850829d271763827e358f2"
         },
         {
           "path": "hexbin.wgsl.ts",
@@ -417,7 +417,7 @@
         {
           "path": "worldOutline.ts",
           "type": "registry:component",
-          "hash": "a0194f54a6ef0868bda10d2767e1cdaad2ebfb1d628c5f09aaeeb3d6a80e3b9b"
+          "hash": "afa65a4f38ca3e85e02d43b5d3e2b1481099548332a4da0706eb7ceb8d03e4b7"
         }
       ]
     },
@@ -446,12 +446,12 @@
         {
           "path": "axisRules.ts",
           "type": "registry:component",
-          "hash": "44b62b9665f88f80dba22d06ebfc5b8487ca93498785a4a1418d0557ea81472f"
+          "hash": "6d237f3031fa85b3a37d3c958d05506b586ca188f07a4df3112c81e83b50064d"
         },
         {
           "path": "bars.wgsl.ts",
           "type": "registry:component",
-          "hash": "9f6cc43f52f08a3b4928fd192cede80a9750131f92a4214426c5d1f6c7c24a24"
+          "hash": "dd0f6ddf30e8b3ce0691e2daa681f3d83ad736e2d0810928e28ab9a4113361d2"
         },
         {
           "path": "bin.wgsl.ts",
@@ -495,7 +495,7 @@
         {
           "path": "DepGraphComponent.ts",
           "type": "registry:component",
-          "hash": "6397a98dfbf2e04fa604477d126e8276361ed1c87068e557b2cfdcc73bc328cf"
+          "hash": "8abc7b091b8ddfbabc71ddadea87a656d9b4f28a4530c253b33a3ae668dd7f79"
         },
         {
           "path": "GPUDepGraph.tsx",
@@ -520,7 +520,7 @@
         {
           "path": "nodes.wgsl.ts",
           "type": "registry:component",
-          "hash": "556ce5465faabb3cbf601d8a8afdb352ea4b7e61ceedb82cc4f66c35d8492099"
+          "hash": "e349ec949e361468248b9627a1f9e68f86a4dfe21b27119bab9f9f5df3509800"
         }
       ]
     },
@@ -539,12 +539,12 @@
         {
           "path": "GPUSpreadsheet.tsx",
           "type": "registry:component",
-          "hash": "d3dd53e9ba9c0b031a9a933e0f9239c10a8862200669333f5e52bb17b1e003e8"
+          "hash": "c17728e54c9cb1c6183d31e496b3cad089940a333f3de1abab31ca896172611b"
         },
         {
           "path": "SpreadsheetComponent.ts",
           "type": "registry:component",
-          "hash": "ceb2924db13be992e3f5c89a9b3ee9ca4a3b70a2c6798bbfeaa79c5c8362b7a1"
+          "hash": "9ab3e2eefa2135c0ab1e5ccdf0ffa47859d8c2e81cebfa9e400a01e929e02ac3"
         },
         {
           "path": "cellRef.ts",
@@ -584,12 +584,12 @@
         {
           "path": "spreadsheet.wgsl.ts",
           "type": "registry:component",
-          "hash": "58361f135d7391d2c523890f6ddc2ecc366249ab37681331cc37fedc7f3b2cb9"
+          "hash": "0cb714ea634b2f4144a03d543e91d0ed65a3daafe72b116c278a6172b8c5a00d"
         },
         {
           "path": "textLayer.ts",
           "type": "registry:component",
-          "hash": "33ce36fdcdf2990dad36e777690cfe6aab0d719679354bce7b2847a5ad6cdaac"
+          "hash": "ac5aa0a001fab36493ff3e0cdd58691caa9789bde1140b7b3fe01f4eb9b4ba3a"
         }
       ]
     },
@@ -608,12 +608,12 @@
         {
           "path": "GPUNodeEditor.tsx",
           "type": "registry:component",
-          "hash": "027a970e1e96ddfa7e397a36b712228081f8d4fc0477ccf8ab9a33d492349ce8"
+          "hash": "76c7c489292186e7ff206f420c22e59923e346dad8f418be5a13c4d63aef5ee6"
         },
         {
           "path": "NodeEditorComponent.ts",
           "type": "registry:component",
-          "hash": "624ea68d6e16351ffe28f2dba3c1d87bf94892c6855c15540cfa8194801f9bcf"
+          "hash": "f184ccfdc42ac3188efd6a2c5e053c447a5fb34d0bec549793d1f2e74e8204af"
         },
         {
           "path": "index.ts",
@@ -628,12 +628,12 @@
         {
           "path": "nodeeditor.wgsl.ts",
           "type": "registry:component",
-          "hash": "796f1cb280800ba2aea00cfa648a06e0d57dc383293d9caac3ca3b278a429b5c"
+          "hash": "698826564b25e164d028414819677b691fd6558eb1afb44ae8958652c6eaed5d"
         },
         {
           "path": "ports.wgsl.ts",
           "type": "registry:component",
-          "hash": "16db8b1bfb90079684da8e6ed769b688f2c21b1e1cf207e4975098a4d49eafe8"
+          "hash": "e09707d544d9145c277b4c387c1754d11246b97ede6835a114759f9845df9f95"
         }
       ]
     },
@@ -662,7 +662,7 @@
         {
           "path": "background.wgsl.ts",
           "type": "registry:component",
-          "hash": "db900c84ad6073d9595c623eaf966f4339dfb5e46b7c953cbb746676a603080e"
+          "hash": "1476b8b8e7662ce4be13a1309d03da6a35f64066650aafb7165ed0c23e6e2f25"
         },
         {
           "path": "index.ts",
@@ -682,7 +682,7 @@
         {
           "path": "shapes.wgsl.ts",
           "type": "registry:component",
-          "hash": "3e6a82c32372d9b33e214b8165cf4dba7ef1004483a7fb3c4496176f5894b21c"
+          "hash": "64efbb80c97a990a44e5457647619768d72b9d385f921bdbdca290ced6624088"
         }
       ]
     },

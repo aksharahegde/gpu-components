@@ -98,11 +98,16 @@ function isShippable(name) {
   return name.endsWith(".ts") || name.endsWith(".tsx");
 }
 
+/** Strips comments so prose mentioning `from "..."` isn't mistaken for an import. */
+function stripComments(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+}
+
 /** Package imports the copied source needs the consuming project to provide. */
 function dependenciesOf(sources) {
   const found = new Set();
   for (const source of sources) {
-    for (const match of source.matchAll(/from\s+["']([^."'][^"']*)["']/g)) {
+    for (const match of stripComments(source).matchAll(/from\s+["']([^."'][^"']*)["']/g)) {
       const specifier = match[1];
       const pkg = specifier.startsWith("@")
         ? specifier.split("/").slice(0, 2).join("/")

@@ -43,8 +43,8 @@ const DEFAULT_NODE_PX = 14;
 const DEFAULT_EDGE_PX = 1.5;
 const HOVER_RADIUS_PX = 16;
 
-const FORWARD_COLOR = packRgba8(140, 160, 190, 160);
-const BACK_COLOR = packRgba8(230, 120, 100, 200);
+const FORWARD_COLOR = packRgba8(110, 124, 150, 170);
+const BACK_COLOR = packRgba8(192, 64, 48, 210);
 
 let nextId = 0;
 

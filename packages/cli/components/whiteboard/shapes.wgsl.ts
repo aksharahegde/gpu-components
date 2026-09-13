@@ -58,14 +58,14 @@ const FLAG_HOVERED: u32 = ${SHAPE_FLAG_HOVERED}u;
 const COLOR_SHIFT: u32 = ${SHAPE_COLOR_SHIFT}u;
 
 const PALETTE = array<vec3f, 8>(
-  vec3f(0.231, 0.827, 0.910),
-  vec3f(0.655, 0.545, 0.980),
-  vec3f(0.251, 0.878, 0.620),
-  vec3f(0.984, 0.749, 0.141),
-  vec3f(0.973, 0.443, 0.443),
-  vec3f(0.984, 0.596, 0.239),
-  vec3f(0.376, 0.647, 0.980),
-  vec3f(0.945, 0.945, 0.945),
+  vec3f(0.059, 0.455, 0.565),
+  vec3f(0.427, 0.157, 0.851),
+  vec3f(0.055, 0.486, 0.345),
+  vec3f(0.663, 0.400, 0.047),
+  vec3f(0.753, 0.169, 0.169),
+  vec3f(0.761, 0.255, 0.047),
+  vec3f(0.114, 0.306, 0.847),
+  vec3f(0.051, 0.059, 0.078),
 );
 
 @vertex
@@ -136,11 +136,11 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
   var color = PALETTE[(in.flags >> COLOR_SHIFT) & 7u];
   var strokeWidth = max(params.strokeWidthPx, 1.0);
   if ((in.flags & FLAG_SELECTED) != 0u) {
-    color = mix(color, vec3f(1.0), 0.45);
+    color = mix(color, vec3f(0.051, 0.059, 0.078), 0.45);
     strokeWidth = strokeWidth * 1.5;
   }
   if ((in.flags & FLAG_HOVERED) != 0u) {
-    color = mix(color, vec3f(1.0), 0.65);
+    color = mix(color, vec3f(0.051, 0.059, 0.078), 0.65);
   }
 
   let isStroke = distanceToEdgePx <= strokeWidth || in.kind == KIND_POINT;

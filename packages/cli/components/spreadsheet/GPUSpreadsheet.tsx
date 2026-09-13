@@ -473,9 +473,9 @@ export function GPUSpreadsheet(props: GPUSpreadsheetProps): JSX.Element {
           style={{
             ...inputStyle,
             font: "12px ui-monospace, monospace",
-            color: "#fff",
-            background: "#151920",
-            border: "1.5px solid #8b9dff",
+            color: "#0d0f14",
+            background: "#ffffff",
+            border: "1.5px solid #0077b6",
             outline: "none",
             padding: "0 8px",
             boxSizing: "border-box",

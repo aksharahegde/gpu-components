@@ -43,14 +43,14 @@ struct GridParams {
 // -1 for text columns, else the column's index within \`values\`.
 @group(0) @binding(5) var<storage, read> numericIndex: array<i32>;
 
-const ROW_EVEN = vec3f(0.055, 0.063, 0.075);
-const ROW_ODD  = vec3f(0.075, 0.086, 0.102);
-const HOVER    = vec3f(0.16, 0.18, 0.23);
-const SELECTED = vec3f(0.20, 0.24, 0.34);
+const ROW_EVEN = vec3f(1.000, 1.000, 1.000);
+const ROW_ODD  = vec3f(0.957, 0.961, 0.969);
+const HOVER    = vec3f(0.878, 0.894, 0.937);
+const SELECTED = vec3f(0.796, 0.827, 0.949);
 /** Conditional formatting ramp: a cool-to-warm wash laid *under* the text, kept low-contrast so
  * the Canvas2D text on top stays readable (§21.2's WCAG note on text-on-fill). */
-const HEAT_LO = vec3f(0.10, 0.16, 0.28);
-const HEAT_HI = vec3f(0.42, 0.24, 0.16);
+const HEAT_LO = vec3f(0.780, 0.847, 0.941);
+const HEAT_HI = vec3f(0.949, 0.769, 0.702);
 
 /** Binary search over the column prefix sum: log2(columns) steps instead of a linear scan. */
 fn columnAt(x: f32) -> i32 {
