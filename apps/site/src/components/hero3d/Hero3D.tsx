@@ -1,10 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState, type RefObject } from 'react'
-import { useCanvasRef, useGpuComponent } from '@gpu-components/react'
+import * as stylex from '@stylexjs/stylex'
+import { useCanvasRef, useGpu, useGpuComponent } from '@gpu-components/react'
 import type { SurfaceOptions } from 'vgpu'
 import { Hero3DComponent, type Hero3DProps } from './Hero3DComponent.ts'
 import { usePrefersReducedMotion } from './usePrefersReducedMotion.ts'
+import { WAYPOINT_READOUT, WAYPOINTS } from './data.ts'
+import { color, font } from '../../tokens.stylex'
 
 /** Below this viewport width the DPR cap tightens from 2 to 1.5 (Phase 5 budget: bounds the
  * canvas's backing-store resolution, and so its fill-rate cost, on the small viewports where a
@@ -182,10 +185,96 @@ export function Hero3D({
   useGpuComponent(() => new Hero3DComponent(), canvas, props, surfaceOpts)
 
   return (
-    <canvas
-      ref={ref}
-      aria-hidden="true"
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
-    />
+    <>
+      <canvas
+        ref={ref}
+        aria-hidden="true"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
+      />
+      <ReadoutRail journeyT={journeyT} />
+    </>
   )
 }
+
+/**
+ * Phase 4 of the extension plan: a live perf rail replacing decorative sci-fi flavor text with
+ * real, checkable numbers — this product's whole voice (PRODUCT.md: "credible, measured,
+ * anti-hype"). Three lines: a fixed product label, the current waypoint's name + a derived
+ * instance count (`WAYPOINT_READOUT` in `data.ts`, computed from the same constants each layer
+ * loops over — never a separate magic number), and a live CPU-encode/submit readout polled the
+ * same way `Showcase.tsx`'s caption does (500ms `setInterval` against `profiler.lastFrame`, which
+ * `packages/core/src/profiler.ts` documents as "always populated" — free to collect, no new GPU
+ * work). Labeled "CPU ENCODE", matching `GpuInspector.ts`'s own precedent, so it can't be misread
+ * as total frame time.
+ *
+ * `journeyT` is already sampled by this component's own scroll-tracking effect above, so the
+ * "current waypoint" lookup reuses that rather than re-deriving scroll position independently.
+ * `aria-hidden`: ambient decoration — the page's real claims live in the prose copy, not here.
+ */
+function ReadoutRail({ journeyT }: { journeyT: number }) {
+  const { runtime } = useGpu()
+  const [frame, setFrame] = useState<{ cpuMs: number; passCount: number } | null>(null)
+
+  useEffect(() => {
+    if (!runtime) return
+    const id = setInterval(() => {
+      const f = runtime.profiler.lastFrame
+      if (f) setFrame({ cpuMs: f.cpuMs, passCount: f.passCount })
+    }, 500)
+    return () => clearInterval(id)
+  }, [runtime])
+
+  const waypointIndex = Math.min(
+    WAYPOINT_READOUT.length - 1,
+    Math.round(journeyT * (WAYPOINTS.length - 1)),
+  )
+  const waypoint = WAYPOINT_READOUT[waypointIndex]!
+
+  return (
+    <div {...stylex.props(s.rail)} aria-hidden="true">
+      <span {...stylex.props(s.railLine)}>GPU-COMPONENTS</span>
+      <span {...stylex.props(s.railLine)}>
+        {waypoint.name} · {waypoint.count}
+      </span>
+      <span {...stylex.props(s.railLine)}>
+        {frame
+          ? `${frame.cpuMs.toFixed(2)} MS CPU ENCODE · ${frame.passCount} PASS${frame.passCount === 1 ? '' : 'ES'}`
+          : '—'}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * Below this, `Wrap`'s content (`tokens.stylex.ts`: `maxWidth: 1120px`, `gutter: 24px`) runs
+ * edge-to-edge with only the 24px gutter as margin — nowhere near this rail's ~190px of nowrap
+ * text. Rather than let the rail collide with (and get partly occluded by, since section cards
+ * sit at a higher z-index — `HeroJourney.tsx`'s doc comment) the section cards, it simply doesn't
+ * render below the width where a real empty margin opens up: `(100vw - 1120px) / 2` needs to clear
+ * the rail's own width plus a gutter-sized buffer, which happens around 1400px of viewport width.
+ */
+const RAIL_TOO_NARROW = '@media (max-width: 1399px)'
+
+const s = stylex.create({
+  rail: {
+    position: 'absolute',
+    right: 20,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    display: { default: 'flex', [RAIL_TOO_NARROW]: 'none' },
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 6,
+    maxWidth: 200,
+    pointerEvents: 'none',
+  },
+  railLine: {
+    fontFamily: font.mono,
+    fontSize: 10.5,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    textAlign: 'right',
+    color: color.textFaint,
+    whiteSpace: 'nowrap',
+  },
+})

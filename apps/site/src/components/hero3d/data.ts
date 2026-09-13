@@ -160,8 +160,8 @@ function backdropLayer(): HeroInstance[] {
   ]
 }
 
-const HEAT_ROWS = 9
-const HEAT_COLS = 14
+export const HEAT_ROWS = 9
+export const HEAT_COLS = 14
 
 function heatmapLayer(rnd: () => number): HeroInstance[] {
   const { halfW, halfH } = frustumHalfExtentsAt(DEPTH.heatmap)
@@ -190,7 +190,7 @@ function heatmapLayer(rnd: () => number): HeroInstance[] {
   return instances
 }
 
-const GRID_ROW_COUNT = 6
+export const GRID_ROW_COUNT = 6
 
 function gridRowsLayer(): HeroInstance[] {
   const { halfW, halfH } = frustumHalfExtentsAt(DEPTH.gridRows)
@@ -212,7 +212,7 @@ function gridRowsLayer(): HeroInstance[] {
   return instances
 }
 
-const SPAN_COUNT = 54
+export const SPAN_COUNT = 54
 const SPAN_TRACKS = 4
 const SPAN_COLORS = [ACCENT, MINT, AMBER] as const
 
@@ -243,7 +243,7 @@ const SCATTER_CLUSTERS = [
   { cx: 0.3, cy: 0.28, spread: 0.26, color: MINT },
   { cx: 0.62, cy: -0.3, spread: 0.16, color: AMBER },
 ] as const
-const SCATTER_COUNT = 140
+export const SCATTER_COUNT = 140
 
 function scatterLayer(rnd: () => number): HeroInstance[] {
   const { halfW, halfH } = frustumHalfExtentsAt(DEPTH.scatter)
@@ -266,6 +266,19 @@ function scatterLayer(rnd: () => number): HeroInstance[] {
   }
   return instances
 }
+
+/** One entry per `WAYPOINTS` stop (Phase 4 of the extension plan — the readout rail's
+ * waypoint-name/count line, `ReadoutRail` in `Hero3D.tsx`). Counts are computed from the same
+ * constants each layer function loops over, not retyped as separate magic numbers — the readout
+ * cannot drift from what actually got drawn. Names/order follow `WAYPOINTS`'s own doc comment
+ * (Stack / Backdrop / Heatmap / Grid+Timeline / Dissolve). */
+export const WAYPOINT_READOUT: readonly { readonly name: string; readonly count: number }[] = [
+  { name: 'STACK', count: 1 + HEAT_ROWS * HEAT_COLS + GRID_ROW_COUNT + SPAN_COUNT + SCATTER_COUNT },
+  { name: 'BACKDROP PANEL', count: 1 },
+  { name: 'HEATMAP LATTICE', count: HEAT_ROWS * HEAT_COLS },
+  { name: 'GRID ROWS + SPANS', count: GRID_ROW_COUNT + SPAN_COUNT },
+  { name: 'SCATTER FIELD', count: SCATTER_COUNT },
+]
 
 export interface HeroScene {
   readonly instances: Float32Array<ArrayBuffer>
