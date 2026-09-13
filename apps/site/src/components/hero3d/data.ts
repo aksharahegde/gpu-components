@@ -81,12 +81,27 @@ function rgba(rgb: readonly [number, number, number], a: number) {
   return { r: rgb[0], g: rgb[1], b: rgb[2], a }
 }
 
+/** Every layer collapses toward this single Z on mount (Phase 3's reveal, driven by
+ * `Hero3DComponent`'s `scene.collapsedZ` uniform — see `shader.ts`'s doc comment for why only Z
+ * moves, scale is untouched) — chosen mid-stack, close to where the old static `HeroMiniatures`
+ * hero read as one flat plane, so the collapsed pose is a continuation of that look rather than a
+ * jump cut. Exported for `Hero3DComponent` to set as the uniform's initial/constant value; kept
+ * here, next to `DEPTH`, because it's part of this scene's authored geometry, not runtime state. */
+export const COLLAPSED_DEPTH = -4.2
+
 function backdropLayer(): HeroInstance[] {
   // A single, near-full-frustum, very faint panel — grounds the stack without competing with the
   // real data layers in front of it.
   const { halfW, halfH } = frustumHalfExtentsAt(DEPTH.backdrop)
   return [
-    { tx: 0, ty: 0, tz: DEPTH.backdrop, sx: halfW * 0.94, sy: halfH * 0.94, ...rgba(ACCENT_DIM, 0.07) },
+    {
+      tx: 0,
+      ty: 0,
+      tz: DEPTH.backdrop,
+      sx: halfW * 0.94,
+      sy: halfH * 0.94,
+      ...rgba(ACCENT_DIM, 0.07),
+    },
   ]
 }
 
@@ -130,7 +145,14 @@ function gridRowsLayer(): HeroInstance[] {
   for (let i = 0; i < GRID_ROW_COUNT; i++) {
     const ty = -h + (2 * h * i) / (GRID_ROW_COUNT - 1)
     const rowColor = i % 2 === 0 ? TEXT : ACCENT_HOVER
-    instances.push({ tx: 0, ty, tz: DEPTH.gridRows, sx: w, sy: (h / GRID_ROW_COUNT) * 0.6, ...rgba(rowColor, 0.16) })
+    instances.push({
+      tx: 0,
+      ty,
+      tz: DEPTH.gridRows,
+      sx: w,
+      sy: (h / GRID_ROW_COUNT) * 0.6,
+      ...rgba(rowColor, 0.16),
+    })
   }
   return instances
 }
