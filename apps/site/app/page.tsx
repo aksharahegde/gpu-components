@@ -167,12 +167,14 @@ function Home() {
                 * hand.
                 */}
               <H1>
-                Your interface has a ceiling.{' '}
-                <span {...stylex.props(tone.accent)}>It is about five thousand nodes.</span>
+                This isn&rsquo;t a preview of the GPU web.{' '}
+                <span {...stylex.props(tone.accent)}>It&rsquo;s running.</span>
               </H1>
               <Lead>
-                gpu-components is a WebGPU runtime and a component registry for the surfaces that
-                hit it — timelines, grids, heatmaps, scatter plots, trace views.
+                Seventeen components, built on one shared WebGPU runtime, pre-1.0 and already
+                drawing. Four of them are running together further down this page — one device,
+                one frame, one submit — and every one of the seventeen has a live demo you can
+                open.
               </Lead>
               <Row sx={s.heroCta}>
                 <LinkBtn to="/playground" primary>
@@ -197,13 +199,50 @@ function Home() {
         </Wrap>
       </section>
 
-      <Section title="Every dense UI dies the same way.">
+      <Section
+        title="The DOM is out of headroom. The GPU is barely awake."
+        lead="WebGPU reached Baseline in January 2026. The fastest chip in the machine is now a standard browser API, and it spends most of its life compositing rectangles while your interface drops frames next to it."
+      >
+        <Grid cols={3}>
+          <Card>
+            <Stack gap={8}>
+              <H3 sm>Baseline, not experimental.</H3>
+              <Body sm>
+                Chrome and Edge since 113. Safari 26. Firefox 141 on Windows, 145 on macOS Tahoe
+                ARM. Shipped, not proposed.
+              </Body>
+            </Stack>
+          </Card>
+          <Card>
+            <Stack gap={8}>
+              <H3 sm>Under ten per cent left behind.</H3>
+              <Body sm>
+                Linux Firefox, older iOS, locked-down enterprise browsers. They get the Canvas2D
+                path at reduced capacity and are told so. Our estimate — we have not measured it
+                ourselves.
+              </Body>
+            </Stack>
+          </Card>
+          <Card>
+            <Stack gap={8}>
+              <H3 sm>Charts shipped. Runtimes didn&rsquo;t.</H3>
+              <Body sm>
+                One WebGPU chart is a weekend. A shared device under six different components is
+                the part nobody built.
+              </Body>
+            </Stack>
+          </Card>
+        </Grid>
+      </Section>
+
+      <Section title="Everybody writes this UI three times.">
         <Stack gap={28}>
           <Body>
-            You ship it in DOM. It is fine at a thousand rows. At five thousand the frame budget is
-            gone — that is roughly the ceiling on primitives one JS frame can issue. So you rewrite
-            it in Canvas2D and buy an order of magnitude: about fifty thousand <C>fillRect</C>s at
-            60fps. Then the dataset grows again.
+            First in DOM. Fine at a thousand rows, dead at five thousand — that is roughly the
+            ceiling on primitives one JS frame can issue. So you rewrite it in Canvas2D and buy an
+            order of magnitude: about fifty thousand <C>fillRect</C>s at 60fps. Then the data
+            grows again. Both ceilings are properties of drawing from a CPU loop, and no version
+            of either platform raises them.
           </Body>
           <div {...stylex.props(s.stats)}>
             {CEILINGS.map(([value, label]) => (
@@ -214,7 +253,8 @@ function Home() {
             ))}
           </div>
           <p {...stylex.props(s.kicker)}>
-            The third rewrite is the one nobody budgets for. That is the one this library is.
+            Nobody budgets for the third rewrite. Nobody has to do a fourth — above this one, the
+            ceiling is the hardware.
           </p>
         </Stack>
       </Section>
@@ -254,8 +294,8 @@ function Home() {
       </Section>
 
       <Section
-        title="Six GPU panels on a page means six GPU devices. That is the bug we started from."
-        lead="Chart libraries already exist, and WebGPU charting already shipped. What does not exist is one shared runtime underneath heterogeneous components — a timeline, a heatmap, a grid and a scatter plot on the same page, through one device, one frame loop, one submit."
+        title="Here are four of them. One device."
+        lead="Six GPU panels on a page usually means six GPU devices, and that is the bug this project started from. Chart libraries exist; WebGPU charting already shipped. What does not exist is one runtime underneath components that are not alike — a timeline, a heatmap, a grid and a scatter plot on the same page, through one device, one frame loop, one submit."
       >
         <Stack gap={28}>
           <Showcase />
@@ -351,14 +391,14 @@ function Home() {
         </div>
       </Section>
 
-      <Section title="Seventeen components. Every one of them runs live in your browser.">
+      <Section title="Seventeen components. All seventeen running live, right now, on your GPU.">
         <ComponentGallery />
       </Section>
 
       <Section flush>
         <div {...stylex.props(s.ctaBand)}>
           <Stack gap={16}>
-            <H2>Do not take the claim. Run it.</H2>
+            <H2>You&rsquo;ve seen four of them run. There are seventeen.</H2>
             <Body>
               The playground runs every component live, on your GPU, on your machine. Architecture,
               the scoring matrix, and the full &ldquo;why not&rdquo; live on their own pages when you
