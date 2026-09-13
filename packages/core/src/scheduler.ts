@@ -27,11 +27,18 @@ export class FrameScheduler {
   private readonly mounted = new Map<string, Mounted>();
   private handle: FrameLoopHandle | null = null;
   private readonly profilerRef: Profiler;
+  private readonly fps?: number;
 
-  constructor(gpu: Gpu, globals: SharedUniforms<Globals>, profiler: Profiler = createProfiler(gpu, false)) {
+  constructor(
+    gpu: Gpu,
+    globals: SharedUniforms<Globals>,
+    profiler: Profiler = createProfiler(gpu, false),
+    fps?: number,
+  ) {
     this.gpu = gpu;
     this.globals = globals;
     this.profilerRef = profiler;
+    this.fps = fps;
   }
 
   get profiler(): Profiler {
@@ -62,7 +69,7 @@ export class FrameScheduler {
     // call. rAF is already throttled by browsers in background tabs, which covers most of the
     // real cost in practice. Revisit with a real wake signal (e.g. component-initiated
     // `ensureRunning()`) if idle GPU usage ever actually matters.
-    this.handle = frameLoop(this.gpu, (frame) => this.tick(frame));
+    this.handle = frameLoop(this.gpu, (frame) => this.tick(frame), this.fps != null ? { fps: this.fps } : undefined);
   }
 
   /** Stops the loop. Idempotent. Existing mounts are left in place — `mount()` restarts it. */

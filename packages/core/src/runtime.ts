@@ -136,14 +136,14 @@ export class GpuRuntime implements RuntimeHandle {
       // externally-owned adopted device actually had requested when it was created — conservative
       // false here rather than risking `timer(gpu)`'s `VGPU-TIMER-INVALID` on a device we don't
       // control. CPU frame stats still work regardless (`createProfiler`'s own doc comment).
-      const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, false));
+      const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, false), options.fps);
       return new GpuRuntime(gpu, caps, scheduler, globals, registry, options);
     }
 
     if (options.connect) {
       const { gpu, caps } = await options.connect();
       const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
-      const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)));
+      const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)), options.fps);
       return new GpuRuntime(gpu, caps, scheduler, globals, registry, options);
     }
 
@@ -157,7 +157,7 @@ export class GpuRuntime implements RuntimeHandle {
 
     const gpu = await GpuRuntime.initGpu(caps, options);
     const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
-    const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)));
+    const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)), options.fps);
     return new GpuRuntime(gpu, caps, scheduler, globals, registry, options);
   }
 
@@ -184,7 +184,7 @@ export class GpuRuntime implements RuntimeHandle {
    */
   static createWithGpu(gpu: Gpu, caps: Capabilities, options: GpuRuntimeOptions = {}): GpuRuntime {
     const globals = uniforms(gpu, { time: 0, deltaTime: 0, dpr: 1 });
-    const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)));
+    const scheduler = new FrameScheduler(gpu, globals, createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, options)), options.fps);
     return new GpuRuntime(gpu, caps, scheduler, globals, new ResourceRegistry(), options);
   }
 
@@ -252,6 +252,7 @@ export class GpuRuntime implements RuntimeHandle {
           gpu,
           this.globalsRef,
           createProfiler(gpu, GpuRuntime.gpuTimingFor(caps, this.options)),
+          this.options.fps,
         );
         this.watchDeviceLoss(gpu);
         this.replayMounts();

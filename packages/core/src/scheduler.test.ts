@@ -115,6 +115,39 @@ describe("FrameScheduler", () => {
     gpu.dispose();
   });
 
+  it("throttles ticks when constructed with an fps option", async () => {
+    // `GpuRuntimeOptions.fps` was declared but never threaded to vgpu's `frameLoop`, so it did
+    // nothing — this proves the 4th constructor arg actually reaches it, by observing fewer
+    // plan() calls over the same real-time window than an unthrottled scheduler gets.
+    const { gpu: gpuA } = await createMockGpu();
+    const { gpu: gpuB } = await createMockGpu();
+    const globalsA = uniforms(gpuA, { time: 0, deltaTime: 0, dpr: 1 });
+    const globalsB = uniforms(gpuB, { time: 0, deltaTime: 0, dpr: 1 });
+
+    const unthrottled = new FrameScheduler(gpuA, globalsA);
+    const throttled = new FrameScheduler(gpuB, globalsB, undefined, 10); // ~100ms min interval
+
+    const tA = target(gpuA, { size: [2, 2] });
+    const tB = target(gpuB, { size: [2, 2] });
+    const a = new RecordingComponent("a", tA);
+    const b = new RecordingComponent("b", tB);
+    a.animating = true; // stays active every tick, instead of settling after one plan()
+    b.animating = true;
+
+    unthrottled.mount(a, fakeSurface(tA));
+    throttled.mount(b, fakeSurface(tB));
+
+    await tick(220);
+
+    assert.ok(a.planCalls > b.planCalls, `expected throttled (${b.planCalls}) < unthrottled (${a.planCalls})`);
+    assert.ok(b.planCalls >= 1, "the throttled scheduler should still have ticked at least once");
+
+    unthrottled.stop();
+    throttled.stop();
+    gpuA.dispose();
+    gpuB.dispose();
+  });
+
   /*
    * The site's landing page shows a live component count read from `profiler.lastFrame` and calls
    * it "N components, one GPUDevice, one submit per frame". That sentence is only true if the
