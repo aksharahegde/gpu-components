@@ -97,6 +97,12 @@ const ITEMS = {
     description:
       "Network topology map — a `GraphComponent` fork with a continuous traffic-pulse animation driven by time, on top of the same GPU-resident force-directed layout.",
   },
+  // GPUAnnotationCanvas is deliberately absent: a "Locked decision" in its own design spec
+  // (docs/superpowers/specs/2026-09-01-gpuannotationcanvas-design.md — "Distribution: Playground +
+  // tests only — omit from buildRegistry.mjs") scopes it to playground-only for v1, with CLI/
+  // registry.json ship explicitly listed under "Out of scope (v1)". Not a defect and not an
+  // oversight — just documented in the spec rather than here, unlike every other exclusion on this
+  // list. If it ever graduates to the CLI, add it here and delete this comment.
 };
 
 /** Never shipped to a consumer: tests, harnesses, internal notes. */
