@@ -1,4 +1,4 @@
-import { createImageTexture, RasterLayer, viewportUniforms } from "@gpu-components/core";
+import { createImageTexture, RasterLayer, viewportUniforms } from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -7,7 +7,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { compute, sampler, storage, uniforms } from "vgpu";
 import type { Compute, Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { modeIndex, type DiffMode, type ImagePair } from "./ingest.ts";

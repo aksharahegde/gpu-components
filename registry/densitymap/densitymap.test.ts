@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { frame, target, uniforms, type Gpu } from "vgpu";
-import { createMockGpu } from "@gpu-components/testing";
+import { createMockGpu } from "@gpuc/testing";
 import {
   createWarningsLog,
   gpuPass,
@@ -9,7 +9,7 @@ import {
   ResourceRegistry,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { computeBounds, ingestLonLat, ingestPoints, packPoints, POINT_STRIDE } from "./ingest.ts";
 import { lonLatToMercator, mercatorToLonLat, MAX_LAT } from "./mercator.ts";
 import {

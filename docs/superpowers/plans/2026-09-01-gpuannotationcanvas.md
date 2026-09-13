@@ -6,7 +6,7 @@
 
 **Architecture:** Bounded scene graph (`Root → ImageNode | AnnotationGroup → nodes`) in `registry/annotationcanvas/`. Field drawn like heatmap (storage/texture + colormap + window uniforms); annotations as GPU quads/lines with CPU hit-test and DOM measurement labels. No CLI registry entry.
 
-**Tech Stack:** TypeScript, WGSL/`vgpu`, `@gpu-components/core` + `@gpu-components/react`, node:test + Dawn, Next.js playground demo.
+**Tech Stack:** TypeScript, WGSL/`vgpu`, `@gpuc/core` + `@gpuc/react`, node:test + Dawn, Next.js playground demo.
 
 **Spec:** `docs/superpowers/specs/2026-09-01-gpuannotationcanvas-design.md`
 
@@ -18,7 +18,7 @@
 - Scene graph v1 is shallow: Root → Image | AnnotationGroup → AnnotationNode[].
 - Large single texture within caps (document ≤8192); no pyramid tiling.
 - Playground + tests only — **do not** add to `packages/cli/scripts/buildRegistry.mjs`.
-- Prefer zero `@gpu-components/core` API changes; if float texture helpers are missing, use storage-buffer field sampling like `GPUHeatmap` / `RasterLayer` patterns already in core.
+- Prefer zero `@gpuc/core` API changes; if float texture helpers are missing, use storage-buffer field sampling like `GPUHeatmap` / `RasterLayer` patterns already in core.
 - Follow heatmap ingest validation and imagediff viewport (x=cols, y=rows) conventions.
 
 ## File map

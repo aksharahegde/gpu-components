@@ -1,4 +1,4 @@
-import type { ImageTextureSource } from "@gpu-components/core";
+import type { ImageTextureSource } from "@gpuc/core";
 
 /**
  * `GPUImageDiff`'s data model — PLAN.md §6.2 candidate #10 (120.5), scoring 9 on GPU necessity.

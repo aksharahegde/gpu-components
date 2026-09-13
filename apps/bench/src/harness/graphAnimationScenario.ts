@@ -1,4 +1,4 @@
-import { GpuRuntime, type MountHandle } from "@gpu-components/core";
+import { GpuRuntime, type MountHandle } from "@gpuc/core";
 import { generateClusteredGraph } from "../../../../registry/graph/ingest.ts";
 import { GraphComponent } from "../../../../registry/graph/GraphComponent.ts";
 import { makeCanvas } from "./sharedContextScenario.ts";

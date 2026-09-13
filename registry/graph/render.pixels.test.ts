@@ -9,7 +9,7 @@ import {
   type Capabilities,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { generateClusteredGraph } from "./ingest.ts";
 import { GraphComponent } from "./GraphComponent.ts";
 

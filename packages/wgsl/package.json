@@ -1,5 +1,5 @@
 {
-  "name": "@gpu-components/wgsl",
+  "name": "@gpuc/wgsl",
   "private": true,
   "version": "0.0.0",
   "type": "module",

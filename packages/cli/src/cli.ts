@@ -10,7 +10,7 @@ import {
 } from "./registry.ts";
 
 /**
- * `gpu-components` — the distribution half of PLAN.md §18.
+ * `gpuc` — the distribution half of PLAN.md §18.
  *
  * The model is the hybrid §18.1 argues for: the *runtime* stays a versioned npm dependency because
  * it is infrastructure nobody wants to fork and everybody wants patched, while *components* are
@@ -53,7 +53,7 @@ function resolveWithin(base: string, file: string): string {
   const relative = path.relative(base, full);
   if (relative.startsWith("..") || path.isAbsolute(relative)) {
     throw new Error(
-      `gpu-components: registry entry "${file}" resolves outside its component directory. ` +
+      `gpuc: registry entry "${file}" resolves outside its component directory. ` +
         `Refusing to continue — this package may be corrupted or tampered with.`,
     );
   }
@@ -64,7 +64,7 @@ function resolveWithin(base: string, file: string): string {
 function readVerified(componentsRoot: string, item: RegistryItem, file: string, hash: string): string {
   const full = resolveWithin(path.join(componentsRoot, item.name), file);
   if (!existsSync(full)) {
-    throw new Error(`gpu-components: registry file missing from the package: ${item.name}/${file}`);
+    throw new Error(`gpuc: registry file missing from the package: ${item.name}/${file}`);
   }
   const source = readFileSync(full, "utf8");
   const actual = sha256(source);
@@ -72,7 +72,7 @@ function readVerified(componentsRoot: string, item: RegistryItem, file: string, 
     // §24.3: verify before writing. A mismatch means the package is corrupted or was edited in
     // place — either way, writing it into someone's repository is the wrong move.
     throw new Error(
-      `gpu-components: integrity check failed for ${item.name}/${file}\n` +
+      `gpuc: integrity check failed for ${item.name}/${file}\n` +
         `  expected ${hash}\n  actual   ${actual}\n` +
         `  Refusing to write. Reinstall the CLI, or report this if it persists.`,
     );
@@ -81,20 +81,20 @@ function readVerified(componentsRoot: string, item: RegistryItem, file: string, 
 }
 
 export function list(registry: Registry, io: Io): number {
-  io.log(`gpu-components v${registry.version} — ${registry.items.length} components\n`);
+  io.log(`gpuc v${registry.version} — ${registry.items.length} components\n`);
   for (const item of registry.items) {
     io.log(`  ${item.name.padEnd(10)} ${item.title}`);
     io.log(`  ${" ".repeat(10)} ${item.description}`);
     io.log(`  ${" ".repeat(10)} ${item.files.length} files · needs ${item.dependencies.join(", ")}\n`);
   }
-  io.log(`Add one with:  npx gpu-components add <name>`);
+  io.log(`Add one with:  npx @gpuc/cli add <name>`);
   return 0;
 }
 
 export function add(registry: Registry, componentsRoot: string, name: string, io: Io, options: AddOptions = {}): number {
   const item = findItem(registry, name);
   if (!item) {
-    io.error(`gpu-components: unknown component "${name}". Try: ${registry.items.map((i) => i.name).join(", ")}`);
+    io.error(`gpuc: unknown component "${name}". Try: ${registry.items.map((i) => i.name).join(", ")}`);
     return 1;
   }
 
@@ -103,9 +103,9 @@ export function add(registry: Registry, componentsRoot: string, name: string, io
   const existing = existsSync(dir) ? readdirSync(dir) : [];
   if (existing.length > 0 && !options.force) {
     io.error(
-      `gpu-components: ${relative} already exists with ${existing.length} files.\n` +
+      `gpuc: ${relative} already exists with ${existing.length} files.\n` +
         `  Your edits live there — overwriting would discard them.\n` +
-        `  Run \`npx gpu-components diff ${item.name}\` to see what changed upstream, or re-run with --force.`,
+        `  Run \`npx @gpuc/cli diff ${item.name}\` to see what changed upstream, or re-run with --force.`,
     );
     return 1;
   }
@@ -117,7 +117,7 @@ export function add(registry: Registry, componentsRoot: string, name: string, io
     content: transform(readVerified(componentsRoot, item, file.path, file.hash), item.name, registry.version),
   }));
 
-  io.log(`gpu-components: ${item.title} v${registry.version} -> ${relative}/`);
+  io.log(`gpuc: ${item.title} v${registry.version} -> ${relative}/`);
   for (const file of files) io.log(`  ${file.path}`);
   io.log(`\nThis code becomes yours to edit. Requires: ${item.dependencies.join(", ")}`);
 
@@ -136,9 +136,15 @@ export function add(registry: Registry, componentsRoot: string, name: string, io
   const missing = missingDependencies(io.cwd, item);
   if (missing.length > 0) {
     io.log(`\nMissing dependencies — install them before importing the component:`);
-    io.log(`  npm i ${missing.join(" ")}`);
+    io.log(`  npm i ${missing.map((dep) => installSpec(registry, dep)).join(" ")}`);
   }
   return 0;
+}
+
+/** `npm i` argument for a dependency name — pinned to its known-compatible range when one exists. */
+function installSpec(registry: Registry, dep: string): string {
+  const range = registry.versions[dep];
+  return range ? `${dep}@${range}` : dep;
 }
 
 /** Which of the item's dependencies the project does not already declare. */
@@ -174,21 +180,21 @@ export interface DiffEntry {
  * Compares a copied component against what the CLI would write today.
  *
  * §18.2 makes this the mitigation for the copy model's central cost: "copied components drift…
- * `npx gpu-components diff timeline` shows upstream changes against your copy", and the issue
+ * `npx @gpuc/cli diff timeline` shows upstream changes against your copy", and the issue
  * template asks for its output. The comparison strips the provenance header from both sides, so a
  * version bump alone never shows as a change.
  */
 export function diff(registry: Registry, componentsRoot: string, name: string, io: Io, options: AddOptions = {}): number {
   const item = findItem(registry, name);
   if (!item) {
-    io.error(`gpu-components: unknown component "${name}"`);
+    io.error(`gpuc: unknown component "${name}"`);
     return 1;
   }
 
   const dir = targetDir(io, item.name, options);
   const relative = path.relative(io.cwd, dir) || ".";
   if (!existsSync(dir)) {
-    io.error(`gpu-components: ${relative} does not exist — nothing to diff. Run \`add ${item.name}\` first.`);
+    io.error(`gpuc: ${relative} does not exist — nothing to diff. Run \`add ${item.name}\` first.`);
     return 1;
   }
 
@@ -210,7 +216,7 @@ export function diff(registry: Registry, componentsRoot: string, name: string, i
   }
 
   const changed = entries.filter((e) => e.status !== "unchanged");
-  io.log(`gpu-components: ${item.title} — your copy in ${relative} vs registry v${registry.version}\n`);
+  io.log(`gpuc: ${item.title} — your copy in ${relative} vs registry v${registry.version}\n`);
   if (changed.length === 0) {
     io.log(`  identical (${entries.length} files)`);
     return 0;
@@ -268,12 +274,12 @@ export function doctorChecks(cwd: string, registry: Registry): DoctorCheck[] {
   });
 
   const declared = { ...manifest?.dependencies, ...manifest?.devDependencies };
-  for (const dep of ["@gpu-components/core", "@gpu-components/react", "vgpu", "react"]) {
+  for (const dep of ["@gpuc/core", "@gpuc/react", "vgpu", "react"]) {
     const version = declared[dep];
     checks.push({
       name: dep,
       ok: version !== undefined,
-      detail: version ? `declared ${version}` : `missing — npm i ${dep}`,
+      detail: version ? `declared ${version}` : `missing — npm i ${installSpec(registry, dep)}`,
     });
   }
 
@@ -304,7 +310,7 @@ export function doctorChecks(cwd: string, registry: Registry): DoctorCheck[] {
 
 export function doctor(registry: Registry, io: Io): number {
   const checks = doctorChecks(io.cwd, registry);
-  io.log(`gpu-components doctor\n`);
+  io.log(`gpuc doctor\n`);
   for (const check of checks) {
     io.log(`  ${check.ok ? "ok  " : "FAIL"} ${check.name.padEnd(22)} ${check.detail}`);
   }

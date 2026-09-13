@@ -1,5 +1,5 @@
-import { rowRange, visibleRows } from "@gpu-components/core";
-import type { ViewportState } from "@gpu-components/core";
+import { rowRange, visibleRows } from "@gpuc/core";
+import type { ViewportState } from "@gpuc/core";
 import { columnOffset, type SpreadsheetData } from "./ingest.ts";
 
 /**

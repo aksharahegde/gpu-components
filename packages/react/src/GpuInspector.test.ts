@@ -26,15 +26,15 @@ g.IS_REACT_ACT_ENVIRONMENT = true;
 
 const { createElement, act } = await import("react");
 const { createRoot } = await import("react-dom/client");
-const { createMockGpu, createMockCanvasContext } = await import("@gpu-components/testing");
+const { createMockGpu, createMockCanvasContext } = await import("@gpuc/testing");
 const { GPUProvider } = await import("./GPUProvider.ts");
 const { useGpuComponent } = await import("./useGpuComponent.ts");
 const { useCanvasRef } = await import("./useCanvasRef.ts");
 const { GpuInspector } = await import("./GpuInspector.ts");
 const { useGpu } = await import("./useGpu.ts");
-type GpuComponent = import("@gpu-components/core").GpuComponent;
-type RenderPlan = import("@gpu-components/core").RenderPlan;
-type GpuRuntime = import("@gpu-components/core").GpuRuntime;
+type GpuComponent = import("@gpuc/core").GpuComponent;
+type RenderPlan = import("@gpuc/core").RenderPlan;
+type GpuRuntime = import("@gpuc/core").GpuRuntime;
 type Gpu = import("vgpu").Gpu;
 
 let currentGpu: Gpu | null = null;

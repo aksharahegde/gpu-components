@@ -85,8 +85,8 @@ function Architecture() {
           <Layers />
           <Stack gap={16}>
             <Body>
-              <C>@gpu-components/core</C> is framework-free and must compile with React uninstalled
-              — enforced in CI by a lint rule, not by good intentions. <C>@gpu-components/react</C>{' '}
+              <C>@gpuc/core</C> is framework-free and must compile with React uninstalled
+              — enforced in CI by a lint rule, not by good intentions. <C>@gpuc/react</C>{' '}
               is an adapter with three hooks and no GPU state. Components are not a package at all:
               they are source copied into your repo.
             </Body>

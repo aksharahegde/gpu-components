@@ -1,4 +1,4 @@
-import { assertBufferBudget, InstancedQuadLayer, pixelXToTime, viewportUniforms } from "@gpu-components/core";
+import { assertBufferBudget, InstancedQuadLayer, pixelXToTime, viewportUniforms } from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -6,7 +6,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { storage, uniforms } from "vgpu";
 import type { Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { packPoints, POINT_STRIDE, type ScatterData } from "./ingest.ts";

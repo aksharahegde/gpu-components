@@ -31,14 +31,14 @@ g.IS_REACT_ACT_ENVIRONMENT = true;
 
 const { createElement, act, StrictMode } = await import("react");
 const { createRoot } = await import("react-dom/client");
-const { createMockGpu, createMockCanvasContext } = await import("@gpu-components/testing");
+const { createMockGpu, createMockCanvasContext } = await import("@gpuc/testing");
 const { GPUProvider } = await import("./GPUProvider.ts");
 const { useGpu } = await import("./useGpu.ts");
 const { useCanvasRef } = await import("./useCanvasRef.ts");
 const { useGpuComponent } = await import("./useGpuComponent.ts");
-const coreTypes = await import("@gpu-components/core");
-type ComponentContext = import("@gpu-components/core").ComponentContext;
-type GpuComponent<Props = unknown> = import("@gpu-components/core").GpuComponent<Props>;
+const coreTypes = await import("@gpuc/core");
+type ComponentContext = import("@gpuc/core").ComponentContext;
+type GpuComponent<Props = unknown> = import("@gpuc/core").GpuComponent<Props>;
 type Gpu = import("vgpu").Gpu;
 
 // A single test's <canvas> elements all resolve against whichever mock Gpu that test's
@@ -172,7 +172,7 @@ describe("GPUProvider", () => {
       return createElement("canvas", { ref, width: 2, height: 2 });
     }
 
-    let runtimeRef: import("@gpu-components/core").GpuRuntime | null = null;
+    let runtimeRef: import("@gpuc/core").GpuRuntime | null = null;
     function Capture() {
       runtimeRef = useGpu().runtime;
       return null;
@@ -198,7 +198,7 @@ describe("GPUProvider", () => {
       root.unmount();
     });
 
-    const finalRuntime = runtimeRef as unknown as import("@gpu-components/core").GpuRuntime;
+    const finalRuntime = runtimeRef as unknown as import("@gpuc/core").GpuRuntime;
     assert.equal(finalRuntime.registry.size, 0, "no registry entries should leak");
     for (const c of created) {
       assert.equal(c.createCalls, 1, `component ${c.id} must be created exactly once`);

@@ -45,16 +45,16 @@ function Start() {
     <>
       <PageHead
         eyebrow="Get started"
-        title="The runtime works. The install does not exist yet."
-        lead="Everything on this page is the intended install surface, written down before it exists so it can be argued with while changing it is still cheap. The runtime and seventeen components are real and run in the playground today; the distribution around them is not."
+        title="The runtime works. So does the install."
+        lead="The runtime and seventeen components are real and run in the playground today, and every command on this page is live on npm right now — not a preview of one."
       />
 
       <Section flush>
         <Notice variant="amber">
-          <B>Nothing is on npm yet, so every command on this page will fail today.</B> They are
-          published in this state deliberately: an install surface is easiest to change before
-          anyone depends on it, and hardest afterwards. If one of them is wrong, now is when that
-          is cheap to say.
+          <B>@gpuc/core, @gpuc/react and @gpuc/cli are on npm at v0.1.</B> This is a young install
+          surface, published early on purpose: it is easiest to change before many people depend on
+          it, and hardest afterwards. If a command on this page is wrong, that is a bug — open an
+          issue.
         </Notice>
       </Section>
 
@@ -63,20 +63,20 @@ function Start() {
           <Stack gap={20}>
             <Stack gap={8}>
               <InstallCommand
-                command="npm i @gpu-components/core @gpu-components/react"
+                command="npm i @gpuc/core @gpuc/react"
                 label="the runtime install command"
               />
               <Small>The runtime — versioned, upgradeable, not yours to fork.</Small>
             </Stack>
             <Stack gap={8}>
               <InstallCommand
-                command="npx gpu-components add timeline"
+                command="npx @gpuc/cli add timeline"
                 label="the component install command"
               />
               <Small>The component — copied into your repo, yours to edit.</Small>
             </Stack>
             <Stack gap={8}>
-              <InstallCommand command="npx gpu-components doctor" label="the doctor command" />
+              <InstallCommand command="npx @gpuc/cli doctor" label="the doctor command" />
               <Small>Checks bundler config, the WGSL loader, and WebGPU availability.</Small>
             </Stack>
             <Body>
@@ -89,7 +89,7 @@ function Start() {
 
           <Stack gap={16}>
             <Code file="app.tsx">
-              {k('import')} {'{ GPUProvider }'} {k('from')} {str("'@gpu-components/react'")}
+              {k('import')} {'{ GPUProvider }'} {k('from')} {str("'@gpuc/react'")}
               {'\n'}
               {k('import')} {'{ GPUTimeline }'} {k('from')} {str("'@/components/gpu/timeline'")}
               {'\n\n'}

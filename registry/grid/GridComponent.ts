@@ -1,4 +1,4 @@
-import { assertBufferBudget, LineLayer, RasterLayer, packRgba8, rowRange, viewportUniforms, visibleRows } from "@gpu-components/core";
+import { assertBufferBudget, LineLayer, RasterLayer, packRgba8, rowRange, viewportUniforms, visibleRows } from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -7,7 +7,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { storage, uniforms } from "vgpu";
 import type { Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { columnAt, columnOffset, totalWidth, type GridData } from "./ingest.ts";

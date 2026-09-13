@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { tick } from "@gpu-components/testing";
+import { tick } from "@gpuc/testing";
 import { Canvas2DScheduler } from "./canvas2dScheduler.ts";
 import { Canvas2DSurface } from "./canvas2dSurface.ts";
 import { createWarningsLog } from "./warnings.ts";

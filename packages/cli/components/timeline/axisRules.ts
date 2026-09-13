@@ -1,5 +1,5 @@
-import { LINE_FLAG_CLIP_X, LINE_FLAG_CLIP_Y, packRgba8 } from "@gpu-components/core";
-import type { LineInstance, ViewportState } from "@gpu-components/core";
+import { LINE_FLAG_CLIP_X, LINE_FLAG_CLIP_Y, packRgba8 } from "@gpuc/core";
+import type { LineInstance, ViewportState } from "@gpuc/core";
 
 /**
  * The axis rules of PLAN.md §12.2's overlay ("hover outline, selection, brush rect, **axis rules**,

@@ -1,5 +1,5 @@
 import { createContext, createElement, useEffect, useRef, useState, type ReactNode } from "react";
-import { GpuRuntime, type GpuRuntimeOptions } from "@gpu-components/core";
+import { GpuRuntime, type GpuRuntimeOptions } from "@gpuc/core";
 
 /** `"fallback"` — WebGPU isn't available but a `Canvas2DScheduler` is running instead
  * (`caps.tier === 'fallback'`); `"unsupported"` — no rendering at all (`caps.tier === 'none'`,
@@ -42,7 +42,7 @@ export function GPUProvider(props: GPUProviderProps) {
   useEffect(() => {
     if (options !== undefined && optionsRef.current !== options) {
       console.warn(
-        "@gpu-components/react: GPUProvider `options` changed after its runtime was already " +
+        "@gpuc/react: GPUProvider `options` changed after its runtime was already " +
           "created. The new options are ignored — a provider's runtime is created once, on first " +
           "mount, for its lifetime.",
       );

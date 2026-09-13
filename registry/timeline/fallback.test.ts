@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { viewportUniforms, CANVAS2D_CAPS, createWarningsLog } from "@gpu-components/core";
-import type { ViewportUniforms } from "@gpu-components/core";
+import { viewportUniforms, CANVAS2D_CAPS, createWarningsLog } from "@gpuc/core";
+import type { ViewportUniforms } from "@gpuc/core";
 import {
   createHighlightQuadPolicy,
   createSpanQuadPolicy,

@@ -9,7 +9,7 @@ import {
   type Capabilities,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { ingestField } from "./ingest.ts";
 import type { Annotation } from "./scene.ts";
 import { AnnotationCanvasComponent } from "./AnnotationCanvasComponent.ts";

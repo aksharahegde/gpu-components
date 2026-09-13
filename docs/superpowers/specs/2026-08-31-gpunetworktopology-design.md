@@ -159,4 +159,4 @@ generateMesh({ mode: "schematic" | "stress", seed? }): TopologyData
 1. Playground page renders schematic and stress modes with distinct node/edge styling and a visible traffic pulse on hot links (when the device animates).
 2. Registry + site typecheck clean; topology tests green (Dawn skipped if unavailable).
 3. Component remains absent from the CLI registry bundle.
-4. No `@gpu-components/core` API changes.
+4. No `@gpuc/core` API changes.

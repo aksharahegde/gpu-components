@@ -1,5 +1,5 @@
 {
-  "name": "@gpu-components/site",
+  "name": "@gpuc/site",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,8 +12,8 @@
     "check": "npm run typecheck && npm run build && npm run smoke"
   },
   "dependencies": {
-    "@gpu-components/core": "*",
-    "@gpu-components/react": "*",
+    "@gpuc/core": "*",
+    "@gpuc/react": "*",
     "@stylexjs/stylex": "^0.19.0",
     "geist": "^1.7.2",
     "next": "^16.3.3",

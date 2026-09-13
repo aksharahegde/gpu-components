@@ -2,8 +2,8 @@
 
 import * as stylex from '@stylexjs/stylex'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { GPUProvider, GpuInspector, useGpu } from '@gpu-components/react'
-import type { ViewportState } from '@gpu-components/core'
+import { GPUProvider, GpuInspector, useGpu } from '@gpuc/react'
+import type { ViewportState } from '@gpuc/core'
 import { GPUNetworkTopology, generateMesh } from '../../../../../registry/networktopology'
 import { color } from '../../tokens.stylex'
 import { Btn, Dim, Field, fmtInt, Hint, Panel, PROVIDER_OPTIONS, Readout, s, Segmented, useMeasuredStage } from './chrome'

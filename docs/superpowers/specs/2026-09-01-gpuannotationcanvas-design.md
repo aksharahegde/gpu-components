@@ -19,7 +19,7 @@ A medical / scientific annotation canvas: one large Float32 field rendered throu
 | Scale | Large single texture within device limits (aim ≤8192); no pyramid tiling in v1 |
 | Architecture | GPU vector scene graph (image + annotations share one transform stack) |
 | Distribution | Playground + tests only — **omit** from `buildRegistry.mjs` |
-| Core | Prefer zero `@gpu-components/core` API changes; scene types live in the component |
+| Core | Prefer zero `@gpuc/core` API changes; scene types live in the component |
 
 ## Approach (chosen)
 
@@ -142,4 +142,4 @@ ingestField({
 1. Playground shows a colormapped Float32 field with pan/zoom/window and drawable annotations that round-trip through host state via events.
 2. Registry + site typecheck clean; annotationcanvas tests green (Dawn skipped if unavailable).
 3. Component absent from the CLI registry bundle.
-4. No required `@gpu-components/core` API changes (or explicitly justified minimal ones only if texture helpers are missing — prefer component-local).
+4. No required `@gpuc/core` API changes (or explicitly justified minimal ones only if texture helpers are missing — prefer component-local).

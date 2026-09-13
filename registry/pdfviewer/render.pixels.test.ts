@@ -9,7 +9,7 @@ import {
   type Capabilities,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { PdfViewerComponent } from "./PdfViewerComponent.ts";
 import { ingestPdfDocument, type PdfPage } from "./ingest.ts";
 

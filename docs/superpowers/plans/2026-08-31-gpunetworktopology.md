@@ -6,7 +6,7 @@
 
 **Architecture:** Local fork of `registry/graph` under `registry/networktopology/` (layout compute + GPU-resident positions). Domain ingest adds kind/status/health/traffic buffers; render shaders consume them. Not added to the CLI registry (same exclusion as `GPUGraph`).
 
-**Tech Stack:** TypeScript, WGSL via `vgpu`, `@gpu-components/core` + `@gpu-components/react`, node:test + Dawn pixel smoke, Next.js site demo.
+**Tech Stack:** TypeScript, WGSL via `vgpu`, `@gpuc/core` + `@gpuc/react`, node:test + Dawn pixel smoke, Next.js site demo.
 
 **Spec:** `docs/superpowers/specs/2026-08-31-gpunetworktopology-design.md`
 
@@ -17,7 +17,7 @@
 - Distribution: playground + tests only — **do not** add to `packages/cli/scripts/buildRegistry.mjs`.
 - Domain encoding: kind + status + link health + traffic pulse.
 - Demo: dual modes — schematic (~300 nodes) and stress (~4k nodes).
-- Core: zero `@gpu-components/core` API changes in v1.
+- Core: zero `@gpuc/core` API changes in v1.
 - Hover: none in v1 (`hitTest` returns `null`).
 - Never explain code unless asked (user preference); still write clear tests and commit messages.
 - Follow existing graph patterns for create/update/plan/iterate; copy then adapt rather than inventing a new layout kernel.

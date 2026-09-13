@@ -3,8 +3,8 @@
  * timeline `axisRules.ts`.
  */
 
-import { packRgba8, type LineInstance, type ViewportState } from "@gpu-components/core";
-import { rowRange } from "@gpu-components/core";
+import { packRgba8, type LineInstance, type ViewportState } from "@gpuc/core";
+import { rowRange } from "@gpuc/core";
 import { lonLatToMercator, mercatorToLonLat } from "./mercator.ts";
 
 const MAX_GRATICULE_LINES = 96;

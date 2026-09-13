@@ -1,17 +1,17 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createViewportController, rowRange, type ViewportState } from "@gpu-components/core";
-import { createRecordingContext2D } from "@gpu-components/testing";
+import { createViewportController, rowRange, type ViewportState } from "@gpuc/core";
+import { createRecordingContext2D } from "@gpuc/testing";
 import { target, uniforms, type Gpu } from "vgpu";
-import { createMockGpu } from "@gpu-components/testing";
+import { createMockGpu } from "@gpuc/testing";
 import {
   createWarningsLog,
   NO_WEBGPU_CAPABILITIES,
   ResourceRegistry,
   type Canvas2DPassEncoder,
   type ComponentContext,
-} from "@gpu-components/core";
-import { viewportUniforms } from "@gpu-components/core";
+} from "@gpuc/core";
+import { viewportUniforms } from "@gpuc/core";
 import { ingestMatrix } from "./ingest.ts";
 import { HeatmapComponent } from "./HeatmapComponent.ts";
 

@@ -1,4 +1,4 @@
-import { GpuRuntime, type MountHandle } from "@gpu-components/core";
+import { GpuRuntime, type MountHandle } from "@gpuc/core";
 import { ingestSpans, type RawSpan, type SpanBuffers } from "../../../../registry/timeline/ingest.ts";
 import { TimelineComponent } from "../../../../registry/timeline/TimelineComponent.ts";
 import { generateDataset } from "../generators.ts";

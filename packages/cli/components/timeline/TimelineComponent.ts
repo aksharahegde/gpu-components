@@ -10,7 +10,7 @@ import {
   trackedUniforms,
   viewportUniforms,
   writeLine,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import type {
   BrushRect,
   ComponentContext,
@@ -19,7 +19,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { compute, storage, uniforms } from "vgpu";
 import type { Compute, Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { computeDomainMax, computeOrigin, INSTANCE_STRIDE, packHighlights, packInstances } from "./ingest.ts";

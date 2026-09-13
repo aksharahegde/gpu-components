@@ -5,8 +5,8 @@
  * covers the viewport, and axial `(q, r)` is only used for pixel conversion and cube rounding.
  */
 
-import type { ViewportState } from "@gpu-components/core";
-import { rowRange } from "@gpu-components/core";
+import type { ViewportState } from "@gpuc/core";
+import { rowRange } from "@gpuc/core";
 
 const SQRT3 = Math.sqrt(3);
 

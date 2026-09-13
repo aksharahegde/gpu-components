@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as stylex from '@stylexjs/stylex'
 import dynamic from 'next/dynamic'
-import { useGpu } from '@gpu-components/react'
+import { useGpu } from '@gpuc/react'
 import { color, font, radius, shadow } from '../tokens.stylex'
 
 /**

@@ -8,7 +8,7 @@
 // Run: node ci/trend.mjs   (or `npm run trend` from apps/bench)
 //
 // Known rough edge: real Dawn (unlike `vgpu/mock`'s software backend) logs a validation warning —
-// "Destroyed texture ... used in a submit" — because `@gpu-components/testing`'s
+// "Destroyed texture ... used in a submit" — because `@gpuc/testing`'s
 // `createMockCanvasContext` recreates the canvas texture on every `getCurrentTexture()` call rather
 // than caching it for the frame, which real `GPUCanvasContext` presentation semantics expect. The
 // script still runs and produces real numbers, but this should be fixed in
@@ -17,8 +17,8 @@
 // here rather than risk destabilizing those.
 
 import { init as nodeInit } from "vgpu/node";
-import { createMockCanvas, tick } from "@gpu-components/testing";
-import { GpuRuntime } from "@gpu-components/core";
+import { createMockCanvas, tick } from "@gpuc/testing";
+import { GpuRuntime } from "@gpuc/core";
 import { ingestSpans } from "../../../registry/timeline/ingest.ts";
 import { TimelineComponent } from "../../../registry/timeline/TimelineComponent.ts";
 import { generateDataset } from "../src/generators.ts";
@@ -30,7 +30,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TREND_FILE = path.resolve(__dirname, "../results/trend.jsonl");
 
 // A conservative, hand-built `Capabilities` — `probeCapabilities()` needs `navigator.gpu`, which
-// does not exist under Node. Mirrors `@gpu-components/testing`'s `capabilitiesFor` pattern.
+// does not exist under Node. Mirrors `@gpuc/testing`'s `capabilitiesFor` pattern.
 const CAPS = {
   webgpu: true,
   timestampQuery: false,
@@ -112,7 +112,7 @@ async function main() {
   component.update({ spans, viewport });
 
   // No `requestAnimationFrame` under Node — `FrameScheduler`'s `frameLoop` self-drives via a 16ms
-  // `setTimeout` fallback (see `@gpu-components/testing`'s `tick()`, which this reuses: "a real, if
+  // `setTimeout` fallback (see `@gpuc/testing`'s `tick()`, which this reuses: "a real, if
   // coarse, clock — not a fake timer"). `invalidate()` marks the surface dirty so the *next*
   // autonomous tick actually redraws; wall-clock between successive `tick()` calls is the frame
   // timing proxy, coarser than a browser rAF loop but genuine wall-clock, not a stub.

@@ -1,5 +1,5 @@
 import { createMockAdapter, init as mockInit, type Gpu } from "vgpu/mock";
-import { GpuRuntime, type Capabilities, type GpuRuntimeOptions } from "@gpu-components/core";
+import { GpuRuntime, type Capabilities, type GpuRuntimeOptions } from "@gpuc/core";
 
 export interface MockRuntimeOptions {
   readonly features?: readonly GPUFeatureName[];

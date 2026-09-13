@@ -3,7 +3,7 @@
  * Not cartographic: enough chrome to read as a map without shipping Natural Earth.
  */
 
-import { packRgba8, type LineInstance } from "@gpu-components/core";
+import { packRgba8, type LineInstance } from "@gpuc/core";
 import { lonLatToMercator } from "./mercator.ts";
 
 const WIDTH_PX = 1.25;

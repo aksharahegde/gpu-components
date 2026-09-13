@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { ComponentContext, GpuComponent } from "@gpu-components/core";
+import type { ComponentContext, GpuComponent } from "@gpuc/core";
 import type { SurfaceOptions } from "vgpu";
 import { useGpu } from "./useGpu.ts";
 

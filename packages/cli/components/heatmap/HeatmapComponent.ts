@@ -1,4 +1,4 @@
-import { assertBufferBudget, dispatchWorkgroups, RasterLayer, rowRange, viewportUniforms, visibleRows } from "@gpu-components/core";
+import { assertBufferBudget, dispatchWorkgroups, RasterLayer, rowRange, viewportUniforms, visibleRows } from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -6,7 +6,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { compute, storage, uniforms } from "vgpu";
 import type { Compute, Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { computeRange, VALUE_STRIDE, type HeatmapData } from "./ingest.ts";
@@ -46,7 +46,7 @@ let nextId = 0;
 
 /**
  * `GPUHeatmap` — PLAN.md §29 Phase 5's **architecture test**, whose acceptance criterion is a
- * falsifiable claim: this component should require *zero* changes to `@gpu-components/core`.
+ * falsifiable claim: this component should require *zero* changes to `@gpuc/core`.
  *
  * Stages 1–3 (data model, raster render, compute in the data path) are implemented here. What core
  * carried unchanged: `RasterLayer`, `viewportUniforms()`, `ResourceRegistry` (the colormap LUT is

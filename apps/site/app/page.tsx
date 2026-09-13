@@ -160,13 +160,13 @@ function Home() {
               </Row>
               <Stack gap={8} sx={s.install}>
                 <InstallCommand
-                  command="npx gpu-components add timeline"
+                  command="npx @gpuc/cli add timeline"
                   label="the install command"
                 />
                 <Small>
                   The component is copied into your repo, yours to edit; the runtime stays a
-                  versioned dependency. Nothing is on npm yet — the install surface is published
-                  early so it can be argued with while changing it is cheap.
+                  versioned dependency on npm — @gpuc/core, @gpuc/react and @gpuc/cli, published
+                  early so the install surface can be argued with while changing it is cheap.
                 </Small>
               </Stack>
             </Stack>
@@ -273,7 +273,7 @@ function Home() {
           <Showcase />
           <div {...stylex.props(s.split)}>
             <Code file="app.tsx">
-              {k('import')} {'{ GPUProvider }'} {k('from')} {str("'@gpu-components/react'")}
+              {k('import')} {'{ GPUProvider }'} {k('from')} {str("'@gpuc/react'")}
               {'\n'}
               {k('import')} {'{ GPUTimeline }'} {k('from')} {str("'@/components/gpu/timeline'")}
               {'\n\n'}
@@ -319,14 +319,14 @@ function Home() {
           <div {...stylex.props(s.split)}>
             <Stack gap={10}>
               <InstallCommand
-                command="npm i @gpu-components/core @gpu-components/react"
+                command="npm i @gpuc/core @gpuc/react"
                 label="the runtime install command"
               />
               <Small>Versioned, upgradeable, not yours to fork.</Small>
             </Stack>
             <Stack gap={10}>
               <InstallCommand
-                command="npx gpu-components add timeline"
+                command="npx @gpuc/cli add timeline"
                 label="the component install command"
               />
               <Small>Copied into your repo, yours to edit.</Small>

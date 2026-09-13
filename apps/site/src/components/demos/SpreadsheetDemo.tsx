@@ -2,8 +2,8 @@
 
 import * as stylex from '@stylexjs/stylex'
 import { useEffect, useState } from 'react'
-import { GPUProvider, useGpu } from '@gpu-components/react'
-import type { ViewportState } from '@gpu-components/core'
+import { GPUProvider, useGpu } from '@gpuc/react'
+import type { ViewportState } from '@gpuc/core'
 import { GPUSpreadsheet } from '../../../../../registry/spreadsheet'
 import { Hint, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 

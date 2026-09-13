@@ -5,7 +5,7 @@ import {
   LineLayer,
   pixelXToTime,
   viewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -13,7 +13,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { compute, storage, uniforms } from "vgpu";
 import type { Compute, Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { packValues, VALUE_STRIDE, withBinCount, type HistogramData } from "./ingest.ts";

@@ -12,7 +12,7 @@ const RENDER_ATTACHMENT = 0x10;
  * on demand. `vgpu`'s `surface()` never inspects a canvas context beyond `configure`,
  * `unconfigure`, and `getCurrentTexture` — so this is enough for `surface(gpu, canvas)` to succeed
  * against a mock `Gpu` on *any* object with a `getContext('webgpu')` that returns one, real DOM
- * canvas (`@gpu-components/react`'s jsdom tests) or fully synthetic (`createMockCanvas` below).
+ * canvas (`@gpuc/react`'s jsdom tests) or fully synthetic (`createMockCanvas` below).
  */
 export function createMockCanvasContext(
   gpu: Gpu,
@@ -43,7 +43,7 @@ export function createMockCanvasContext(
 
 /**
  * A fake `HTMLCanvasElement` whose `getContext('webgpu')` returns `createMockCanvasContext(gpu)`,
- * letting `@gpu-components/core`'s real `GpuRuntime.mount()` path run in tests with no DOM at all.
+ * letting `@gpuc/core`'s real `GpuRuntime.mount()` path run in tests with no DOM at all.
  */
 export function createMockCanvas(
   gpu: Gpu,

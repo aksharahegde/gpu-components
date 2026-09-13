@@ -7,7 +7,7 @@ import {
   pixelYToTrack,
   RasterLayer,
   viewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -16,7 +16,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { storage, uniforms } from "vgpu";
 import type { Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { buildColormapLut, colormapKey, LUT_SIZE, type ColormapName } from "../heatmap/colormap.ts";

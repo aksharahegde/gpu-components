@@ -171,11 +171,29 @@ for (const name of Object.keys(ITEMS)) {
   });
 }
 
+/**
+ * Version ranges to print alongside `npm i <dep>` (§ doctor/add). Read from the packages that
+ * declare them rather than hand-copied, so a bump there can't silently desync from what the CLI
+ * tells a consumer to install — the exact bug that shipped `npm i vgpu` with no range and let a
+ * fresh install pick up an incompatible major.
+ */
+function runtimeVersions() {
+  const core = JSON.parse(readFileSync(path.join(repoRoot, "packages/core/package.json"), "utf8"));
+  const react = JSON.parse(readFileSync(path.join(repoRoot, "packages/react/package.json"), "utf8"));
+  return {
+    "@gpuc/core": `^${core.version}`,
+    "@gpuc/react": `^${react.version}`,
+    vgpu: core.dependencies.vgpu,
+    react: react.peerDependencies.react,
+  };
+}
+
 const registry = {
   $schema: "https://ui.shadcn.com/schema/registry.json",
   name: "gpu-components",
   homepage: "https://github.com/gpu-components/gpu-components",
   version,
+  versions: runtimeVersions(),
   items,
 };
 

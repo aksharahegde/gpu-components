@@ -1,10 +1,10 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { frame, target, uniforms, type Gpu } from "vgpu";
-import { createFallbackRuntime, createMockGpu, createRecordingContext2D } from "@gpu-components/testing";
-import type { RecordedFillRect } from "@gpu-components/testing";
-import { createWarningsLog, gpuPass, NO_WEBGPU_CAPABILITIES, ResourceRegistry } from "@gpu-components/core";
-import type { ComponentContext } from "@gpu-components/core";
+import { createFallbackRuntime, createMockGpu, createRecordingContext2D } from "@gpuc/testing";
+import type { RecordedFillRect } from "@gpuc/testing";
+import { createWarningsLog, gpuPass, NO_WEBGPU_CAPABILITIES, ResourceRegistry } from "@gpuc/core";
+import type { ComponentContext } from "@gpuc/core";
 import { TimelineComponent } from "./TimelineComponent.ts";
 import { ingestSpans } from "./ingest.ts";
 

@@ -69,7 +69,7 @@ export class Canvas2DScheduler {
 
   /** `requestAnimationFrame` where available, falling back to a 16ms `setTimeout` where it isn't
    * (Node, no DOM) — the same fallback `vgpu`'s own `frameLoop` uses (see
-   * `@gpu-components/testing`'s `tick()` doc comment), so this scheduler is unit-testable under
+   * `@gpuc/testing`'s `tick()` doc comment), so this scheduler is unit-testable under
    * plain Node without a jsdom `window`. */
   private scheduleFrame(cb: (now: number) => void): ReturnType<typeof setTimeout> | number {
     if (typeof requestAnimationFrame === "function") return requestAnimationFrame(cb);

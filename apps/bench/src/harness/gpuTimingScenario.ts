@@ -1,4 +1,4 @@
-import { GpuRuntime } from "@gpu-components/core";
+import { GpuRuntime } from "@gpuc/core";
 import { TimelineComponent } from "../../../../registry/timeline/TimelineComponent.ts";
 import { buildPayload, driveComponents, makeCanvas } from "./sharedContextScenario.ts";
 

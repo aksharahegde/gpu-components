@@ -6,7 +6,7 @@ import {
   type RasterFallbackPolicy,
   type ViewportUniforms,
   type WarningsLog,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { INSTANCE_STRIDE } from "./ingest.ts";
 import type { SpanBuffers } from "./ingest.ts";
 

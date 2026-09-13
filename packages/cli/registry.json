@@ -2,7 +2,13 @@
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "gpu-components",
   "homepage": "https://github.com/gpu-components/gpu-components",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "versions": {
+    "@gpuc/core": "^0.1.0",
+    "@gpuc/react": "^0.1.0",
+    "vgpu": "^0.3.1",
+    "react": "^18.3.1"
+  },
   "items": [
     {
       "name": "timeline",
@@ -10,8 +16,8 @@
       "title": "GPUTimeline",
       "description": "Trace, span and event timeline. Instanced spans, LOD density binning, brush selection, and a DOM label layer that doubles as the accessibility tree.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -19,17 +25,17 @@
         {
           "path": "GPUTimeline.tsx",
           "type": "registry:component",
-          "hash": "4471f2f66b1d490bf3e05c6eb5d88d7e4c934e304c993ef13043738494a81f57"
+          "hash": "bea7df5d5eb91b253902278337da47955359f09fceb8f91b0c25c4dacb3c0d29"
         },
         {
           "path": "TimelineComponent.ts",
           "type": "registry:component",
-          "hash": "0fa595f8d242083a4837df0e3ffb86bcf82fe864914ae8cf8f2252fccbfc03b8"
+          "hash": "a151ea1d3bf3bbc0649189cdbc3b8060156c5eb9ae310f23fd980478602bd3fd"
         },
         {
           "path": "axisRules.ts",
           "type": "registry:component",
-          "hash": "ce8d594ebaa65be9c609eb823b0f91cf49d8b39d5472be1d4a5569c8e9f62a15"
+          "hash": "c5663fc3e049fa7481d880595267333f5c573bab321dc42282385b502b9a299c"
         },
         {
           "path": "brushSelect.wgsl.ts",
@@ -49,7 +55,7 @@
         {
           "path": "fallback.ts",
           "type": "registry:component",
-          "hash": "f4eb0ef991adf55b5531c753aee443be17f0a3e0dfa6269aa575baabd7f616d9"
+          "hash": "85d53f07d314420c3c4f46205c92bf9a9aaf080703eaeee66dc1789d1bf9f0b2"
         },
         {
           "path": "highlight.wgsl.ts",
@@ -89,7 +95,7 @@
         {
           "path": "viewModel.ts",
           "type": "registry:component",
-          "hash": "782d03e533562367a6af2a2e30e89b1ba6351b3a384cfc616c096e3685112fc1"
+          "hash": "3ea4af2a4edd388640f532e13b0e81f5016e5f5bd554bba43963d5ac0bb241bb"
         }
       ]
     },
@@ -99,8 +105,8 @@
       "title": "GPUHeatmap",
       "description": "Dense matrix surface with a GPU colormap, GPU min/max auto-ranging, and two-axis pan and zoom.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -108,12 +114,12 @@
         {
           "path": "GPUHeatmap.tsx",
           "type": "registry:component",
-          "hash": "7a37104917761209695e76547c4de38abb18a06f53f243b4c9103163319f990d"
+          "hash": "3092fabf07be00d4ac46765de046ab55cca73383d98a02f9a3b0080d013cb886"
         },
         {
           "path": "HeatmapComponent.ts",
           "type": "registry:component",
-          "hash": "bcabcc1e1166fb463e5a51d38732f43924c3e2994fc1fc12b6e80adedbacdbe4"
+          "hash": "92c0a2174d8309af3f8dc3f86b2af6d2127ec29944dbfb9ad517c771cdfe7e44"
         },
         {
           "path": "colormap.ts",
@@ -148,8 +154,8 @@
       "title": "GPUDataGrid",
       "description": "Read-only data grid. GPU cell chrome and per-cell conditional formatting, Canvas2D text, and an accessible table mirror.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -157,12 +163,12 @@
         {
           "path": "GPUDataGrid.tsx",
           "type": "registry:component",
-          "hash": "aec51e8ad7bca04378d3fe4023f7846ca248cf3cd144205bd3d1ca30b82962f5"
+          "hash": "fa02f79720a55ca40315a979e67c4d79008b4b7e8b8d124cd4e4828b1ba84a2f"
         },
         {
           "path": "GridComponent.ts",
           "type": "registry:component",
-          "hash": "105b5ff00229f82c4092553063c2178554b7ccf322a7908161f160779385611e"
+          "hash": "6410021e48e83c726d4f33556a85dc49fd3909e1761a34d1642b8a1033f2ee62"
         },
         {
           "path": "grid.wgsl.ts",
@@ -182,7 +188,7 @@
         {
           "path": "textLayer.ts",
           "type": "registry:component",
-          "hash": "3faae556144a147e0cad039085e76c9628fc037d8e3cee2d2db205472e2e4f6c"
+          "hash": "c7da735c84aa4a876978cb20b2cfe4b4acea1e913cc1466435026064c853961f"
         }
       ]
     },
@@ -192,8 +198,8 @@
       "title": "GPUScatter",
       "description": "Dense point cloud. One instanced draw call, uniform-write filtering, and exact CPU hover through a spatial index.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -201,12 +207,12 @@
         {
           "path": "GPUScatter.tsx",
           "type": "registry:component",
-          "hash": "32a60f166d308606956cda685c38e959bcc1be4f7b259ba235e6d311cdeb8097"
+          "hash": "d22e25c70d730f03ad1e914c7ccc99888b113e4f2da575aeaaf9cfe463041e78"
         },
         {
           "path": "ScatterComponent.ts",
           "type": "registry:component",
-          "hash": "d7120f14ed88ded5b1a9e4f3546c724f44d29bc64ab2e92a99489f6d2538ad49"
+          "hash": "6bf98eec18118904cd4d331ca23c93fc09b3581013ea9b5a3b09465bcf3dbfda"
         },
         {
           "path": "index.ts",
@@ -236,8 +242,8 @@
       "title": "GPUImageDiff",
       "description": "Image comparison. Split, onion-skin, difference and heat modes sampled from real textures, with a changed-pixel count computed by a compute pass.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -245,12 +251,12 @@
         {
           "path": "GPUImageDiff.tsx",
           "type": "registry:component",
-          "hash": "f5b3beee293a88604adfdc1d40d2f0642b6c9f0766b60778366d672c171aca53"
+          "hash": "63ac656773f228396751425507085c804d3d0da2482bffe1a80c45b3a50f4a3a"
         },
         {
           "path": "ImageDiffComponent.ts",
           "type": "registry:component",
-          "hash": "5bf84d02354cc3bf381d6ad42a650de3bb3348eadcfe478d5d095b14700daae7"
+          "hash": "8d694b6d7b883d238a615b3e47dd2ac44a43d7ca93ff798df1708011e0476ebf"
         },
         {
           "path": "imagediff.wgsl.ts",
@@ -265,7 +271,7 @@
         {
           "path": "ingest.ts",
           "type": "registry:component",
-          "hash": "f06d59f4d4cde831940bcd18c67d18b9898589e124129fdd57cbe56aa631bb44"
+          "hash": "fbf6372cb84f3241ceb91fd32f0eafa8f1dbba112714c2e7564e5ae4c6dab437"
         }
       ]
     },
@@ -275,8 +281,8 @@
       "title": "GPULogViewer",
       "description": "Streaming log viewer. A GPU-resident ring buffer with incremental appends, virtualised scroll, and match/error density reduced across the whole buffer for the minimap.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -284,12 +290,12 @@
         {
           "path": "GPULogViewer.tsx",
           "type": "registry:component",
-          "hash": "70c716c53f7aae4cf976e6518dd6924324c5734422b41893d38d3a8c25ff5c14"
+          "hash": "fbc0e2a349cdb1442c2bee51788a355b55878fbd235589c1c6d1ad53c671d34a"
         },
         {
           "path": "LogViewerComponent.ts",
           "type": "registry:component",
-          "hash": "c669b72ad12af668384dd753d6ee0a0090c270356eb9e9556592ce22b30dd37b"
+          "hash": "699fe676d8c2f8c9e7ca4e9ca3273c8f307f209199ebe296eb0db2f462bd3cf9"
         },
         {
           "path": "index.ts",
@@ -319,8 +325,8 @@
       "title": "GPUCandlestick",
       "description": "OHLC price chart over a streaming ring buffer. In-place revision of the open bar, ordinal bar layout, and a whole-history min/max/volume envelope reduced on the GPU.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -328,12 +334,12 @@
         {
           "path": "CandlestickComponent.ts",
           "type": "registry:component",
-          "hash": "992bb738c68c267d7db78ee6b81cea9dc3bb79a471199707b35805fa9007ec7d"
+          "hash": "a8ab477ce562c9bf8c9c112b3a397908f0d369cfd42d616796e6f0cf343e96e6"
         },
         {
           "path": "GPUCandlestick.tsx",
           "type": "registry:component",
-          "hash": "63a4e8237ffc1de9954f011fc45484d0b3232a66299f262a7ca8de3c64048329"
+          "hash": "e5a49183eecd3c8ae3a356c6aa400d8fdf9db0c5fd5f682999a08b336364b72b"
         },
         {
           "path": "candlestick.wgsl.ts",
@@ -358,8 +364,8 @@
       "title": "GPUDensityMap",
       "description": "Geospatial hexbin density map. Lon/lat projected to Web Mercator, GPU atomic hexbin, colormap fill, and graticule / world-outline chrome — no tile basemap.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -367,12 +373,12 @@
         {
           "path": "DensityMapComponent.ts",
           "type": "registry:component",
-          "hash": "fb42426702625e9a47424e245db35c57d4b8f79fe267f7739afa3d715aa36515"
+          "hash": "0913abf6763348decc7d2497cfe89343f16becbb3dd556a9aa9298c47e3200f0"
         },
         {
           "path": "GPUDensityMap.tsx",
           "type": "registry:component",
-          "hash": "e08fe63e29121ec8806e93fdba8c244b86b768ed625c2b4c2b662562fbdebb2f"
+          "hash": "0c85ea5d1c901dc6de20a387fdb875ff7d7e4920ceec1bb5c5f324bb6b0860b7"
         },
         {
           "path": "colormap.ts",
@@ -382,7 +388,7 @@
         {
           "path": "graticule.ts",
           "type": "registry:component",
-          "hash": "177285456cc8c82278a207ebec33fddf1239846ade0ec9434149d934a1a37131"
+          "hash": "aee5a4a57541d39f36bfcadda4a0da76178f2d9085ef528db567ee3e6e5a5715"
         },
         {
           "path": "hex.wgsl.ts",
@@ -397,7 +403,7 @@
         {
           "path": "hexmath.ts",
           "type": "registry:component",
-          "hash": "0ea8d34b47447fedd6675bfbe331e30f77f4c3763c8b38a25e3e44327585f8cc"
+          "hash": "c3ecb78dfe5c5ed422dda0f1bc346eafd983b6b48422bc303e66aef8ffea5c9c"
         },
         {
           "path": "index.ts",
@@ -422,7 +428,7 @@
         {
           "path": "worldOutline.ts",
           "type": "registry:component",
-          "hash": "afa65a4f38ca3e85e02d43b5d3e2b1481099548332a4da0706eb7ceb8d03e4b7"
+          "hash": "72e135ffe0f0ea90d62ad1cf55656dd8b1b3dba654e57eae5239ecb16df18993"
         }
       ]
     },
@@ -432,8 +438,8 @@
       "title": "GPUHistogram",
       "description": "1D value histogram. Freedman–Diaconis (Sturges fallback) bins at ingest, GPU atomic binning, and instanced bar quads.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -441,17 +447,17 @@
         {
           "path": "GPUHistogram.tsx",
           "type": "registry:component",
-          "hash": "8a6ef08963f0f0b61790062d4dafdc1d6e009be2137e022cbdec88077a2b1746"
+          "hash": "066f9a5cdddf0b8c9325ca3c1e16eda4624fbd804b527103e74a87669a494395"
         },
         {
           "path": "HistogramComponent.ts",
           "type": "registry:component",
-          "hash": "7195c13fea5564c5b8cc5a0f6f2401208f1de1406992d505c12ecb5c6d047203"
+          "hash": "f6f309b8ccbeab371998f76fae228799188c3ab8f7c86a077ddb86d7247d3faa"
         },
         {
           "path": "axisRules.ts",
           "type": "registry:component",
-          "hash": "6d237f3031fa85b3a37d3c958d05506b586ca188f07a4df3112c81e83b50064d"
+          "hash": "7437d07c819faaa860659bbca257abd03df623791250569a57612bc7be2f19fb"
         },
         {
           "path": "bars.wgsl.ts",
@@ -491,8 +497,8 @@
       "title": "GPUDepGraph",
       "description": "Sugiyama layered dependency graph. CPU layout at ingest (cycle break, ranks, barycenter order, orthogonal routes); GPU draws nodes and line segments only.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -500,12 +506,12 @@
         {
           "path": "DepGraphComponent.ts",
           "type": "registry:component",
-          "hash": "c968737d443ac3bb5711faa10844e3d9b188fabd93742eb86a454604e51c098d"
+          "hash": "066d359739518ea8f8aa20e075129f4d753e5093fcdcf1d6624f4e798d75c761"
         },
         {
           "path": "GPUDepGraph.tsx",
           "type": "registry:component",
-          "hash": "201b804b271c879192e07fff9ee1839de501cdfcbb5d56c21e2049e00825a03a"
+          "hash": "8de608d79a03ee77d215d5cf1f4f633740980568e771c64436e128650bbf02d5"
         },
         {
           "path": "index.ts",
@@ -535,8 +541,8 @@
       "title": "GPUSpreadsheet",
       "description": "Editable spreadsheet. GPU cell chrome, selection rectangle and dirty-cell flash; a CPU dependency-graph formula engine, cell editing, clipboard, and pivot tables — formulas never touch the GPU.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -544,12 +550,12 @@
         {
           "path": "GPUSpreadsheet.tsx",
           "type": "registry:component",
-          "hash": "c17728e54c9cb1c6183d31e496b3cad089940a333f3de1abab31ca896172611b"
+          "hash": "dd7d69444974aa14f7ae59ac962215911dc405fa3b99beb7476173761ce6eb99"
         },
         {
           "path": "SpreadsheetComponent.ts",
           "type": "registry:component",
-          "hash": "a330a2b3033b3bd5794478989a06673e897ec21699a250b674ea3cc340faf12c"
+          "hash": "b1d7c15a674413a383ee7cf1665cd62621de904be0d74a2386706d546be6a92a"
         },
         {
           "path": "cellRef.ts",
@@ -594,7 +600,7 @@
         {
           "path": "textLayer.ts",
           "type": "registry:component",
-          "hash": "ac5aa0a001fab36493ff3e0cdd58691caa9789bde1140b7b3fe01f4eb9b4ba3a"
+          "hash": "1408f118edc3d5b057f89beaeeb076f808a9b33d1b9cc948b62fda399c39f7dd"
         }
       ]
     },
@@ -604,8 +610,8 @@
       "title": "GPUNodeEditor",
       "description": "Freeform node-flow canvas. Drag nodes, drag-to-connect ports, multi-select (shift-click/marquee) and delete — all exact CPU hit-testing over caller-owned positions, with GPU-baked selection/port flags and a DOM label overlay for titles.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -613,12 +619,12 @@
         {
           "path": "GPUNodeEditor.tsx",
           "type": "registry:component",
-          "hash": "76c7c489292186e7ff206f420c22e59923e346dad8f418be5a13c4d63aef5ee6"
+          "hash": "112f7bb5429d6ab6de5437ba64c31bb90d826904c60f94411d81f576bd5be92f"
         },
         {
           "path": "NodeEditorComponent.ts",
           "type": "registry:component",
-          "hash": "4e60c4c0d07b19e626c5a757afdba31b7ce020ea1018656e0b31f802f3b7b737"
+          "hash": "a012c5e54d1cf7efd711cd47bcf0ead55ced464bbb3027c035e3b1db019ba279"
         },
         {
           "path": "index.ts",
@@ -648,8 +654,8 @@
       "title": "GPUWhiteboard",
       "description": "Freeform infinite canvas. A procedural dot-grid background, instanced rect/ellipse/point shapes plus ruler/polygon/freehand ink, and exact CPU hit-testing. Draw tools create shapes by pointer gesture; a select tool click/shift-clicks/marquee-drags a multi-selection, drags it to move, and Delete/Backspace removes it.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -657,12 +663,12 @@
         {
           "path": "GPUWhiteboard.tsx",
           "type": "registry:component",
-          "hash": "99f205357b415a34ccbd89f1799b063780e8cba3f2ddf7902b9d2da48a520455"
+          "hash": "ae4e193810eb2ecf94060746ee068a8da177ee7693a9c17e73eed9607ca0fb75"
         },
         {
           "path": "WhiteboardComponent.ts",
           "type": "registry:component",
-          "hash": "39725aba87ef473d8500a7f31e15fba3d858a8080aa78099c21343828ee22400"
+          "hash": "38d837301228b0495296d1cf892e8ba5165c54a56ff191160d4b6b44d5047588"
         },
         {
           "path": "background.wgsl.ts",
@@ -702,8 +708,8 @@
       "title": "GPUPdfViewer",
       "description": "Virtualized multi-page document compositor — not a PDF renderer. Takes host-rasterized page bitmaps (e.g. from pdf.js) and composites a small resident-texture pool as one positioned quad per page, with continuous zoom/scroll and CPU page hit-testing.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -711,12 +717,12 @@
         {
           "path": "GPUPdfViewer.tsx",
           "type": "registry:component",
-          "hash": "545d351f7942d625e56046ab6cc9d03d78e6dc0da9e3247a4d512bc78740b841"
+          "hash": "72cded607c5ba025b8c7f5f14b9ce82522b703f523a20aa90988b35ae1e673a2"
         },
         {
           "path": "PdfViewerComponent.ts",
           "type": "registry:component",
-          "hash": "dd95c7544594d4b13c0b2cbd1c2ef9e366fe17355381d03ccbfebb8a3831e0f2"
+          "hash": "5c36da303dceef319ce1b85322e53896608927c7c0c21de8547c52d5345b7f3f"
         },
         {
           "path": "index.ts",
@@ -741,8 +747,8 @@
       "title": "GPUGraph",
       "description": "Force-directed graph layout. GPU-resident ping-pong position buffer iterated in place, settling on its own after a bounded number of iterations — no per-frame CPU readback.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -750,12 +756,12 @@
         {
           "path": "GPUGraph.tsx",
           "type": "registry:component",
-          "hash": "9222d721ff72b661a8384cd7ccf73b67f0698b29f2ef4f4badc95c7b60b91592"
+          "hash": "10fe5e108bb36e6adb01ad6bc03ee935bfd6842bf70438d502a45815462b40f5"
         },
         {
           "path": "GraphComponent.ts",
           "type": "registry:component",
-          "hash": "863f25edfd1d4ef3d8b28799b2e8b3af9f97e26eab1c41b737831e08f3fc4391"
+          "hash": "4d9d20c56a23e9ad139cddef5ca0ddf08cf2a076b1f101fa8195af19bc6c8ff7"
         },
         {
           "path": "graph.wgsl.ts",
@@ -785,8 +791,8 @@
       "title": "GPUNetworkTopology",
       "description": "Network topology map — a `GraphComponent` fork with a continuous traffic-pulse animation driven by time, on top of the same GPU-resident force-directed layout.",
       "dependencies": [
-        "@gpu-components/core",
-        "@gpu-components/react",
+        "@gpuc/core",
+        "@gpuc/react",
         "react",
         "vgpu"
       ],
@@ -794,12 +800,12 @@
         {
           "path": "GPUNetworkTopology.tsx",
           "type": "registry:component",
-          "hash": "44fb67eca40d7f62a597bf05ea47b0c45ebbfd8712b38356f75e4eae78f533da"
+          "hash": "885f6203f468c06be82d5d2eca30d8b1221ccda9bdc7582b66f1c4c1551c4a7a"
         },
         {
           "path": "NetworkTopologyComponent.ts",
           "type": "registry:component",
-          "hash": "ed0dbc8c7ad45c48acefae73b63bb3b412ff8b30c6dc56557285c1683c3cb65e"
+          "hash": "5c8172d8f98e35f411d8a844d035b8b342b2c0a1b9d0ace7fa592bc8d951f21b"
         },
         {
           "path": "generate.ts",

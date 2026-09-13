@@ -9,6 +9,6 @@ export { LabelOverlay, MAX_DOM_LABELS, SR_ONLY, useGpuA11y } from "./a11y.ts";
 export type { GpuA11y, GpuA11yOptions, LabelOverlayProps, PositionedLabel } from "./a11y.ts";
 export type { GpuInspectorProps } from "./GpuInspector.ts";
 
-export type { GpuRuntimeOptions, MountHandle } from "@gpu-components/core";
-export type { ComponentContext, GpuComponent } from "@gpu-components/core";
+export type { GpuRuntimeOptions, MountHandle } from "@gpuc/core";
+export type { ComponentContext, GpuComponent } from "@gpuc/core";
 export type { SurfaceOptions } from "vgpu";

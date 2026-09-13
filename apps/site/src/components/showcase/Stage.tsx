@@ -2,7 +2,7 @@
 
 import { type ReactNode } from 'react'
 import * as stylex from '@stylexjs/stylex'
-import { useGpu } from '@gpu-components/react'
+import { useGpu } from '@gpuc/react'
 import { useMeasuredStage } from '../demos/chrome'
 
 const s = stylex.create({

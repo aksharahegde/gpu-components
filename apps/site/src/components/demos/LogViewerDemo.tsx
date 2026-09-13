@@ -2,8 +2,8 @@
 
 import * as stylex from '@stylexjs/stylex'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { GPUProvider, useGpu } from '@gpu-components/react'
-import type { ViewportState } from '@gpu-components/core'
+import { GPUProvider, useGpu } from '@gpuc/react'
+import type { ViewportState } from '@gpuc/core'
 import { GPULogViewer, generateLogLines } from '../../../../../registry/logviewer'
 import type { LogLine, LogSource } from '../../../../../registry/logviewer'
 import { Btn, Dim, Field, fmtInt, Hint, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'

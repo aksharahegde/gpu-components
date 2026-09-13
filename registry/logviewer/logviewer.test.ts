@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { target, uniforms, type Gpu } from "vgpu";
-import { createMockGpu } from "@gpu-components/testing";
+import { createMockGpu } from "@gpuc/testing";
 import {
   createWarningsLog,
   NO_WEBGPU_CAPABILITIES,
@@ -9,7 +9,7 @@ import {
   type Capabilities,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import {
   LOG_RECORD_STRIDE,
   formatLogLine,

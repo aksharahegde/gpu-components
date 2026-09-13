@@ -1,11 +1,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { target, uniforms, type Gpu } from "vgpu";
-import { createMockGpu } from "@gpu-components/testing";
+import { createMockGpu } from "@gpuc/testing";
 import {
   createWarningsLog, ResourceRegistry,
   type Capabilities, type ComponentContext, type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import {
   BAR_STRIDE, aggregateTicks, generateBars, packBars, priceRange, validateBars, type Bar,
 } from "./ingest.ts";

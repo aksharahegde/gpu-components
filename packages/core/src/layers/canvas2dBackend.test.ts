@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createMockGpu, createRecordingContext2D } from "@gpu-components/testing";
+import { createMockGpu, createRecordingContext2D } from "@gpuc/testing";
 import { CANVAS2D_CAPS, type Canvas2DPassEncoder } from "../passEncoder.ts";
 import { viewportUniforms } from "../viewport.ts";
 import { InstancedQuadLayer, type QuadFallbackPolicy } from "./instancedQuad.ts";

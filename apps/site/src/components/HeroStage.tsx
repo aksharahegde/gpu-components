@@ -6,7 +6,7 @@
 
 import type { ReactNode } from 'react'
 import * as stylex from '@stylexjs/stylex'
-import { GPUProvider } from '@gpu-components/react'
+import { GPUProvider } from '@gpuc/react'
 import { PROVIDER_OPTIONS } from './demos/chrome'
 import { HeroMiniatures } from './HeroMiniatures'
 import { color, radius, shadow, size } from '../tokens.stylex'

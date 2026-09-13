@@ -3,7 +3,7 @@ import { surface as vgpuSurface, type Gpu, type Surface, type SurfaceOptions, ty
 /**
  * What `FrameScheduler` actually needs from a mounted component's surface: a resize-driven target
  * for `RenderPass.target === 'surface'`, and a dirty flag it consumes each tick. Kept as an
- * interface (not the concrete `SurfaceHandle` class) so `@gpu-components/testing` can mount
+ * interface (not the concrete `SurfaceHandle` class) so `@gpuc/testing` can mount
  * components against a synthetic `Target` (e.g. an offscreen `target()`) without a real
  * `HTMLCanvasElement` — there is no canvas-surface mock in `vgpu/mock`.
  */

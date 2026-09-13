@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createMockGpu } from "@gpu-components/testing";
+import { createMockGpu } from "@gpuc/testing";
 import { createWarningsLog } from "../warnings.ts";
 import {
   LINE_FLAG_CLIP_X,

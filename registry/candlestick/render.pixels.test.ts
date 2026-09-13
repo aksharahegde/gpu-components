@@ -9,7 +9,7 @@ import {
   type Capabilities,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { generateBars, type Bar } from "./ingest.ts";
 import { CandlestickComponent, type BarSource } from "./CandlestickComponent.ts";
 import { OVERVIEW_BUCKETS } from "./candlestick.wgsl.ts";

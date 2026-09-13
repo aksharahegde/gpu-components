@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `npx gpu-components <command>` — PLAN.md §18.3's surface.
+ * `npx @gpuc/cli <command>` — PLAN.md §18.3's surface.
  *
  * Thin on purpose: argument parsing here, behaviour in `../src/cli.ts`, so every command is
  * testable without spawning a process or touching a real project.
@@ -9,7 +9,7 @@ import { readFileSync, readSync, writeSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 // Imports the built `dist/cli.js`, not `src/cli.ts` — a plain `node` (what a real `npx
-// gpu-components` invocation uses) can't type-strip files under `node_modules`
+// gpuc` invocation uses) can't type-strip files under `node_modules`
 // (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`), so this package must ship compiled JS. See
 // tsconfig.build.json.
 import { add, diff, doctor, list } from "../dist/cli.js";
@@ -59,14 +59,14 @@ const io = {
 const options = { path: targetPath, force: flags.has("--force") };
 
 function usage() {
-  console.log(`gpu-components v${registry.version}
+  console.log(`gpuc v${registry.version}
 
-  npx gpu-components add <component> [--path <dir>] [--force]
-  npx gpu-components diff <component> [--path <dir>]
-  npx gpu-components doctor
-  npx gpu-components list
+  npx @gpuc/cli add <component> [--path <dir>] [--force]
+  npx @gpuc/cli diff <component> [--path <dir>]
+  npx @gpuc/cli doctor
+  npx @gpuc/cli list
 
-The runtime (@gpu-components/core, @gpu-components/react) is an npm dependency you upgrade.
+The runtime (@gpuc/core, @gpuc/react) is an npm dependency you upgrade.
 Components are copied into your repository and become yours to edit.`);
 }
 

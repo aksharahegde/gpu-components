@@ -39,6 +39,8 @@ export interface Registry {
   readonly homepage: string;
   /** The version stamped into copied files, so `diff` knows what the copy was taken from. */
   readonly version: string;
+  /** Version range to install for each runtime package name — `npm i <dep>` prints `dep@range`. */
+  readonly versions: Readonly<Record<string, string>>;
   readonly items: readonly RegistryItem[];
 }
 
@@ -62,7 +64,7 @@ export function findItem(registry: Registry, name: string): RegistryItem | undef
   const item = registry.items.find((item) => item.name === name);
   if (item && !isValidItemName(item.name)) {
     throw new Error(
-      `gpu-components: registry entry "${item.name}" is not a valid component name. ` +
+      `gpuc: registry entry "${item.name}" is not a valid component name. ` +
         `Refusing to continue — this package may be corrupted or tampered with.`,
     );
   }
@@ -79,7 +81,7 @@ export function findItem(registry: Registry, name: string): RegistryItem | undef
  * project does not set that flag and rejects the import outright — so a straight file copy would
  * hand every user code that does not compile.
  *
- * Only *relative* specifiers are touched. Package imports (`@gpu-components/core`, `vgpu`, `react`)
+ * Only *relative* specifiers are touched. Package imports (`@gpuc/core`, `vgpu`, `react`)
  * are left exactly as they are.
  */
 export function rewriteImportExtensions(source: string): string {
@@ -89,12 +91,12 @@ export function rewriteImportExtensions(source: string): string {
   );
 }
 
-/** The provenance header §18.2 asks for: "stamp `// @gpu-components/timeline@0.4.2` in a header". */
+/** The provenance header §18.2 asks for: "stamp `// @gpuc/timeline@0.4.2` in a header". */
 export function stampHeader(source: string, item: string, version: string): string {
   return (
-    `// @gpu-components/${item}@${version}\n` +
+    `// @gpuc/${item}@${version}\n` +
     `// This file was copied into your repository and is yours to edit.\n` +
-    `// \`npx gpu-components diff ${item}\` shows what has changed upstream since.\n` +
+    `// \`npx @gpuc/cli diff ${item}\` shows what has changed upstream since.\n` +
     source
   );
 }
@@ -108,7 +110,7 @@ export function transform(source: string, item: string, version: string): string
 export function stripHeader(source: string): string {
   const lines = source.split("\n");
   let i = 0;
-  while (i < lines.length && lines[i]!.startsWith("// @gpu-components/")) i++;
+  while (i < lines.length && lines[i]!.startsWith("// @gpuc/")) i++;
   while (i < lines.length && lines[i]!.startsWith("// ")) i++;
   return lines.slice(i).join("\n");
 }

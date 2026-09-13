@@ -8,7 +8,7 @@ import {
   ResourceRegistry,
   type Capabilities,
   type ComponentContext,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { computeRange, ingestMatrix } from "./ingest.ts";
 import { HeatmapComponent } from "./HeatmapComponent.ts";
 

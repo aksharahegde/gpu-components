@@ -49,7 +49,7 @@ environment.
   to the repo root since `webgpu.ts` imports `registry/timeline/*` directly).
 - `ci/trend.mjs` — standalone Node script, `vgpu/node` (headless Dawn), WebGPU-only, for CI
   regression-trend tracking without needing a browser. Has one known rough edge — see the comment at
-  the top of the file — around `@gpu-components/testing`'s canvas-texture mock and real Dawn's
+  the top of the file — around `@gpuc/testing`'s canvas-texture mock and real Dawn's
   stricter validation; it still runs and produces real numbers.
 
 ## Renderer cutoffs

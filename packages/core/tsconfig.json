@@ -5,7 +5,7 @@
     "types": ["@webgpu/types", "node"],
     "outDir": "dist",
     "paths": {
-      "@gpu-components/core": ["./src/index.ts"]
+      "@gpuc/core": ["./src/index.ts"]
     }
   },
   "include": ["src"]

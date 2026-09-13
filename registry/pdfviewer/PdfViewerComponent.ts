@@ -1,4 +1,4 @@
-import { createImageTexture, pixelXToTime, pixelYToTrack, viewportUniforms } from "@gpu-components/core";
+import { createImageTexture, pixelXToTime, pixelYToTrack, viewportUniforms } from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -7,7 +7,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { draw, sampler, uniforms } from "vgpu";
 import type { Draw, Gpu, SharedUniforms } from "vgpu";
 import { pageAt, visiblePageRange, type PdfDocumentData } from "./ingest.ts";

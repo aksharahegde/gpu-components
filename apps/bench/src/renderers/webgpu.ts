@@ -1,4 +1,4 @@
-import { GpuRuntime } from "@gpu-components/core";
+import { GpuRuntime } from "@gpuc/core";
 // Imported from the concrete files, not the barrel `index.ts` — that barrel also re-exports the
 // React-based `GPUTimeline.tsx`, and this package has no `react` dependency.
 import { ingestSpans, type RawSpan } from "../../../../registry/timeline/ingest.ts";
@@ -21,7 +21,7 @@ function toRawSpans(dataset: Dataset): RawSpan[] {
 
 /**
  * Drives the real `TimelineComponent` (`registry/timeline`) directly via `GpuRuntime`, no React —
- * this is the actual `@gpu-components/react` consumer minus the React adapter layer, so the
+ * this is the actual `@gpuc/react` consumer minus the React adapter layer, so the
  * benchmark measures the runtime everyone else would get, not a synthetic stand-in.
  */
 export const webgpuRenderer: RendererDef = {

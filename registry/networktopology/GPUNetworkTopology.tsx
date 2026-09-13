@@ -1,6 +1,6 @@
-import { createPointerController, createViewportController, normalizeWheel } from "@gpu-components/core";
-import type { ViewportBounds, ViewportState } from "@gpu-components/core";
-import { useGpu, useGpuA11y, useGpuComponent } from "@gpu-components/react";
+import { createPointerController, createViewportController, normalizeWheel } from "@gpuc/core";
+import type { ViewportBounds, ViewportState } from "@gpuc/core";
+import { useGpu, useGpuA11y, useGpuComponent } from "@gpuc/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, JSX } from "react";
 import { NetworkTopologyComponent } from "./NetworkTopologyComponent.ts";

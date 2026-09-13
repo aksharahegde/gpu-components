@@ -1,6 +1,6 @@
 {
-  "name": "gpu-components",
-  "version": "0.1.0",
+  "name": "@gpuc/cli",
+  "version": "0.1.1",
   "type": "module",
   "description": "Copy GPU component source into your repo. The runtime stays an npm dependency.",
   "license": "MIT",
@@ -13,7 +13,7 @@
   },
   "bugs": "https://github.com/aksharahegde/gpu-components/issues",
   "bin": {
-    "gpu-components": "./bin/gpu-components.mjs"
+    "gpuc": "./bin/gpuc.mjs"
   },
   "scripts": {
     "typecheck": "tsc --noEmit --pretty",

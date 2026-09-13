@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { target, uniforms, type Target } from "vgpu";
-import { createMockGpu, tick } from "@gpu-components/testing";
+import { createMockGpu, tick } from "@gpuc/testing";
 import { FrameScheduler } from "./scheduler.ts";
 import { EMPTY_PLAN } from "./component.ts";
 import type { ComputePass, GpuComponent, RenderPass, RenderPlan } from "./component.ts";

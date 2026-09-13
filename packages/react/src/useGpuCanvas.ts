@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SurfaceHandle } from "@gpu-components/core";
+import type { SurfaceHandle } from "@gpuc/core";
 import type { SurfaceOptions } from "vgpu";
 import { useGpu } from "./useGpu.ts";
 

@@ -1,6 +1,6 @@
-import { normalizeWheel } from "@gpu-components/core";
-import type { ViewportState } from "@gpu-components/core";
-import { useGpu, useGpuA11y, useGpuComponent } from "@gpu-components/react";
+import { normalizeWheel } from "@gpuc/core";
+import type { ViewportState } from "@gpuc/core";
+import { useGpu, useGpuA11y, useGpuComponent } from "@gpuc/react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, JSX } from "react";
 import { LogViewerComponent, type LogSource } from "./LogViewerComponent.ts";

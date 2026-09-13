@@ -8,8 +8,8 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { LabelOverlay, useCanvasRef, useGpu, useGpuA11y, useGpuComponent } from "@gpu-components/react";
-import type { PositionedLabel } from "@gpu-components/react";
+import { LabelOverlay, useCanvasRef, useGpu, useGpuA11y, useGpuComponent } from "@gpuc/react";
+import type { PositionedLabel } from "@gpuc/react";
 import {
   brushRectFromPixels,
   createPointerController,
@@ -21,8 +21,8 @@ import {
   timeToPixelX,
   trackRowHeight,
   trackToPixelY,
-} from "@gpu-components/core";
-import type { BrushRect, ViewportBounds, ViewportState } from "@gpu-components/core";
+} from "@gpuc/core";
+import type { BrushRect, ViewportBounds, ViewportState } from "@gpuc/core";
 import { TimelineComponent, type TimelineProps as TimelineComponentProps } from "./TimelineComponent.ts";
 import {
   firstSpanIndex,
@@ -153,7 +153,7 @@ function revealSpan(
  * currently-labeled/visible spans `visibleLabels` renders — the viewport pans to reveal a span that
  * scrolls out of view, same as a real trace-viewer's roving focus.
  *
- * Wheel gestures also drive inertial pan (PLAN.md Phase 3): a `VelocityTracker` (`@gpu-components/core`)
+ * Wheel gestures also drive inertial pan (PLAN.md Phase 3): a `VelocityTracker` (`@gpuc/core`)
  * is fed from each wheel event's pan delta, and `WHEEL_IDLE_MS` after the last one, decays that
  * velocity across `requestAnimationFrame`s via `decayVelocity` until it settles. Honors
  * `prefers-reduced-motion` (no decay animation at all, per §21/§32) and is cancelled by any new

@@ -6,10 +6,10 @@ import {
   pixelYToTrack,
   timeToPixelX,
   trackToPixelY,
-} from "@gpu-components/core";
-import type { ViewportBounds, ViewportState } from "@gpu-components/core";
-import { LabelOverlay, SR_ONLY, useGpu, useGpuA11y, useGpuComponent } from "@gpu-components/react";
-import type { PositionedLabel } from "@gpu-components/react";
+} from "@gpuc/core";
+import type { ViewportBounds, ViewportState } from "@gpuc/core";
+import { LabelOverlay, SR_ONLY, useGpu, useGpuA11y, useGpuComponent } from "@gpuc/react";
+import type { PositionedLabel } from "@gpuc/react";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { CSSProperties, JSX } from "react";
 import { NodeEditorComponent } from "./NodeEditorComponent.ts";

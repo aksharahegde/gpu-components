@@ -34,14 +34,14 @@ g.IS_REACT_ACT_ENVIRONMENT = true;
 
 const { createElement, act } = await import("react");
 const { createRoot } = await import("react-dom/client");
-const { createMockGpu, createMockCanvasContext, createRecordingContext2D } = await import("@gpu-components/testing");
-const { GPUProvider, useGpu } = await import("@gpu-components/react");
+const { createMockGpu, createMockCanvasContext, createRecordingContext2D } = await import("@gpuc/testing");
+const { GPUProvider, useGpu } = await import("@gpuc/react");
 const { GPUTimeline } = await import("./GPUTimeline.tsx");
 const { ingestSpans } = await import("./ingest.ts");
-const { CANVAS2D_CAPS } = await import("@gpu-components/core");
+const { CANVAS2D_CAPS } = await import("@gpuc/core");
 type Gpu = import("vgpu").Gpu;
-type GpuRuntime = import("@gpu-components/core").GpuRuntime;
-type ViewportState = import("@gpu-components/core").ViewportState;
+type GpuRuntime = import("@gpuc/core").GpuRuntime;
+type ViewportState = import("@gpuc/core").ViewportState;
 
 // Same convention as GPUProvider.test.ts: canvases resolve against whichever mock Gpu the test's
 // GPUProvider most recently connected to. "2d" is for the Canvas2D fallback path (PLAN.md §22,

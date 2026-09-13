@@ -8,7 +8,7 @@ import {
   ResourceRegistry,
   type Capabilities,
   type ComponentContext,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { ingestRows, type GridColumn } from "./ingest.ts";
 import { GridComponent } from "./GridComponent.ts";
 

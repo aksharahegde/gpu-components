@@ -50,7 +50,7 @@ describe("import extension rewriting — the transform that makes copied source 
     const source = [
       `import { a } from "./ingest.ts";`,
       `import { b } from "../shared/util.tsx";`,
-      `import { c } from "@gpu-components/core";`,
+      `import { c } from "@gpuc/core";`,
       `import { d } from "vgpu";`,
       `export { e } from "./sub/thing.ts";`,
     ].join("\n");
@@ -60,7 +60,7 @@ describe("import extension rewriting — the transform that makes copied source 
     assert.match(out, /from "\.\.\/shared\/util"/);
     assert.match(out, /from "\.\/sub\/thing"/);
     // Package specifiers must survive untouched, including ones that merely contain a dot.
-    assert.match(out, /from "@gpu-components\/core"/);
+    assert.match(out, /from "@gpuc\/core"/);
     assert.match(out, /from "vgpu"/);
   });
 
@@ -78,7 +78,7 @@ describe("provenance header", () => {
   it("stamps the component and version, and round-trips through stripHeader", () => {
     const body = `export const x = 1;\n`;
     const stamped = stampHeader(body, "timeline", "0.4.2");
-    assert.match(stamped, /^\/\/ @gpu-components\/timeline@0\.4\.2\n/);
+    assert.match(stamped, /^\/\/ @gpuc\/timeline@0\.4\.2\n/);
     assert.equal(stripHeader(stamped), body);
   });
 
@@ -102,7 +102,7 @@ describe("registry integrity", () => {
 
   it("records the packages each component needs", () => {
     for (const item of registry.items) {
-      assert.ok(item.dependencies.includes("@gpu-components/core"), `${item.name} should need core`);
+      assert.ok(item.dependencies.includes("@gpuc/core"), `${item.name} should need core`);
       assert.ok(item.files.length > 0);
     }
   });
@@ -119,7 +119,7 @@ describe("add", () => {
     assert.deepEqual(written, expected);
 
     const index = readFileSync(path.join(dir, "index.ts"), "utf8");
-    assert.match(index, /^\/\/ @gpu-components\/scatter@/);
+    assert.match(index, /^\/\/ @gpuc\/scatter@/);
     assert.doesNotMatch(index, /from "\.\/[^"]*\.tsx?"/, "no .ts extensions may survive into the copy");
     assert.ok(path.relative(cwd, dir).startsWith("components"), "defaults under components/gpu");
   });
@@ -143,7 +143,7 @@ describe("add", () => {
     add(registry, componentsRoot, "scatter", io);
     writeFileSync(path.join(targetDir(io, "scatter"), "index.ts"), "// mine\n");
     assert.equal(add(registry, componentsRoot, "scatter", io, { force: true }), 0);
-    assert.match(readFileSync(path.join(targetDir(io, "scatter"), "index.ts"), "utf8"), /@gpu-components\/scatter@/);
+    assert.match(readFileSync(path.join(targetDir(io, "scatter"), "index.ts"), "utf8"), /@gpuc\/scatter@/);
   });
 
   it("honours --path", () => {
@@ -161,7 +161,7 @@ describe("missing dependencies", () => {
       JSON.stringify({ dependencies: { react: "^18.0.0", vgpu: "^0.3.1" } }),
     );
     const item = registry.items.find((i) => i.name === "heatmap")!;
-    assert.deepEqual(missingDependencies(cwd, item), ["@gpu-components/core", "@gpu-components/react"]);
+    assert.deepEqual(missingDependencies(cwd, item), ["@gpuc/core", "@gpuc/react"]);
   });
 
   it("treats a project with no package.json as missing everything", () => {
@@ -234,7 +234,7 @@ describe("doctor", () => {
     const checks = doctorChecks(cwd, registry);
     const failed = checks.filter((c) => !c.ok).map((c) => c.name);
     assert.ok(failed.includes("project"), "no package.json should fail");
-    assert.ok(failed.includes("@gpu-components/core"));
+    assert.ok(failed.includes("@gpuc/core"));
     assert.ok(failed.includes("vgpu"));
   });
 
@@ -244,8 +244,8 @@ describe("doctor", () => {
       path.join(cwd, "package.json"),
       JSON.stringify({
         dependencies: {
-          "@gpu-components/core": "^0.1.0",
-          "@gpu-components/react": "^0.1.0",
+          "@gpuc/core": "^0.1.0",
+          "@gpuc/react": "^0.1.0",
           vgpu: "^0.3.1",
           react: "^18.3.1",
         },
@@ -282,7 +282,7 @@ describe("list", () => {
     assert.equal(list(registry, io), 0);
     const text = out.join("\n");
     for (const item of registry.items) assert.ok(text.includes(item.name), item.name);
-    assert.match(text, /npx gpu-components add/);
+    assert.match(text, /npx @gpuc\/cli add/);
   });
 });
 

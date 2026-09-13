@@ -9,7 +9,7 @@ import {
   type Capabilities,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { cpuHistogram } from "./bins.ts";
 import { ingestNumbers } from "./ingest.ts";
 import { HistogramComponent } from "./HistogramComponent.ts";

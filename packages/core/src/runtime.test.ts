@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createMockCanvas, createMockRuntime, tick } from "@gpu-components/testing";
+import { createMockCanvas, createMockRuntime, tick } from "@gpuc/testing";
 import { EMPTY_PLAN } from "./component.ts";
 import type { ComponentContext, GpuComponent, RenderPlan } from "./component.ts";
 

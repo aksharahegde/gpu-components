@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import * as stylex from '@stylexjs/stylex'
-import { GPUProvider, useGpu } from '@gpu-components/react'
+import { GPUProvider, useGpu } from '@gpuc/react'
 import { GPUTimeline, ingestSpans, type RawSpan } from '../../../../registry/timeline'
 import { color, font, radius } from '../tokens.stylex'
 import type { SX } from '../ui'

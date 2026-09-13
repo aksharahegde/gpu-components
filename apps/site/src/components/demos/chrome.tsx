@@ -2,7 +2,7 @@
 
 import * as stylex from '@stylexjs/stylex'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import type { GpuRuntimeOptions } from '@gpu-components/core'
+import type { GpuRuntimeOptions } from '@gpuc/core'
 import { color, font, radius, shadow } from '../../tokens.stylex'
 
 /**

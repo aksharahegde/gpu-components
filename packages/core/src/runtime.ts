@@ -45,7 +45,7 @@ export interface GpuRuntimeOptions {
    * Canvas2D path. */
   readonly onFallback?: (reason: string) => void;
   /** Test-only: overrides how `create()` gets its `Gpu` + `Capabilities`, bypassing the browser
-   * `navigator.gpu` probe and `init()` entirely. `@gpu-components/testing`'s mock runtime uses
+   * `navigator.gpu` probe and `init()` entirely. `@gpuc/testing`'s mock runtime uses
    * this so code that calls `GpuRuntime.create()` itself (e.g. `<GPUProvider>`, which cannot be
    * pointed at `createWithGpu()`) can still reach `caps.webgpu === true` under `vgpu/mock`. Also
    * `recover()`'s default reconnect strategy, unless `reconnect` overrides it separately. */
@@ -176,7 +176,7 @@ export class GpuRuntime implements RuntimeHandle {
   }
 
   /**
-   * Escape hatch for callers that already hold a `Gpu` (chiefly `@gpu-components/testing`, which
+   * Escape hatch for callers that already hold a `Gpu` (chiefly `@gpuc/testing`, which
    * builds one from `vgpu/mock`'s `createMockAdapter` — there is no `navigator.gpu` to probe under
    * Node). Skips capability probing and `init()`; `caps` is taken as given. Still wires up
    * device-loss recovery, so a mock device's `.destroy()` exercises the same recovery path a real

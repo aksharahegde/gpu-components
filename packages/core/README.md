@@ -1,11 +1,11 @@
-# @gpu-components/core
+# @gpuc/core
 
 Framework-independent GPU runtime for [gpu-components](https://gpuc.akshara.dev), built on
 [vgpu](https://vgpu.sh). One `GpuRuntime` per page — one `GPUDevice`, one frame scheduler, one
 `submit()` — shared by every mounted component instead of each component opening its own device.
 
 This package has no React dependency. If you're using React, install
-[`@gpu-components/react`](https://www.npmjs.com/package/@gpu-components/react) instead, which
+[`@gpuc/react`](https://www.npmjs.com/package/@gpuc/react) instead, which
 wraps this runtime in a `<GPUProvider>` and hooks.
 
 ## What's in here
@@ -26,7 +26,7 @@ wraps this runtime in a `<GPUProvider>` and hooks.
 ## Install
 
 ```bash
-npm i @gpu-components/core
+npm i @gpuc/core
 ```
 
 ## Why a shared runtime
@@ -37,7 +37,7 @@ libraries each drawing their own `<canvas>`. `GpuRuntime` exists so a page can m
 heatmap, a grid, and a scatter plot through **one** device, **one** frame, **one** submit.
 
 Components in the [registry](https://gpuc.akshara.dev/playground) are copied into your repo
-(via `npx gpu-components add <name>`) so you own and can edit the rendering code; this runtime is
+(via `npx @gpuc/cli add <name>`) so you own and can edit the rendering code; this runtime is
 the part that stays a versioned dependency underneath them.
 
 See [gpuc.akshara.dev/architecture](https://gpuc.akshara.dev/architecture) for the full runtime

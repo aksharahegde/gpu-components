@@ -2,8 +2,8 @@
 
 import * as stylex from '@stylexjs/stylex'
 import { useEffect, useMemo, useState } from 'react'
-import { GPUProvider, useGpu } from '@gpu-components/react'
-import type { ViewportState } from '@gpu-components/core'
+import { GPUProvider, useGpu } from '@gpuc/react'
+import type { ViewportState } from '@gpuc/core'
 import { GPUImageDiff, DIFF_MODES, generateImage, ingestPair } from '../../../../../registry/imagediff'
 import type { DiffMode } from '../../../../../registry/imagediff'
 import { Btn, Dim, Field, fmtInt, Hint, PROVIDER_OPTIONS, s, Segmented, useMeasuredStage } from './chrome'

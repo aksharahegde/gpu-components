@@ -9,7 +9,7 @@ import {
   type Capabilities,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { generateLogLines, type LogLine } from "./ingest.ts";
 import { LogViewerComponent, type LogSource } from "./LogViewerComponent.ts";
 import { MINIMAP_BUCKETS } from "./logviewer.wgsl.ts";

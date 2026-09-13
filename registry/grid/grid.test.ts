@@ -1,14 +1,14 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { frame, target, uniforms, type Gpu } from "vgpu";
-import { createMockGpu, createRecordingContext2D } from "@gpu-components/testing";
+import { createMockGpu, createRecordingContext2D } from "@gpuc/testing";
 import {
   createWarningsLog,
   gpuPass,
   NO_WEBGPU_CAPABILITIES,
   ResourceRegistry,
   type ComponentContext,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { columnAt, columnOffset, computeColumnRanges, ingestRows, totalWidth, type GridColumn } from "./ingest.ts";
 import { GridComponent } from "./GridComponent.ts";
 import { drawGridText, HEADER_HEIGHT } from "./textLayer.ts";

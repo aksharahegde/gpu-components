@@ -8,7 +8,7 @@ import {
   ResourceRegistry,
   type Capabilities,
   type ComponentContext,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { TimelineComponent } from "./TimelineComponent.ts";
 import { ingestSpans } from "./ingest.ts";
 

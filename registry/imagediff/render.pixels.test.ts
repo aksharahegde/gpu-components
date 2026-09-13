@@ -9,7 +9,7 @@ import {
   type Capabilities,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { generateImage, ingestPair, type DiffMode } from "./ingest.ts";
 import { ImageDiffComponent } from "./ImageDiffComponent.ts";
 

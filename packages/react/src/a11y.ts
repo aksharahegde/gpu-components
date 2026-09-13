@@ -12,7 +12,7 @@ import type { CSSProperties, ReactElement, ReactNode } from "react";
  * label layer. Three independent implementations of an architectural guarantee is how the
  * guarantee rots — quietly, one component at a time. A fourth (`GPUScatter`) was the point to stop.
  *
- * It lives in `@gpu-components/react` and not `@gpu-components/core` because it is DOM and React:
+ * It lives in `@gpuc/react` and not `@gpuc/core` because it is DOM and React:
  * §16.1's table already assigns "DOM event wiring" and framework glue to the adapter, and §25 says
  * `core` carries "no React, no DOM assumptions beyond canvas". A future Vue adapter reimplements
  * this file, which is ~150 lines, rather than `core` growing a DOM dependency.

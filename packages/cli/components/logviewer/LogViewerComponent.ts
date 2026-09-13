@@ -1,11 +1,11 @@
-import { RingBuffer } from "@gpu-components/core";
+import { RingBuffer } from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
   HitResult,
   RenderPlan,
   ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { compute, draw, storage, uniforms } from "vgpu";
 import type { Compute, Draw, SharedUniforms, StorageBuffer } from "vgpu";
 

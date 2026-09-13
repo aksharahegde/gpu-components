@@ -1,5 +1,5 @@
 {
-  "name": "@gpu-components/bench",
+  "name": "@gpuc/bench",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,8 +12,8 @@
     "trend": "node ci/trend.mjs"
   },
   "dependencies": {
-    "@gpu-components/core": "*",
-    "@gpu-components/testing": "*",
+    "@gpuc/core": "*",
+    "@gpuc/testing": "*",
     "vgpu": "^0.3.1"
   },
   "devDependencies": {

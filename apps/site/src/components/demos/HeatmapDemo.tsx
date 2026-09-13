@@ -2,8 +2,8 @@
 
 import * as stylex from '@stylexjs/stylex'
 import { useEffect, useMemo, useState } from 'react'
-import { GPUProvider, useGpu } from '@gpu-components/react'
-import type { ViewportState } from '@gpu-components/core'
+import { GPUProvider, useGpu } from '@gpuc/react'
+import type { ViewportState } from '@gpuc/core'
 import { GPUHeatmap, ingestMatrix, type HeatmapData } from '../../../../../registry/heatmap'
 import { Hint, PROVIDER_OPTIONS, s, useMeasuredStage } from './chrome'
 
@@ -76,7 +76,7 @@ function HeatmapStage() {
       </div>
       <p {...stylex.props(s.footnote)}>
         This component was the architecture test: it was built to find out whether{' '}
-        <code>@gpu-components/core</code> could host a second, differently-shaped component without
+        <code>@gpuc/core</code> could host a second, differently-shaped component without
         changes. It needed exactly one — a second axis on the viewport — and that one change was
         written down rather than quietly patched.
       </p>

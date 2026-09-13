@@ -9,7 +9,7 @@ import {
   type Capabilities,
   type ComponentContext,
   type ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { WhiteboardComponent } from "./WhiteboardComponent.ts";
 import type { WhiteboardShape } from "./ingest.ts";
 

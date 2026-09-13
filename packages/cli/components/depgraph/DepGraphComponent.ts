@@ -6,7 +6,7 @@ import {
   pixelXToTime,
   pixelYToTrack,
   viewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -15,7 +15,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { uniforms } from "vgpu";
 import type { SharedUniforms } from "vgpu";
 import { NODE_STRIDE, packNodes, type DepGraphData } from "./ingest.ts";

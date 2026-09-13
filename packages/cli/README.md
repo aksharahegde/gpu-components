@@ -1,7 +1,7 @@
-# gpu-components
+# gpuc
 
 Copy [gpu-components](https://gpuc.akshara.dev) source into your repo. The component becomes
-yours to edit; the runtime (`@gpu-components/core` / `@gpu-components/react`) stays a versioned
+yours to edit; the runtime (`@gpuc/core` / `@gpuc/react`) stays a versioned
 npm dependency underneath it — the same split [shadcn/ui](https://ui.shadcn.com) popularized for
 DOM components, applied to WebGPU ones.
 
@@ -10,7 +10,7 @@ DOM components, applied to WebGPU ones.
 No install needed — run it with `npx`:
 
 ```bash
-npx gpu-components add timeline
+npx @gpuc/cli add timeline
 ```
 
 That copies the timeline component's source into your repo (default `./components/gpu`, override
@@ -19,10 +19,10 @@ with `--path`) and reports any peer dependencies you still need to install.
 ### Commands
 
 ```
-npx gpu-components add <component> [--path <dir>] [--force]
-npx gpu-components diff <component> [--path <dir>]
-npx gpu-components doctor
-npx gpu-components list
+npx @gpuc/cli add <component> [--path <dir>] [--force]
+npx @gpuc/cli diff <component> [--path <dir>]
+npx @gpuc/cli doctor
+npx @gpuc/cli list
 ```
 
 - **`add`** — copy a component's source into your repo. Refuses to overwrite an existing file
@@ -37,7 +37,7 @@ npx gpu-components list
 
 Sixteen components ship through this CLI, one shared runtime — timelines, heatmaps, grids, scatter
 plots, and more. (A seventeenth, GPUAnnotationCanvas, is playground-only for v1 — run
-`npx gpu-components list` for the current, authoritative set.) Browse them live at
+`npx @gpuc/cli list` for the current, authoritative set.) Browse them live at
 [gpuc.akshara.dev/playground](https://gpuc.akshara.dev/playground); each has its own demo, a
 "when NOT to use this" section with a measured crossover point, and a Canvas2D fallback for the
 under-10% of browsers without WebGPU.

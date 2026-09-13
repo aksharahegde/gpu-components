@@ -8,9 +8,9 @@ import { util } from '../ui'
 /**
  * A copyable one-line command.
  *
- * Deliberately does not present itself as working: nothing is on npm yet, so the caller is
- * expected to carry the caveat next to it (`PRODUCT.md`'s content rules — the site never implies a
- * capability it does not have). This component only handles the copy affordance.
+ * Renders the command as-is with no status claim of its own — the caller carries any caveat next
+ * to it (`PRODUCT.md`'s content rules — the site never implies a capability it does not have).
+ * This component only handles the copy affordance.
  */
 export function InstallCommand({ command, label }: { command: string; label?: string }) {
   const [copied, setCopied] = useState(false)

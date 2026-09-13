@@ -1,5 +1,5 @@
 import { createElement, useContext, useEffect, useState, type ReactElement } from "react";
-import type { Capabilities, FrameStats, GpuRuntime, Warning } from "@gpu-components/core";
+import type { Capabilities, FrameStats, GpuRuntime, Warning } from "@gpuc/core";
 import { GpuContext } from "./GPUProvider.ts";
 
 export interface GpuInspectorProps {

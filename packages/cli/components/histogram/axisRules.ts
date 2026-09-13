@@ -2,7 +2,7 @@
  * Value-axis gridlines for `GPUHistogram`, through `LineLayer`.
  */
 
-import { LINE_FLAG_CLIP_Y, packRgba8, type LineInstance, type ViewportState } from "@gpu-components/core";
+import { LINE_FLAG_CLIP_Y, packRgba8, type LineInstance, type ViewportState } from "@gpuc/core";
 
 const TARGET_TICKS = 8;
 const MAX_RULES = 64;

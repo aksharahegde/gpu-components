@@ -1,5 +1,5 @@
-import { timeToPixelX, trackRowHeight, trackToPixelY } from "@gpu-components/core";
-import type { SemanticModel, ViewportState } from "@gpu-components/core";
+import { timeToPixelX, trackRowHeight, trackToPixelY } from "@gpuc/core";
+import type { SemanticModel, ViewportState } from "@gpuc/core";
 import type { SpanBuffers } from "./ingest.ts";
 
 export interface LabelPlacement {

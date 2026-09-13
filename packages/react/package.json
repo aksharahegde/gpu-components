@@ -1,5 +1,5 @@
 {
-  "name": "@gpu-components/react",
+  "name": "@gpuc/react",
   "version": "0.1.0",
   "type": "module",
   "description": "React adapter for gpu-components. Owns no GPU state.",
@@ -28,7 +28,7 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@gpu-components/core": "^0.1.0",
+    "@gpuc/core": "^0.1.0",
     "vgpu": "^0.3.1"
   },
   "peerDependencies": {
@@ -36,7 +36,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@gpu-components/testing": "*",
+    "@gpuc/testing": "*",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",

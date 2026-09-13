@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // PLAN.md §32's "Developer experience" acceptance criterion, verified for real:
 //
-//   npm i @gpu-components/core @gpu-components/react && npx gpu-components add timeline
+//   npm i @gpuc/core @gpuc/react && npx @gpuc/cli add timeline
 //   -> a rendering <GPUTimeline /> in under five minutes
 //
 // on real freshly-scaffolded Vite / Next.js (App Router) / React Router v7 apps. Run deliberately
@@ -13,7 +13,7 @@
 // is what that merged tool actually is. We test that, not legacy `create-remix` — see the
 // `reactRouter` scenario below.
 //
-// None of @gpu-components/{core,react} or `gpu-components` (the CLI) are published to npm. A real
+// None of @gpuc/{core,react} or `gpu-components` (the CLI) are published to npm. A real
 // stranger's `npm i` resolves a real published tarball, so this script builds one with `npm pack`
 // (never `npm link`, which is symlinks and would hide real packaging bugs, e.g. a wrong `files`
 // field) and installs that, exactly as a real consumer would.
@@ -125,7 +125,7 @@ function spawnServer(cmd, args, opts) {
 /** The smallest valid `<GPUTimeline>` mount: one span, a viewport covering it, no controlled state
  * — mirrors `GPUTimeline.test.tsx`'s and `apps/site`'s own usage, minus everything demo-only. */
 function demoComponentSource(relativeToComponentsDir = "../components/gpu/timeline") {
-  return `import { GPUProvider } from "@gpu-components/react";
+  return `import { GPUProvider } from "@gpuc/react";
 import { GPUTimeline, ingestSpans } from "${relativeToComponentsDir}";
 
 const spans = ingestSpans([{ start: 0, duration: 10, track: 0, label: "install-e2e" }]);
@@ -175,8 +175,8 @@ async function assertCanvasPainted(page, url) {
 }
 
 async function installTarballsAndAddComponent(appDir, tarballs) {
-  // Real `npm i` of the tarballs, exactly as a consumer's `npm i @gpu-components/core
-  // @gpu-components/react` (+ CLI) would resolve a real published version. `vgpu` is `core`'s own
+  // Real `npm i` of the tarballs, exactly as a consumer's `npm i @gpuc/core
+  // @gpuc/react` (+ CLI) would resolve a real published version. `vgpu` is `core`'s own
   // declared dependency (`^0.3.1`, published on npm — verified via `npm view vgpu versions`) so npm
   // resolves it from the real registry, same as any other transitive dependency.
   //

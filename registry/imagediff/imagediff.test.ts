@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { frame, target, uniforms, type Gpu } from "vgpu";
-import { createMockGpu } from "@gpu-components/testing";
+import { createMockGpu } from "@gpuc/testing";
 import {
   createImageTexture,
   createWarningsLog,
@@ -10,7 +10,7 @@ import {
   NO_WEBGPU_CAPABILITIES,
   ResourceRegistry,
   type ComponentContext,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { DIFF_MODES, generateImage, ingestPair, modeIndex } from "./ingest.ts";
 import { ImageDiffComponent } from "./ImageDiffComponent.ts";
 

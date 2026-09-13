@@ -1,4 +1,4 @@
-import { assertBufferBudget, dispatchWorkgroups, viewportUniforms } from "@gpu-components/core";
+import { assertBufferBudget, dispatchWorkgroups, viewportUniforms } from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -6,7 +6,7 @@ import type {
   RenderPlan,
   ViewportState,
   ViewportUniforms,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { compute, draw, pingPongStorage, storage, uniforms } from "vgpu";
 import type { Compute, Draw, Gpu, PingPongStorage, SharedUniforms, StorageBuffer } from "vgpu";
 import { EDGE_STRIDE, POSITION_STRIDE, type GraphData } from "./ingest.ts";

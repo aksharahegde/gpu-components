@@ -1,4 +1,4 @@
-import { RingBuffer } from "@gpu-components/core";
+import { RingBuffer } from "@gpuc/core";
 import type {
   ComponentContext,
   GpuComponent,
@@ -6,7 +6,7 @@ import type {
   RenderPlan,
   RuntimeHandle,
   ViewportState,
-} from "@gpu-components/core";
+} from "@gpuc/core";
 import { compute, draw, storage, uniforms } from "vgpu";
 import type { Compute, Draw, SharedUniforms, StorageBuffer } from "vgpu";
 import { BAR_STRIDE, packBars, priceRange, validateBars, type Bar } from "./ingest.ts";

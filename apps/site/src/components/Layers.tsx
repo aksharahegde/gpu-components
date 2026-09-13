@@ -7,9 +7,9 @@ type LayerKind = 'app' | 'ours' | 'copied' | 'upstream' | 'foundation'
 
 const LAYERS: Array<{ name: string; who: string; kind: LayerKind }> = [
   { name: 'Application', who: 'your code', kind: 'app' },
-  { name: '@gpu-components/react', who: 'ours · npm', kind: 'ours' },
+  { name: '@gpuc/react', who: 'ours · npm', kind: 'ours' },
   { name: 'components/gpu/timeline/*', who: 'yours · copied', kind: 'copied' },
-  { name: '@gpu-components/core', who: 'ours · npm', kind: 'ours' },
+  { name: '@gpuc/core', who: 'ours · npm', kind: 'ours' },
   { name: 'vgpu', who: 'upstream', kind: 'upstream' },
   { name: 'WebGPU', who: 'browser', kind: 'foundation' },
 ]

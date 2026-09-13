@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { LINE_FLAG_CLIP_X, LINE_FLAG_CLIP_Y } from "@gpu-components/core";
-import type { ViewportState } from "@gpu-components/core";
+import { LINE_FLAG_CLIP_X, LINE_FLAG_CLIP_Y } from "@gpuc/core";
+import type { ViewportState } from "@gpuc/core";
 import { computeAxisRules, MAX_AXIS_RULES, niceTickStep, timeRuleTicks } from "./axisRules.ts";
 
 const viewport = (over: Partial<ViewportState> = {}): ViewportState => ({

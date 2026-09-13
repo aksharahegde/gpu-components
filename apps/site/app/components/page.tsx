@@ -120,7 +120,7 @@ function Components() {
         <Notice variant="accent">
           <B>The architecture test was GPUHeatmap, not GPUDataGrid.</B> The falsifiable claim was
           that the heatmap would ship requiring <em>zero</em> changes to{' '}
-          <C>@gpu-components/core</C>. It needed exactly one — a second axis on the viewport —
+          <C>@gpuc/core</C>. It needed exactly one — a second axis on the viewport —
           which is close enough to count and specific enough to be worth knowing. The abstraction
           held.
         </Notice>

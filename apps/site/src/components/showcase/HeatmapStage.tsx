@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import type { ViewportState } from '@gpu-components/core'
+import type { ViewportState } from '@gpuc/core'
 import { GPUHeatmap, ingestMatrix } from '../../../../../registry/heatmap'
 import { Stage } from './Stage'
 

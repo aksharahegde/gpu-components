@@ -1,5 +1,5 @@
 {
-  "name": "@gpu-components/testing",
+  "name": "@gpuc/testing",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit --pretty"
   },
   "dependencies": {
-    "@gpu-components/core": "*",
+    "@gpuc/core": "*",
     "vgpu": "^0.3.1"
   },
   "devDependencies": {
