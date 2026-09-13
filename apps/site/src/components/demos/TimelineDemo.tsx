@@ -8,13 +8,16 @@ import { GPUTimeline, ingestSpans, type RawSpan, type SpanBuffers } from '../../
 import { Field, fmtInt, fmtMs, Hint, mulberry32, PROVIDER_OPTIONS, Readout, s, useMeasuredStage } from './chrome'
 
 const SIZES = [1_000, 10_000, 100_000, 500_000] as const
-const SHAPES = ['bursty', 'shallow-wide', 'deep-nested'] as const
+const SHAPES = ['bursty', 'shallow-wide', 'flame-graph'] as const
 type Shape = (typeof SHAPES)[number]
 
 const SHAPE_BLURB: Record<Shape, string> = {
   bursty: 'Realistic trace clustering — dense knots separated by quiet gaps.',
   'shallow-wide': 'Many tracks, little nesting. The width-bound case.',
-  'deep-nested': 'Flame-graph shaped: deep call stacks, heavy overlap per track.',
+  'flame-graph':
+    'A real call tree, not a look-alike: every child span sits strictly inside its parent’s ' +
+    'time window, depth is track, and same function always gets the same color. PLAN.md §6.2 ' +
+    'treats a flame graph as this component with different data, not a separate one — this is that claim, shown.',
 }
 
 /** Deterministic PRNG, so the dataset you are looking at is the dataset anyone else sees. */
@@ -26,10 +29,60 @@ const NAMES = [
 /** Total domain, in milliseconds — a 60-second trace, so zooming to a single span is a real journey. */
 const DOMAIN_MS = 60_000
 
+/**
+ * Simulates a real call stack via DFS, rather than picking `(track, start, duration)`
+ * independently per span — that scatter looks deep but never actually nests: nothing here
+ * guarantees a "child" sits inside its "parent's" time window. This does: `call()` only ever
+ * spends time inside the window its own caller gave it, so track (call depth) and time are
+ * never in conflict, which is the one property that makes something a flame graph instead of
+ * just a lot of short spans on many tracks.
+ */
+function buildFlameGraph(rnd: () => number, size: number, trackCount: number): RawSpan[] {
+  const spans: RawSpan[] = [];
+
+  function call(start: number, duration: number, depth: number): void {
+    if (spans.length >= size) return;
+    const nameIndex = Math.floor(rnd() * NAMES.length);
+    // Same function, same color everywhere it appears — the convention every real flame graph
+    // tool uses, and free here because `colorIndex` already exists for the highlight/palette path.
+    spans.push({ start, duration, track: depth, label: NAMES[nameIndex], colorIndex: nameIndex });
+    if (depth + 1 >= trackCount || duration < 0.1) return;
+
+    // Split this call's own duration into "self time" (gaps between children, and after the
+    // last one) and "children time" (recursive calls) — the two things a flame graph shows.
+    const childCount = 1 + Math.floor(rnd() * 3);
+    const childrenBudget = duration * (0.3 + rnd() * 0.5);
+    const selfTimeBudget = duration - childrenBudget;
+    const gap = () => (selfTimeBudget * rnd()) / (childCount + 1);
+
+    let cursor = start + gap();
+    let remaining = childrenBudget;
+    for (let c = 0; c < childCount && remaining > 0.1 && spans.length < size; c++) {
+      const isLast = c === childCount - 1;
+      const childDuration = isLast ? remaining : remaining * (0.2 + rnd() * 0.6);
+      if (cursor + childDuration > start + duration) break; // never overrun the parent
+      call(cursor, childDuration, depth + 1);
+      cursor += childDuration + gap();
+      remaining -= childDuration;
+    }
+  }
+
+  // Root calls tile the domain like independent requests, each its own trace.
+  let t = 0;
+  while (t < DOMAIN_MS && spans.length < size) {
+    const duration = 200 + rnd() * 1800;
+    call(t, duration, 0);
+    t += duration + rnd() * 100;
+  }
+  return spans;
+}
+
 function buildSpans(shape: Shape, size: number, trackCount: number): RawSpan[] {
   const rnd = mulberry32(0x5eed)
-  const spans: RawSpan[] = new Array(size)
 
+  if (shape === 'flame-graph') return buildFlameGraph(rnd, size, trackCount)
+
+  const spans: RawSpan[] = new Array(size)
   for (let i = 0; i < size; i++) {
     let start: number
     let duration: number
@@ -42,16 +95,10 @@ function buildSpans(shape: Shape, size: number, trackCount: number): RawSpan[] {
       start = burstStart + rnd() * (DOMAIN_MS / 240) * 0.6
       duration = rnd() * rnd() * 40 + 0.05
       track = Math.floor(rnd() * trackCount)
-    } else if (shape === 'shallow-wide') {
+    } else {
       start = rnd() * DOMAIN_MS
       duration = rnd() * 12 + 0.05
       track = Math.floor(rnd() * trackCount)
-    } else {
-      // Deep-nested: each track is a stack depth, and deeper spans are shorter and later.
-      track = Math.floor(rnd() ** 0.6 * trackCount)
-      const depthScale = 1 / (track + 1)
-      start = rnd() * DOMAIN_MS
-      duration = (rnd() * 300 + 0.05) * depthScale
     }
 
     spans[i] = {
