@@ -3,7 +3,10 @@
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types", "node"],
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": {
+      "@gpu-components/core": ["./src/index.ts"]
+    }
   },
   "include": ["src"]
 }

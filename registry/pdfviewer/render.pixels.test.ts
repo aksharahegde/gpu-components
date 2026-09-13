@@ -144,8 +144,9 @@ describe("GPUPdfViewer render correctness (real Dawn pixels)", () => {
     assert.deepEqual(component.hitTest(W / 2, H - 5), { id: 2 });
 
     const plan = component.plan();
+    const g = gpu;
     assert.doesNotThrow(() => {
-      frame(gpu, (f) => {
+      frame(g, (f) => {
         f.pass({ target: surfaceTarget, clear: true }, (fp) => {
           for (const pass of plan.renderPasses) pass.encode(gpuPass(fp));
         });

@@ -145,7 +145,7 @@ export class RingBuffer {
    * ring earns its keep and also where it is easiest to get wrong, so it is handled here once rather
    * than in every component that streams.
    */
-  append(records: ArrayBufferView<ArrayBuffer>): number {
+  append(records: ArrayBufferView): number {
     const { stride, capacity } = this;
     if (records.byteLength === 0) return 0;
     if (records.byteLength % stride !== 0) {
@@ -170,7 +170,9 @@ export class RingBuffer {
     const tail = (this.headSlot + this.liveCount) % capacity;
     const untilEnd = Math.min(incoming, capacity - tail);
 
-    const bytes: Uint8Array<ArrayBuffer> = new Uint8Array(records.buffer, records.byteOffset, records.byteLength);
+    // The buffers this ring is used with are always plain ArrayBuffers; SharedArrayBuffer support
+    // isn't part of the contract, so this narrows the untyped view back to what `write()` expects.
+    const bytes = new Uint8Array(records.buffer, records.byteOffset, records.byteLength) as Uint8Array<ArrayBuffer>;
     const from = sourceRecord * stride;
 
     this.writable.write(bytes.subarray(from, from + untilEnd * stride), tail * stride);
@@ -202,7 +204,7 @@ export class RingBuffer {
    *
    * `logicalIndex` is counted from the oldest live record, matching `slotOf` and the shaders.
    */
-  overwrite(logicalIndex: number, record: ArrayBufferView<ArrayBuffer>): void {
+  overwrite(logicalIndex: number, record: ArrayBufferView): void {
     if (!Number.isInteger(logicalIndex) || logicalIndex < 0 || logicalIndex >= this.liveCount) {
       throw new RangeError(
         `gpu-components: ring overwrite index ${logicalIndex} is outside the ${this.liveCount} live records`,
@@ -213,7 +215,7 @@ export class RingBuffer {
         `gpu-components: ring overwrite needs exactly one ${this.stride}-byte record, got ${record.byteLength} bytes`,
       );
     }
-    const bytes: Uint8Array<ArrayBuffer> = new Uint8Array(record.buffer, record.byteOffset, record.byteLength);
+    const bytes = new Uint8Array(record.buffer, record.byteOffset, record.byteLength) as Uint8Array<ArrayBuffer>;
     // One record never straddles the end — slots are whole records — so this is always one write.
     this.writable.write(bytes, this.slotOf(logicalIndex) * this.stride);
   }
