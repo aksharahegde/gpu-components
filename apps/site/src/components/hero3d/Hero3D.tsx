@@ -124,6 +124,11 @@ export function Hero3D() {
       pointerX: pointer?.x ?? null,
       pointerY: pointer?.y ?? null,
       scrollCollapse,
+      // TEMPORARY (Phase 1 of the camera-journey extension): reuses `scrollCollapse`'s exact 0..1
+      // range — one hero-height of scroll — so the waypoint camera move can be validated end to
+      // end before inventing new scroll-range math. Phase 3 extends the observed range to span
+      // multiple sections so the journey isn't compressed into the hero's own scroll-out.
+      journeyT: scrollCollapse,
     }),
     [reducedMotion, pointer, scrollCollapse],
   )

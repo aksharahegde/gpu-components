@@ -13,7 +13,7 @@ import {
 import { orbitControls, perspectiveCamera, plane, type OrbitControls, type PerspectiveCamera } from "vgpu/scene";
 import { EMPTY_PLAN, type ComponentContext, type FrameContext, type GpuComponent, type RenderPlan } from "@gpu-components/core";
 import { HERO3D_WGSL } from "./shader.ts";
-import { buildHeroScene, COLLAPSED_DEPTH } from "./data.ts";
+import { buildHeroScene, COLLAPSED_DEPTH, WAYPOINTS, journeyPose } from "./data.ts";
 import { CAMERA_FAR, CAMERA_FOV_Y_DEG, CAMERA_NEAR, CAMERA_POSITION_Z } from "./cameraSpec.ts";
 
 let nextId = 0;
@@ -27,6 +27,13 @@ export interface Hero3DProps {
   /** 0 = settled/in view, 1 = fully collapsed for scroll-out. Driven directly by scroll position
    * (the host's own gesture, so no extra easing) — see `Hero3D.tsx`. */
   readonly scrollCollapse: number;
+  /** 0 = waypoint 1 (today's settled hero pose), 1 = the last of `data.ts`'s `WAYPOINTS`.
+   * Continuous — `update()` lerps the bracketing pair via `journeyPose()` and drives the camera's
+   * `target`/`distance` straight off it, no separate easing (same reasoning as `scrollCollapse`
+   * below: the input already rides the reader's own scroll gesture). Phase 1: `Hero3D.tsx`
+   * temporarily reuses `scrollCollapse`'s exact scroll range for this — a real multi-section range
+   * is Phase 3's job. */
+  readonly journeyT: number;
 }
 
 /** One-time mount reveal: how long the collapse -> separate animation takes. */
@@ -86,6 +93,10 @@ const PARALLAX_DAMPING_S = 0.35;
 interface SceneUniforms extends Record<string, unknown> {
   readonly sceneT: number;
   readonly collapsedZ: number;
+  /** Camera world position, re-set whenever `syncCamera` runs (i.e. whenever the camera actually
+   * moved — resize or orbit). `shader.ts`'s fragment stage uses it for the Phase 2 near-plane fade
+   * (distance from camera), not anything Phase 1 needs on its own. */
+  readonly cameraPos: Float32Array;
 }
 
 /**
@@ -143,6 +154,9 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
   private scrollCollapse = 0;
   private lastPointerGoal = { yaw: 0, pitch: 0 };
   private lastSceneT = -1;
+  /** Last `journeyT` the orbit's `target`/`distance` were set from — `-1` never matches a clamped
+   * `[0, 1]` input, so the first `update()` always applies waypoint 1's pose. */
+  private lastJourneyT = -1;
 
   create(ctx: ComponentContext): void {
     this.gpu = ctx.gpu;
@@ -171,7 +185,13 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
     this.instanceBuffer = storage(gpu, instances.byteLength, "read");
     this.instanceBuffer.write(instances);
     // `collapsedZ` is set once and never changes — a scene-wide constant, not per-frame state.
-    this.sceneUniforms = uniforms(gpu, { sceneT: 0, collapsedZ: COLLAPSED_DEPTH });
+    // `cameraPos` is re-set from `syncCamera` below once the camera exists (`create()` order:
+    // camera is constructed above, so its `worldPosition` is already valid here).
+    this.sceneUniforms = uniforms(gpu, {
+      sceneT: 0,
+      collapsedZ: COLLAPSED_DEPTH,
+      cameraPos: this.camera.worldPosition,
+    });
 
     this.drawable = draw(gpu, {
       shader: HERO3D_WGSL,
@@ -224,7 +244,13 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
         this.dirty = true;
       }
       this.scrollCollapse = 0;
-      this.orbit?.set({ yaw: 0, pitch: 0 });
+      // Also locks the journey to waypoint 1 — `Hero3D.tsx` doesn't even track scroll while
+      // reduced motion is on, so `journeyT` would already read 0, but setting it explicitly here
+      // means this branch alone is enough to guarantee the settled pose, the same contract the
+      // rest of this `if` already keeps for yaw/pitch/reveal/scroll.
+      const settled = WAYPOINTS[0]!;
+      this.lastJourneyT = 0;
+      this.orbit?.set({ yaw: 0, pitch: 0, target: [0, 0, settled.targetZ], distance: settled.distance });
       return;
     }
 
@@ -238,6 +264,18 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
 
     if (props.scrollCollapse !== this.scrollCollapse) {
       this.scrollCollapse = props.scrollCollapse;
+      this.dirty = true;
+    }
+
+    const journeyT = Math.min(1, Math.max(0, props.journeyT));
+    if (journeyT !== this.lastJourneyT) {
+      this.lastJourneyT = journeyT;
+      const { targetZ, distance } = journeyPose(journeyT);
+      // `OrbitControls.set()` jumps `target`/`distance` immediately (no easing of its own) — fine
+      // here since `journeyT` is already a continuous scroll-driven signal, exactly like
+      // `scrollCollapse`/`sceneT` above; layering damping on top would just add lag to a value
+      // that's already smooth.
+      this.orbit?.set({ target: [0, 0, targetZ], distance });
       this.dirty = true;
     }
   }
@@ -329,5 +367,9 @@ export class Hero3DComponent implements GpuComponent<Hero3DProps> {
     this.lastAspect = aspect;
     this.camera.set({ aspect });
     this.drawable.set({ camera: { viewProjection: this.camera.viewProjection } });
+    // Phase 2's near-plane fade (`shader.ts`) needs the camera's current world position, not just
+    // its projection — re-push it alongside `viewProjection` any time either could have changed
+    // (a resize doesn't move the camera, but re-setting the same value is harmless).
+    this.sceneUniforms?.set({ cameraPos: this.camera.worldPosition });
   }
 }

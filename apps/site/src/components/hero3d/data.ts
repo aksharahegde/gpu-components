@@ -1,6 +1,6 @@
 import { mulberry32 } from '../demos/chrome'
 import { HERO3D_INSTANCE_STRIDE } from './shader'
-import { frustumHalfExtentsAt } from './cameraSpec'
+import { CAMERA_POSITION_Z, frustumHalfExtentsAt } from './cameraSpec'
 
 /**
  * Seeded scene data for the static "Stacked Surfaces" hero (Phase 1+2 — see the plan in the task
@@ -88,6 +88,52 @@ function rgba(rgb: readonly [number, number, number], a: number) {
  * jump cut. Exported for `Hero3DComponent` to set as the uniform's initial/constant value; kept
  * here, next to `DEPTH`, because it's part of this scene's authored geometry, not runtime state. */
 export const COLLAPSED_DEPTH = -4.2
+
+/** One stop on the scroll-driven camera journey (Phase 1 of the extension plan on top of this
+ * already-shipped hero): an `OrbitControls` `{target, distance}` pose, expressed the same way
+ * `Hero3DComponent.create()` already constructs its orbit (`target: [0, 0, targetZ]`, camera
+ * looking down `-Z`). Five stops, matching `DEPTH`'s five layers front-to-back-ish narrative:
+ *
+ * 1. **Stack** — today's shipped settled pose, unchanged (`target z=0`, `distance=CAMERA_POSITION_Z`).
+ * 2. **Backdrop** — pull back to take in the whole depth stack.
+ * 3. **Heatmap** — dolly to the densest layer (`DEPTH.heatmap`).
+ * 4. **Grid/Timeline** — continue forward, camera now only ~1.4 units from `DEPTH.scatter` — this
+ *    is exactly why Phase 2's near-plane fade exists (`shader.ts`).
+ * 5. **Dissolve** — placeholder only: Phase 5 wires this to the `<Showcase />` handoff and will
+ *    likely retune these two numbers once that fade is actually built; for now it just continues
+ *    the dolly one step further so `journeyPose` has a real last segment to interpolate into.
+ */
+export interface Waypoint {
+  readonly targetZ: number
+  readonly distance: number
+}
+
+export const WAYPOINTS: readonly Waypoint[] = [
+  { targetZ: 0, distance: CAMERA_POSITION_Z },
+  { targetZ: -4, distance: 7 },
+  { targetZ: DEPTH.heatmap, distance: 3 },
+  { targetZ: -3.6, distance: 2.2 },
+  { targetZ: -0.6, distance: 0.8 },
+] as const
+
+/** Linearly interpolates `targetZ`/`distance` between the bracketing pair of `WAYPOINTS` for
+ * `t` in `[0, 1]` (0 = waypoint 1, 1 = the last waypoint), clamping out-of-range input rather
+ * than extrapolating. `Hero3DComponent.update()` feeds this straight into `orbit.set({ target,
+ * distance })` every time `journeyT` changes — no separate easing on top (same reasoning as
+ * `scrollCollapse`/`sceneT`: the input already rides the reader's own scroll gesture). */
+export function journeyPose(t: number): Waypoint {
+  const clamped = Math.min(1, Math.max(0, t))
+  const segments = WAYPOINTS.length - 1
+  const scaled = clamped * segments
+  const i = Math.min(segments - 1, Math.floor(scaled))
+  const localT = scaled - i
+  const a = WAYPOINTS[i]!
+  const b = WAYPOINTS[i + 1]!
+  return {
+    targetZ: a.targetZ + (b.targetZ - a.targetZ) * localT,
+    distance: a.distance + (b.distance - a.distance) * localT,
+  }
+}
 
 function backdropLayer(): HeroInstance[] {
   // A single, near-full-frustum, very faint panel — grounds the stack without competing with the

@@ -20,6 +20,15 @@
  * that makes "separating in depth" visible under a perspective camera at all. Size ∝ 1/distance is
  * the whole effect; letting the projection do it for free (unchanged `sx`/`sy`, only `tz` moves) is
  * both the simpler shader and the one that actually reads as depth separating out.
+ *
+ * Phase 1+2 of the camera-journey extension (`data.ts`'s `WAYPOINTS`) dollies the camera through
+ * the depth stack, at its closest ~1.4 units from `DEPTH.scatter` — with no depth buffer
+ * (`Hero3DComponent`'s `draw()` call has `depth: false`) and no per-frame sort (layers are written
+ * back-to-front once, in `data.ts`), a layer the camera passes through would otherwise clip/punch
+ * through messily instead of just disappearing behind the lens. The near-plane fade below fixes
+ * that generally — any fragment close enough to the camera fades to transparent rather than
+ * popping through — which is also exactly the mechanism Phase 5 reuses for the dissolve-to-
+ * `<Showcase />` handoff, so it's distance-based, not conditioned on which waypoint is active.
  */
 export const HERO3D_WGSL = /* wgsl */ `
 struct Camera {
@@ -29,7 +38,12 @@ struct Camera {
 struct Scene {
   sceneT: f32,
   collapsedZ: f32,
+  cameraPos: vec3f,
 }
+
+/** How close (world units) a fragment can get to the camera before it's fully faded out — see the
+ * near-plane fade doc comment above. */
+const NEAR_FADE_DISTANCE: f32 = 1.5;
 
 struct Instance {
   tx: f32,
@@ -50,6 +64,12 @@ struct Instance {
 struct VertexOut {
   @builtin(position) position: vec4f,
   @location(0) color: vec4f,
+  // World-space distance from the camera to this vertex — a varying, not recomputed per fragment
+  // from interpolated world position, because every vertex of a given instance shares the same
+  // tz (planes stay upright and camera-facing by construction, see the doc comment above), so
+  // the distance barely varies across one quad's face; interpolating it directly is cheaper and
+  // visually identical.
+  @location(1) camDist: f32,
 }
 
 @vertex
@@ -67,14 +87,19 @@ fn vs_main(
   var out: VertexOut;
   out.position = camera.viewProjection * vec4f(world, 1.0);
   out.color = inst.color;
+  out.camDist = distance(world, scene.cameraPos);
   return out;
 }
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
+  // Near-plane fade: as the scroll-driven camera journey (data.ts's WAYPOINTS) dollies through
+  // the depth stack, a layer the camera passes through fades to transparent instead of clipping/
+  // punching through (no depth buffer, no per-frame sort — see the doc comment above).
+  let fade = smoothstep(0.0, NEAR_FADE_DISTANCE, in.camDist);
   // Straight (non-premultiplied) alpha — the "alpha" BlendPreset's (src-alpha,
   // one-minus-src-alpha) factors do the premultiply in the fixed-function blend unit.
-  return in.color;
+  return vec4f(in.color.rgb, in.color.a * fade);
 }
 `;
 
