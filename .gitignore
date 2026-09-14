@@ -2,6 +2,7 @@ node_modules
 dist
 .smoke
 *.local
+docs/internal/
 graphify-out/
 test-results/
 playwright-report/
