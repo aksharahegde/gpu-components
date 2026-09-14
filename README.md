@@ -30,8 +30,6 @@ npx @gpuc/cli add timeline
 - `apps/bench` — benchmark harness backing documented performance numbers
 - `apps/install-e2e` — end-to-end install verification
 
-See [`PLAN.md`](PLAN.md) and [`PRODUCT.md`](PRODUCT.md) for architecture and product rationale.
-
 ## License
 
 MIT © Akshara Hegde
