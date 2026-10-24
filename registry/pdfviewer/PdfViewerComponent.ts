@@ -12,6 +12,7 @@ import { draw, sampler, uniforms } from "vgpu";
 import type { Draw, Gpu, SharedUniforms } from "vgpu";
 import { pageAt, visiblePageRange, type PdfDocumentData } from "./ingest.ts";
 import { PAGE_WGSL } from "./page.wgsl.ts";
+import { shaderSource } from "@gpuc/core";
 
 export interface PdfViewerProps {
   readonly document: PdfDocumentData;
@@ -102,7 +103,7 @@ export class PdfViewerComponent implements GpuComponent<PdfViewerProps> {
     const placeholder = placeholderBitmap();
     this.slots = Array.from({ length: POOL_SIZE }, (_, i) => {
       const rectUniform = uniforms(ctx.gpu!, { x: 0, y: 0, w: 0, h: 0 });
-      const drawable = draw(ctx.gpu!, { shader: PAGE_WGSL, vertices: 6, label: `${this.id}-page-${i}` });
+      const drawable = draw(ctx.gpu!, { shader: shaderSource(PAGE_WGSL), vertices: 6, label: `${this.id}-page-${i}` });
       const texture = createImageTexture(ctx.gpu!, placeholder, this.caps, { label: `${this.id}-tex-${i}` });
       drawable.set({
         viewport: this.viewportUniform,

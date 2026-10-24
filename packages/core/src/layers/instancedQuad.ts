@@ -1,3 +1,4 @@
+import { shaderSource } from "../shaderSource.ts";
 import { draw, storage, type BlendPreset, type Draw, type Gpu, type StorageBuffer } from "vgpu";
 import type { WarningsLog } from "../warnings.ts";
 import {
@@ -97,7 +98,7 @@ export class InstancedQuadLayer {
     if (this.gpu) {
       this.buffer = storage(this.gpu, this.capacity * this.stride, "read");
       this.drawable = draw(this.gpu, {
-        shader: this.shader,
+        shader: shaderSource(this.shader),
         vertices: 6,
         blend: this.blend,
         label: this.label,

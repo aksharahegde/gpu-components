@@ -13,6 +13,7 @@ import { computeRange, VALUE_STRIDE, type HeatmapData } from "./ingest.ts";
 import { buildColormapLut, colormapKey, LUT_SIZE, type ColormapName } from "./colormap.ts";
 import { HEATMAP_WGSL } from "./heatmap.wgsl.ts";
 import { REDUCE_CHUNK_WGSL, REDUCE_FINAL_WGSL, REDUCE_WORKGROUP_SIZE } from "./reduce.wgsl.ts";
+import { shaderSource } from "@gpuc/core";
 
 export interface HeatmapProps {
   readonly data: HeatmapData;
@@ -124,8 +125,8 @@ export class HeatmapComponent implements GpuComponent<HeatmapProps> {
     this.gridUniform = uniforms(ctx.gpu!, { rows: 1, cols: 1, sampleX: 1, sampleY: 1 });
     this.reduceParams = uniforms(ctx.gpu!, { count: 0, chunkCount: 1 });
 
-    this.reduceChunk = compute(ctx.gpu!, REDUCE_CHUNK_WGSL);
-    this.reduceFinal = compute(ctx.gpu!, REDUCE_FINAL_WGSL);
+    this.reduceChunk = compute(ctx.gpu!, shaderSource(REDUCE_CHUNK_WGSL));
+    this.reduceFinal = compute(ctx.gpu!, shaderSource(REDUCE_FINAL_WGSL));
 
     // `range` is two f32s the render shader reads and pass 2 writes — never read back on the CPU.
     this.rangeBuffer = storage(ctx.gpu!, 2 * 4, "read-write");

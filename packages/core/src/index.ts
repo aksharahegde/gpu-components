@@ -98,3 +98,5 @@ export { createVelocityTracker, decayVelocity, INERTIA_STOP_VELOCITY } from "./i
 export type { VelocityTracker } from "./interaction/inertia.ts";
 export { brushRectFromPixels } from "./interaction/brush.ts";
 export type { BrushRect } from "./interaction/brush.ts";
+
+export { shaderSource } from "./shaderSource.ts";

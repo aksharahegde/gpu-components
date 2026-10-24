@@ -17,6 +17,7 @@ import {
   OVERVIEW_WGSL,
   OVERVIEW_WORKGROUP_SIZE,
 } from "./candlestick.wgsl.ts";
+import { shaderSource } from "@gpuc/core";
 
 /**
  * A growing series the component pulls from — the same shape `GPULogViewer` established, with one
@@ -134,12 +135,12 @@ export class CandlestickComponent implements GpuComponent<CandlestickProps> {
     });
 
     this.candleDraw = draw(ctx.gpu!, {
-      shader: CANDLE_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-candles`,
+      shader: shaderSource(CANDLE_WGSL), vertices: 6, blend: "alpha", label: `${this.id}-candles`,
     });
     this.overviewDraw = draw(ctx.gpu!, {
-      shader: OVERVIEW_DRAW_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-overview`,
+      shader: shaderSource(OVERVIEW_DRAW_WGSL), vertices: 6, blend: "alpha", label: `${this.id}-overview`,
     });
-    this.overviewCompute = compute(ctx.gpu!, OVERVIEW_WGSL);
+    this.overviewCompute = compute(ctx.gpu!, shaderSource(OVERVIEW_WGSL));
 
     this.candleDraw.set({ params: this.params, bars: this.ring.buffer });
     this.overviewDraw.set({ ov: this.overviewParams, buckets: this.bucketBuffer });

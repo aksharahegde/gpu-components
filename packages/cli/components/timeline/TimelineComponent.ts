@@ -34,6 +34,7 @@ import { REDUCE_DENSITY_WGSL } from "./reduceDensity.wgsl.ts";
 import { RASTER_WGSL } from "./raster.wgsl.ts";
 import { BRUSH_SELECT_WGSL } from "./brushSelect.wgsl.ts";
 import { createHighlightQuadPolicy, createRasterShadePolicy, createSpanQuadPolicy, cpuDensityBin, cpuReduceDensity } from "./fallback.ts";
+import { shaderSource } from "@gpuc/core";
 
 export interface TimelineProps {
   readonly spans: SpanBuffers;
@@ -263,7 +264,7 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
     });
 
     if (ctx.gpu) {
-      this.cullPipeline = compute(ctx.gpu, CULL_WGSL);
+      this.cullPipeline = compute(ctx.gpu, shaderSource(CULL_WGSL));
       this.cullParams = uniforms(ctx.gpu, { timeStart: 0, timeEnd: 0, count: 0 });
       this.indirectArgs = storage(ctx.gpu, RESET_INDIRECT_ARGS.byteLength, { indirect: true });
       this.cullPipeline.set({ params: this.cullParams, args: this.indirectArgs });
@@ -274,8 +275,8 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       this.ensureCullCapacity(this.uploadedSpans?.count ?? this.initialCapacity);
 
       this.raster.bind({ viewport: this.viewportUniform });
-      this.densityBinPipeline = compute(ctx.gpu, DENSITY_BIN_WGSL);
-      this.reduceDensityPipeline = compute(ctx.gpu, REDUCE_DENSITY_WGSL);
+      this.densityBinPipeline = compute(ctx.gpu, shaderSource(DENSITY_BIN_WGSL));
+      this.reduceDensityPipeline = compute(ctx.gpu, shaderSource(REDUCE_DENSITY_WGSL));
       this.densityParams = uniforms(ctx.gpu, { pixelColumns: PIXEL_COLUMNS, trackCount: 0 });
       // `cullParams` (the same `{timeStart, timeEnd, count}` object bound to `cullPipeline` above) is
       // byte-compatible with `densityBin.wgsl.ts`'s own `CullParams` struct — `uniforms()` reuses one
@@ -286,7 +287,7 @@ export class TimelineComponent implements GpuComponent<TimelineProps> {
       this.trackCapacity = 0;
       this.ensureDensityCapacity(this.currentViewport?.trackCount ?? 1);
 
-      this.brushPipeline = compute(ctx.gpu, BRUSH_SELECT_WGSL);
+      this.brushPipeline = compute(ctx.gpu, shaderSource(BRUSH_SELECT_WGSL));
       this.brushParams = uniforms(ctx.gpu, { timeStart: 0, timeEnd: 0, trackMin: 0, trackMax: 0, count: 0 });
       this.brushPipeline.set({ params: this.brushParams });
       this.selectionWordCapacity = 0;

@@ -22,6 +22,7 @@ import { BIN_WGSL, BIN_WORKGROUP_SIZE } from "./bin.wgsl.ts";
 import { REDUCE_MAX_WGSL, REDUCE_MAX_WORKGROUP_SIZE } from "./reduce.wgsl.ts";
 import { BAR_INSTANCE_STRIDE, BARS_WGSL } from "./bars.wgsl.ts";
 import { computeAxisRules, MAX_AXIS_RULES } from "./axisRules.ts";
+import { shaderSource } from "@gpuc/core";
 
 export interface HistogramProps {
   readonly data: HistogramData;
@@ -141,8 +142,8 @@ export class HistogramComponent implements GpuComponent<HistogramProps> {
     });
     this.reduceParams = uniforms(ctx.gpu!, { binCount: 1 });
 
-    this.binPipeline = compute(ctx.gpu!, BIN_WGSL);
-    this.reducePipeline = compute(ctx.gpu!, REDUCE_MAX_WGSL);
+    this.binPipeline = compute(ctx.gpu!, shaderSource(BIN_WGSL));
+    this.reducePipeline = compute(ctx.gpu!, shaderSource(REDUCE_MAX_WGSL));
     this.maxCountBuffer = storage(ctx.gpu!, 4, "read-write");
 
     this.barLayer.bindViewport(this.viewportUniform);

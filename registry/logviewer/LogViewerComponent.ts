@@ -28,6 +28,7 @@ import {
   MINIMAP_WGSL,
   MINIMAP_WORKGROUP_SIZE,
 } from "./logviewer.wgsl.ts";
+import { shaderSource } from "@gpuc/core";
 
 /**
  * A growing log stream the component pulls from.
@@ -152,11 +153,11 @@ export class LogViewerComponent implements GpuComponent<LogViewerProps> {
       widthPx: MINIMAP_WIDTH_PX, surfaceW: 1, surfaceH: 1, windowStart: 0, windowEnd: 1,
     });
 
-    this.rowDraw = draw(ctx.gpu!, { shader: LOG_ROWS_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-rows` });
+    this.rowDraw = draw(ctx.gpu!, { shader: shaderSource(LOG_ROWS_WGSL), vertices: 6, blend: "alpha", label: `${this.id}-rows` });
     this.minimapDraw = draw(ctx.gpu!, {
-      shader: MINIMAP_DRAW_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-minimap`,
+      shader: shaderSource(MINIMAP_DRAW_WGSL), vertices: 6, blend: "alpha", label: `${this.id}-minimap`,
     });
-    this.minimapCompute = compute(ctx.gpu!, MINIMAP_WGSL);
+    this.minimapCompute = compute(ctx.gpu!, shaderSource(MINIMAP_WGSL));
 
     this.rowDraw.set({ params: this.params, lines: this.ring.buffer, matches: this.matchBuffer });
     this.minimapDraw.set({ mm: this.minimapParams, buckets: this.bucketBuffer });

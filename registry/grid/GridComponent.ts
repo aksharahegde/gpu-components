@@ -111,6 +111,7 @@ export class GridComponent implements GpuComponent<GridProps> {
       selectedRow: -1,
       scrollX: 0,
       totalWidth: 0,
+      _pad: 0,
     });
     this.rules.bindViewport(this.viewportUniform);
     this.raster.bind({ viewport: this.viewportUniform, params: this.paramsUniform });

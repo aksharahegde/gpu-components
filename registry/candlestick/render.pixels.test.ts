@@ -107,7 +107,7 @@ async function render(
     });
   });
   await gpu.settled();
-  return { pixels: (await surfaceTarget.read()) as Uint8Array, component };
+  return { pixels: await surfaceTarget.color.read({ mipLevel: 0, region: "all" }), component };
 }
 
 function rgb(pixels: Uint8Array, x: number, y: number): [number, number, number] {
