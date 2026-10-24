@@ -25,7 +25,7 @@
     "test": "node --experimental-strip-types --test src/*.test.ts",
     "build": "tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
-    "prepare": "npm run build"
+    "prepare": "npm run build --workspace=@gpuc/core && npm run build"
   },
   "dependencies": {
     "@gpuc/core": "^0.1.0",
