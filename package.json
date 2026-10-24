@@ -17,5 +17,8 @@
     "pretypecheck": "npm run build:packages",
     "pretest": "npm run build:packages",
     "build:packages": "npm run build --workspace=packages/core --workspace=packages/react"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }
