@@ -12,6 +12,7 @@ import type { Compute, Draw, Gpu, PingPongStorage, SharedUniforms, StorageBuffer
 import { EDGE_STRIDE, POSITION_STRIDE, type TopologyData } from "./ingest.ts";
 import { LAYOUT_WGSL, LAYOUT_WORKGROUP_SIZE } from "./layout.wgsl.ts";
 import { EDGE_WGSL, NODE_WGSL } from "./topology.wgsl.ts";
+import { shaderSource } from "@gpuc/core";
 
 export interface TopologyProps {
   readonly data: TopologyData;
@@ -139,8 +140,8 @@ export class NetworkTopologyComponent implements GpuComponent<TopologyProps> {
     this.caps = ctx.caps;
     this.warnings = ctx.runtime.warnings;
 
-    this.layout = compute(ctx.gpu!, LAYOUT_WGSL);
-    this.layoutParams = uniforms(ctx.gpu!, { nodeCount: 0, ...DEFAULTS });
+    this.layout = compute(ctx.gpu!, shaderSource(LAYOUT_WGSL));
+    this.layoutParams = uniforms(ctx.gpu!, { nodeCount: 0, _pad: 0, ...DEFAULTS });
     this.topologyParams = uniforms(ctx.gpu!, {
       nodeSizePx: 8,
       edgeWidthPx: 1,
@@ -154,8 +155,8 @@ export class NetworkTopologyComponent implements GpuComponent<TopologyProps> {
       pxSize: [1, 1],
     });
 
-    this.nodeDraw = draw(ctx.gpu!, { shader: NODE_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-nodes` });
-    this.edgeDraw = draw(ctx.gpu!, { shader: EDGE_WGSL, vertices: 6, blend: "alpha", label: `${this.id}-edges` });
+    this.nodeDraw = draw(ctx.gpu!, { shader: shaderSource(NODE_WGSL), vertices: 6, blend: "alpha", label: `${this.id}-nodes` });
+    this.edgeDraw = draw(ctx.gpu!, { shader: shaderSource(EDGE_WGSL), vertices: 6, blend: "alpha", label: `${this.id}-edges` });
 
     // Allocate against whatever data is already held, so a device-loss replay rebuilds identically
     // (§10.6) — and a placeholder otherwise, so bindings are valid before the first update.

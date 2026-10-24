@@ -105,7 +105,7 @@ async function simulate(gpu: Gpu, frames: number) {
     });
     await gpu.settled();
 
-    pixels = (await surfaceTarget.read()) as Uint8Array;
+    pixels = await surfaceTarget.color.read({ mipLevel: 0, region: "all" });
     painted = 0;
     for (let p = 0; p < pixels.length; p += 4) {
       if (pixels[p] !== 0 || pixels[p + 1] !== 0 || pixels[p + 2] !== 0) painted++;

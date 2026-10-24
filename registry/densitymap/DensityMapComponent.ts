@@ -33,6 +33,7 @@ import {
 } from "./hexmath.ts";
 import { computeGraticule, MAX_GRATICULE } from "./graticule.ts";
 import { MAX_WORLD_OUTLINE, WORLD_OUTLINE_LINES } from "./worldOutline.ts";
+import { shaderSource } from "@gpuc/core";
 
 export interface DensityMapProps {
   readonly data: DensityMapData;
@@ -178,8 +179,8 @@ export class DensityMapComponent implements GpuComponent<DensityMapProps> {
     });
     this.reduceParams = uniforms(ctx.gpu!, { cellCount: 1 });
 
-    this.hexbinPipeline = compute(ctx.gpu!, HEXBIN_WGSL);
-    this.reducePipeline = compute(ctx.gpu!, REDUCE_MAX_WGSL);
+    this.hexbinPipeline = compute(ctx.gpu!, shaderSource(HEXBIN_WGSL));
+    this.reducePipeline = compute(ctx.gpu!, shaderSource(REDUCE_MAX_WGSL));
     this.maxCountBuffer = storage(ctx.gpu!, 4, "read-write");
 
     this.acquireLut(this.currentColormap);

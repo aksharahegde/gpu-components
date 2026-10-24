@@ -28,7 +28,8 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "vgpu": "^0.3.1"
+    "@vgpu/wgsl": "^0.6.0",
+    "vgpu": "^0.6.0"
   },
   "devDependencies": {
     "@gpuc/testing": "*",

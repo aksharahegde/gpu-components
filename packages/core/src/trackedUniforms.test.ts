@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createMockGpu } from "@gpuc/testing";
 import { createWarningsLog } from "./warnings.ts";
 import { trackedUniforms } from "./trackedUniforms.ts";
+import { shaderSource } from "./shaderSource.ts";
 
 describe("trackedUniforms", () => {
   it("does not report before crossing the unchanged-streak threshold", async () => {
@@ -56,7 +57,7 @@ describe("trackedUniforms", () => {
       @fragment fn fs_main() -> @location(0) vec4f { return vec4f(u.x, 0.0, 0.0, 1.0); }
     `;
     const t = target(gpu, { size: [2, 2] });
-    const d = draw(gpu, { shader, vertices: 3 });
+    const d = draw(gpu, { shader: shaderSource(shader), vertices: 3 });
     d.set({ u });
     u.set({ x: 0.5 });
 

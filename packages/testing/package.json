@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@gpuc/core": "*",
-    "vgpu": "^0.3.1"
+    "vgpu": "^0.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

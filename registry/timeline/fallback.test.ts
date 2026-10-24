@@ -13,6 +13,7 @@ import { ingestSpans, packInstances } from "./ingest.ts";
 import { TIMELINE_WGSL } from "./timeline.wgsl.ts";
 import { DENSITY_BIN_WGSL } from "./densityBin.wgsl.ts";
 import { PIXEL_COLUMNS } from "./TimelineComponent.ts";
+import { shaderSource } from "@gpuc/core";
 
 const VIEWPORT: ViewportUniforms = viewportUniforms({
   timeStart: 0,
@@ -186,7 +187,7 @@ describe("cpuDensityBin — CPU/GPU parity with densityBin.wgsl.ts", () => {
       const densityBuf = storage(gpu, trackCount * PIXEL_COLUMNS * 4, "read-write");
       densityBuf.write(new Uint32Array(trackCount * PIXEL_COLUMNS));
 
-      const pipeline = compute(gpu, DENSITY_BIN_WGSL);
+      const pipeline = compute(gpu, shaderSource(DENSITY_BIN_WGSL));
       pipeline.set({ params, instances: instancesBuf, density_params: densityParams, density: densityBuf });
       pipeline.dispatch(Math.ceil(spans.count / 64));
       await gpu.settled();

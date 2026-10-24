@@ -12,6 +12,7 @@ import { compute, sampler, storage, uniforms } from "vgpu";
 import type { Compute, Gpu, SharedUniforms, StorageBuffer } from "vgpu";
 import { modeIndex, type DiffMode, type ImagePair } from "./ingest.ts";
 import { DIFF_STATS_WGSL, DIFF_STATS_WORKGROUP_SIZE, IMAGE_DIFF_WGSL } from "./imagediff.wgsl.ts";
+import { shaderSource } from "@gpuc/core";
 
 export interface ImageDiffProps {
   readonly pair: ImagePair;
@@ -113,9 +114,12 @@ export class ImageDiffComponent implements GpuComponent<ImageDiffProps> {
       blend: 0.5,
       amplify: DEFAULT_AMPLIFY,
       threshold: DEFAULT_THRESHOLD,
+      _pad0: 0,
+      _pad1: 0,
+      _pad2: 0,
     });
-    this.statsParams = uniforms(ctx.gpu!, { width: 1, height: 1, threshold: DEFAULT_THRESHOLD });
-    this.statsPipeline = compute(ctx.gpu!, DIFF_STATS_WGSL);
+    this.statsParams = uniforms(ctx.gpu!, { width: 1, height: 1, threshold: DEFAULT_THRESHOLD, _pad: 0 });
+    this.statsPipeline = compute(ctx.gpu!, shaderSource(DIFF_STATS_WGSL));
     this.statsBuffer = storage(ctx.gpu!, 2 * 4, "read-write");
 
     this.raster.bind({ viewport: this.viewportUniform, params: this.diffParams });

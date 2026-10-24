@@ -88,7 +88,7 @@ async function render(gpu: Gpu, props: Partial<Parameters<ScatterComponent["upda
   });
   await gpu.settled();
 
-  const pixels = (await surfaceTarget.read()) as Uint8Array;
+  const pixels = await surfaceTarget.color.read({ mipLevel: 0, region: "all" });
   let painted = 0;
   for (let i = 0; i < pixels.length; i += 4) {
     if (pixels[i] !== 0 || pixels[i + 1] !== 0 || pixels[i + 2] !== 0) painted++;
@@ -191,7 +191,7 @@ describe("GPUScatter render correctness (real Dawn pixels)", () => {
         });
       });
       await gpu!.settled();
-      return (await surfaceTarget.read()) as Uint8Array;
+      return await surfaceTarget.color.read({ mipLevel: 0, region: "all" });
     })();
 
     // Select the centre point: the shader brightens it and grows it by 1.4x.
@@ -203,7 +203,7 @@ describe("GPUScatter render correctness (real Dawn pixels)", () => {
       });
     });
     await gpu.settled();
-    const afterPixels = (await surfaceTarget.read()) as Uint8Array;
+    const afterPixels = await surfaceTarget.color.read({ mipLevel: 0, region: "all" });
 
     const count = (p: Uint8Array) => {
       let n = 0;

@@ -1,3 +1,4 @@
+import { shaderSource } from "../shaderSource.ts";
 import { effect, type Effect, type Gpu } from "vgpu";
 import type { WarningsLog } from "../warnings.ts";
 import type { Canvas2DPassEncoder, PassEncoder } from "../passEncoder.ts";
@@ -59,7 +60,7 @@ export class RasterLayer {
     this.fallback = opts.fallback;
     this.label = opts.label;
     if (opts.gpu) {
-      this.effect = effect(opts.gpu, opts.shader, { label: opts.label });
+      this.effect = effect(opts.gpu, shaderSource(opts.shader), { label: opts.label });
     } else {
       this.effect = null;
       if (!this.fallback) {
