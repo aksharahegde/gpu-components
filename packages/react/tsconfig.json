@@ -5,6 +5,7 @@
     "jsx": "react-jsx",
     "types": ["@webgpu/types", "node"],
     "outDir": "dist",
+    "rootDir": "..",
     "paths": {
       "@gpuc/core": ["../core/src/index.ts"],
       "@gpuc/core/*": ["../core/src/*"]
