@@ -14,6 +14,12 @@
     "moduleResolution": "bundler",
     "outDir": "dist",
     "rootDir": "src",
+    // The publishable build consumes core as a built package; the source path mappings in
+    // tsconfig.json (for typechecking/tests) would pull core/src into this program and break rootDir.
+    "paths": {
+      "@gpuc/core": ["../core/dist/index.d.ts"],
+      "@gpuc/core/*": ["../core/dist/*"]
+    },
     "jsx": "react-jsx"
   },
   "include": ["src"],
