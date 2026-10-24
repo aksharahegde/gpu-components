@@ -1,8 +1,8 @@
 // A minimal Node ESM loader hook that transforms `.tsx` source (JSX + TS) via esbuild before
 // handing it to Node. `.ts` files are untouched — they keep going through Node's own
 // `--experimental-strip-types`, which is a pure type-erasure pass and cannot handle JSX syntax at
-// all (JSX isn't a type annotation; it needs a real code transform). `esbuild` is already present
-// transitively (via `vite`, a devDependency of apps/site and apps/bench) — not a new dependency.
+// all (JSX isn't a type annotation; it needs a real code transform). `esbuild` is a root devDependency
+// (it used to arrive transitively via vite <= 6, which vite 7+ no longer guarantees).
 //
 // Registered via registry/timeline/test/register.mjs; see the root `test:registry` script.
 import { readFile } from "node:fs/promises";
