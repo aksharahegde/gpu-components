@@ -4,7 +4,11 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "types": ["@webgpu/types", "node"],
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": {
+      "@gpuc/core": ["../core/src/index.ts"],
+      "@gpuc/core/*": ["../core/src/*"]
+    }
   },
   "include": ["src"]
 }
